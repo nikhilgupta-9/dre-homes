@@ -1,0 +1,70 @@
+# ---------------------------------------------------------------
+# DRE Homes - what must never reach git
+# See security.md for the reasoning behind each block.
+# ---------------------------------------------------------------
+
+# --- Secrets / environment config (commit only the *.example.php copies) ---
+/db/config.php
+/admin_nsrdwsc/db/config.php
+/admin_nsrdwsc/push-app/app-db-conn.php
+/config/secrets.php
+.env
+.env.*
+!.env.example
+zoho_tokens.json
+
+# --- Files with hardcoded live credentials (re-add after secrets move to config) ---
+/submit_feedback.php
+/z.php
+/api.php
+/admin_nsrdwsc/ajax/auto_push_crm.php
+
+# --- Debug / info leaks ---
+/info.php
+*.log
+/reviews_cache.json
+.ftpquota
+
+# --- Personal data: candidate CVs ---
+/resume/
+
+# --- User-uploaded media (10+ GB, lives on the server / backup, not in git) ---
+/admin_nsrdwsc/assets/media/*
+!/admin_nsrdwsc/assets/media/logos/
+!/admin_nsrdwsc/assets/media/svg/
+!/admin_nsrdwsc/assets/media/bg/
+!/admin_nsrdwsc/assets/media/error/
+!/admin_nsrdwsc/assets/media/users/
+!/admin_nsrdwsc/assets/media/misc/
+/admin_nsrdwsc/comm_home_img_*
+/assets/media/
+/video/
+
+# --- Admin theme demo pages (unused by the app, licensed theme content) ---
+/admin_nsrdwsc/features/
+/admin_nsrdwsc/crud/
+/admin_nsrdwsc/custom/
+/admin_nsrdwsc/layout/
+
+# --- Old copies and archives ---
+/Archive/
+*.zip
+*.php--
+*.php----
+*.php-old
+*.bak
+*.sql
+*.sql.gz
+
+# --- AI / RAG runtime data (added in the AI phase) ---
+/ai/storage/
+/ai/cache/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# --- Theme demo script containing the theme vendor's sample Google API key ---
+/admin_nsrdwsc/assets/js/pages/features/calendar/google*.js

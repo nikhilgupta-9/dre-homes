@@ -1,0 +1,79 @@
+RewriteEngine On
+
+# ===============================
+# Prevent direct access to real files/folders
+# ===============================
+RewriteCond %{REQUEST_FILENAME} -d [OR]
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -l
+RewriteRule ^ - [L]
+
+
+# ===============================
+# Sitemaps
+# ===============================
+RewriteRule ^sitemap\.xml$ sitemap.php [L,QSA]
+RewriteRule ^blog-sitemap\.xml$ blog-sitemap.php [L,QSA]
+RewriteRule ^developer-sitemap\.xml$ developer-sitemap.php [L,QSA]
+RewriteRule ^community-sitemap\.xml$ community-sitemap.php [L,QSA]
+RewriteRule ^property-sitemap\.xml$ property-sitemap.php [L,QSA]
+
+# ===============================
+# Clean URLs (Static Pages)
+# ===============================
+RewriteRule ^about-us/?$ about-us.php [L,NC]
+RewriteRule ^our-media/?$ gallery.php [L,NC]
+RewriteRule ^our-team/?$ our-team.php [L,NC]
+RewriteRule ^our-awards/?$ our-awards.php [L,NC]
+RewriteRule ^company-news/?$ company-news.php [L,NC]
+RewriteRule ^our-blogs/?$ blogs.php [L,NC]
+RewriteRule ^community/?$ communities.php [L,NC]
+RewriteRule ^developer/?$ developers.php [L,NC]
+RewriteRule ^residential-properties/?$ residential-properties.php [L,NC]
+RewriteRule ^offplan-properties/?$ off-plans.php [L,NC]
+RewriteRule ^buy-property/?$ buy-property.php [L,NC]
+RewriteRule ^rent-property/?$ rent-property.php [L,NC]
+RewriteRule ^international-properties/?$ international-properties.php [L,NC]
+RewriteRule ^ready-to-move-in/?$ ready-to-move-in.php [L,NC]
+RewriteRule ^commercial-properties/?$ commercial-properties.php [L,NC]
+RewriteRule ^dre-brand-video/?$ dre-brand-video.php [L,NC]
+RewriteRule ^careers/?$ careers.php [L,NC]
+RewriteRule ^podcast/?$ podcast.php [L,NC]
+
+# ===============================
+# Dynamic Pages
+# ===============================
+RewriteRule ^our-team/(.+)$ agent-single.php?detail=$1 [L,QSA]
+RewriteRule ^management/(.+)$ agent-single.php?detail=$1 [L,QSA]
+RewriteRule ^company-news/(.+)$ company-news-single.php?detail=$1 [L,QSA]
+RewriteRule ^our-blogs/(.+)$ blog-single.php?detail=$1 [L,QSA]
+RewriteRule ^community/(.+)$ community-single.php?detail=$1 [L,QSA]
+RewriteRule ^developer/(.+)$ developers-single.php?detail=$1 [L,QSA]
+RewriteRule ^buy-property/(.+)$ buy-property-single.php?detail=$1 [L,QSA]
+RewriteRule ^rent-property/(.+)$ rent-property-single.php?detail=$1 [L,QSA]
+RewriteRule ^international-properties/(.+)$ international-properties-single.php?detail=$1 [L,QSA]
+RewriteRule ^ready-to-move-in/(.+)$ ready-to-move-in-single.php?detail=$1 [L,QSA]
+RewriteRule ^property/(.+)$ single-property.php?detail=$1 [L,QSA]
+RewriteRule ^services/(.+)$ services.php?detail=$1 [L,QSA]
+
+# ===============================
+# Block invalid URLs with "=" inside path
+# ===============================
+RewriteCond %{REQUEST_URI} (community|property|buy-property|rent-property|international-properties|ready-to-move-in|offplan-properties|careers|podcast)/.*=.*$ [NC]
+RewriteRule ^ - [R=404,L]
+
+# ===============================
+# Custom 404
+# ===============================
+ErrorDocument 404 /404.php
+ErrorDocument 404 /dre_homes_new/404.php
+
+# ===============================
+# Security (Apache 2.4+)
+# ===============================
+<RequireAll>
+    Require all granted
+    Require not ip 138.226.238.27
+    Require not ip 194.246.100.25
+    Require not ip 3.7.42.158
+</RequireAll>

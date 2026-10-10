@@ -1,0 +1,466 @@
+// AI chat widget. Talks only to our own endpoint (ai/chat.php); no key or provider
+// address is in this file. Answers are built as text nodes, never inserted as HTML.
+(function () {
+    'use strict';
+
+    var settings = window.DRE_AI_CHAT;
+    if (!settings || !settings.endpoint || !window.fetch) {
+        return;
+    }
+
+    var STORAGE_KEY = 'dre_ai_chat_v1';
+    var MAX_CHARS = 1000;
+    var KEEP_MESSAGES = 40;
+    var KEEP_HOURS = 24;
+    var WELCOME = "Hi! I'm the DRE Homes AI assistant. Ask me about properties, areas, developers or buying and renting in Dubai.";
+    var SUGGESTIONS = [
+        '2 bedroom apartment in Dubai Marina under 2 million',
+        'Off-plan villas with handover by 2027',
+        'Apartments for rent under 100,000 a year'
+    ];
+    var ICONS = {
+        chat: 'M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z',
+        close: 'M6 6l12 12M18 6L6 18',
+        reset: 'M4 4v6h6M20 20v-6h-6M5.6 15a8 8 0 0 0 13.9 2M18.4 9A8 8 0 0 0 4.5 7',
+        send: 'M3 11.5L21 3l-8.5 18-2.5-7.5L3 11.5z'
+    };
+
+    var state = load();
+    var busy = false;
+    var els = {};
+
+    // ---------------------------------------------------------------
+    // Saved state (this browser only)
+    // ---------------------------------------------------------------
+    function load() {
+        var empty = { token: '', messages: [], open: false, saved: 0 };
+        try {
+            var saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || 'null');
+            if (!saved || !Array.isArray(saved.messages) || Date.now() - (saved.saved || 0) > KEEP_HOURS * 3600000) {
+                return empty;
+            }
+            return { token: String(saved.token || ''), messages: saved.messages, open: !!saved.open, saved: saved.saved };
+        } catch (error) {
+            return empty;
+        }
+    }
+
+    function save() {
+        try {
+            state.saved = Date.now();
+            state.messages = state.messages.slice(-KEEP_MESSAGES);
+            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (error) {
+            // Private mode or full storage: the chat still works for this page.
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Small DOM helpers
+    // ---------------------------------------------------------------
+    function el(tag, className, text) {
+        var node = document.createElement(tag);
+        if (className) {
+            node.className = className;
+        }
+        if (text !== undefined) {
+            node.textContent = text;
+        }
+        return node;
+    }
+
+    function icon(name) {
+        var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2');
+        svg.setAttribute('stroke-linecap', 'round');
+        svg.setAttribute('stroke-linejoin', 'round');
+        svg.setAttribute('aria-hidden', 'true');
+        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', ICONS[name]);
+        svg.appendChild(path);
+        return svg;
+    }
+
+    // Only links to our own site become clickable. Anything else stays plain text.
+    function isOwnLink(url) {
+        return typeof url === 'string' && url.indexOf(settings.baseUrl) === 0 && !/[\s<>"']/.test(url);
+    }
+
+    // Inline Markdown: **bold**, [text](url) and bare links to our site.
+    function appendInline(parent, text) {
+        var pattern = /\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)\s]+)\)|(https?:\/\/[^\s)<>"']+)/g;
+        var last = 0;
+        var match;
+        while ((match = pattern.exec(text)) !== null) {
+            if (match.index > last) {
+                parent.appendChild(document.createTextNode(text.slice(last, match.index)));
+            }
+            if (match[1] !== undefined) {
+                var strong = el('strong');
+                appendInline(strong, match[1]);
+                parent.appendChild(strong);
+            } else if (match[2] !== undefined) {
+                parent.appendChild(isOwnLink(match[3]) ? link(match[3], match[2].replace(/\*\*/g, '')) : document.createTextNode(match[2]));
+            } else {
+                var url = match[4].replace(/[.,;:!?]+$/, '');
+                parent.appendChild(isOwnLink(url) ? link(url, url.replace(settings.baseUrl, '/')) : document.createTextNode(match[4]));
+                pattern.lastIndex = match.index + (isOwnLink(url) ? url.length : match[4].length);
+            }
+            last = pattern.lastIndex;
+        }
+        if (last < text.length) {
+            parent.appendChild(document.createTextNode(text.slice(last)));
+        }
+    }
+
+    function link(url, text) {
+        var a = el('a', '', text);
+        a.href = url;
+        return a;
+    }
+
+    // Block Markdown: paragraphs and bullet lists. Everything else is shown as written.
+    function renderMarkdown(target, text) {
+        target.textContent = '';
+        var list = null;
+        var paragraph = null;
+        String(text).replace(/\r/g, '').split('\n').forEach(function (line) {
+            var bullet = /^\s*(?:[-*•]|\d+[.)])\s+(.*)$/.exec(line);
+            if (bullet) {
+                paragraph = null;
+                if (!list) {
+                    list = el('ul');
+                    target.appendChild(list);
+                }
+                var item = el('li');
+                appendInline(item, bullet[1]);
+                list.appendChild(item);
+                return;
+            }
+            list = null;
+            if (line.trim() === '') {
+                paragraph = null;
+                return;
+            }
+            if (!paragraph) {
+                paragraph = el('p');
+                target.appendChild(paragraph);
+            } else {
+                paragraph.appendChild(el('br'));
+            }
+            appendInline(paragraph, line.replace(/^#{1,6}\s+/, ''));
+        });
+    }
+
+    // ---------------------------------------------------------------
+    // Building the widget
+    // ---------------------------------------------------------------
+    function build() {
+        var root = el('div', 'dre-ai');
+
+        var launcher = el('button', 'dre-ai-launcher');
+        launcher.type = 'button';
+        launcher.setAttribute('aria-label', 'Open the AI assistant chat');
+        launcher.appendChild(icon('chat'));
+        launcher.appendChild(el('span', '', 'Ask AI'));
+        launcher.addEventListener('click', function () {
+            toggle(true);
+        });
+
+        var panel = el('div', 'dre-ai-panel');
+        panel.setAttribute('role', 'dialog');
+        panel.setAttribute('aria-label', 'DRE Homes AI assistant');
+
+        var header = el('div', 'dre-ai-header');
+        var title = el('div', 'dre-ai-title');
+        title.appendChild(el('strong', '', 'DRE Homes Assistant'));
+        title.appendChild(el('span', '', 'AI assistant - not a human agent'));
+        var reset = el('button');
+        reset.type = 'button';
+        reset.title = 'Start a new chat';
+        reset.setAttribute('aria-label', 'Start a new chat');
+        reset.appendChild(icon('reset'));
+        reset.addEventListener('click', newChat);
+        var close = el('button');
+        close.type = 'button';
+        close.title = 'Close';
+        close.setAttribute('aria-label', 'Close the chat');
+        close.appendChild(icon('close'));
+        close.addEventListener('click', function () {
+            toggle(false);
+        });
+        header.appendChild(title);
+        header.appendChild(reset);
+        header.appendChild(close);
+
+        var notice = el('div', 'dre-ai-notice');
+        notice.appendChild(document.createTextNode('Answers come from an AI and can be wrong; an agent can confirm the details. Please do not share ID or card numbers. '));
+        if (settings.privacyUrl) {
+            var privacy = link(settings.privacyUrl, 'Privacy Policy');
+            privacy.target = '_blank';
+            privacy.rel = 'noopener';
+            notice.appendChild(privacy);
+        }
+
+        var messages = el('div', 'dre-ai-messages');
+        messages.setAttribute('aria-live', 'polite');
+
+        var suggestions = el('div', 'dre-ai-suggestions');
+        SUGGESTIONS.forEach(function (text) {
+            var chip = el('button', '', text);
+            chip.type = 'button';
+            chip.addEventListener('click', function () {
+                send(text);
+            });
+            suggestions.appendChild(chip);
+        });
+
+        var form = el('form', 'dre-ai-form');
+        var input = el('textarea');
+        input.rows = 1;
+        input.placeholder = 'Type your question...';
+        input.setAttribute('aria-label', 'Your message');
+        var button = el('button');
+        button.type = 'submit';
+        button.setAttribute('aria-label', 'Send');
+        button.appendChild(icon('send'));
+        form.appendChild(input);
+        form.appendChild(button);
+        var count = el('div', 'dre-ai-count');
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            send(input.value);
+        });
+        input.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+                event.preventDefault();
+                send(input.value);
+            }
+        });
+        input.addEventListener('input', function () {
+            input.style.height = 'auto';
+            input.style.height = Math.min(input.scrollHeight, 110) + 'px';
+            updateCount();
+        });
+        panel.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                toggle(false);
+            }
+        });
+
+        panel.appendChild(header);
+        panel.appendChild(notice);
+        panel.appendChild(messages);
+        panel.appendChild(suggestions);
+        panel.appendChild(form);
+        panel.appendChild(count);
+        root.appendChild(launcher);
+        root.appendChild(panel);
+        document.body.appendChild(root);
+
+        els = { root: root, launcher: launcher, messages: messages, suggestions: suggestions, input: input, button: button, count: count };
+        redraw();
+        if (state.open) {
+            root.classList.add('dre-ai-open');
+        }
+    }
+
+    function updateCount() {
+        var length = els.input.value.length;
+        els.count.textContent = length > MAX_CHARS * 0.8 ? length + ' / ' + MAX_CHARS : '';
+        els.count.classList.toggle('dre-ai-over', length > MAX_CHARS);
+        els.button.disabled = busy || length > MAX_CHARS;
+    }
+
+    function addBubble(role, text) {
+        var bubble = el('div', 'dre-ai-msg ' + (role === 'user' ? 'dre-ai-msg-user' : 'dre-ai-msg-bot'));
+        if (role === 'user') {
+            bubble.textContent = text;
+        } else {
+            renderMarkdown(bubble, text);
+        }
+        els.messages.appendChild(bubble);
+        scrollDown();
+        return bubble;
+    }
+
+    function redraw() {
+        els.messages.textContent = '';
+        addBubble('bot', WELCOME);
+        state.messages.forEach(function (message) {
+            addBubble(message.role, message.text);
+        });
+        els.suggestions.style.display = state.messages.length ? 'none' : '';
+    }
+
+    function scrollDown() {
+        els.messages.scrollTop = els.messages.scrollHeight;
+    }
+
+    function toggle(open) {
+        state.open = open;
+        els.root.classList.toggle('dre-ai-open', open);
+        save();
+        if (open) {
+            scrollDown();
+            els.input.focus();
+        } else {
+            els.launcher.focus();
+        }
+    }
+
+    function newChat() {
+        if (busy) {
+            return;
+        }
+        state.token = '';
+        state.messages = [];
+        save();
+        redraw();
+        els.input.focus();
+    }
+
+    // ---------------------------------------------------------------
+    // Sending a message and reading the streamed answer
+    // ---------------------------------------------------------------
+    function send(text) {
+        text = String(text || '').trim();
+        if (busy || text === '' || text.length > MAX_CHARS) {
+            return;
+        }
+        busy = true;
+        els.input.value = '';
+        els.input.style.height = 'auto';
+        updateCount();
+        els.suggestions.style.display = 'none';
+
+        addBubble('user', text);
+        state.messages.push({ role: 'user', text: text });
+        save();
+
+        var status = el('div', 'dre-ai-status');
+        var dots = el('span', 'dre-ai-dots');
+        dots.appendChild(el('i'));
+        dots.appendChild(el('i'));
+        dots.appendChild(el('i'));
+        var statusText = el('span', '', '');
+        status.appendChild(dots);
+        status.appendChild(document.createTextNode(' '));
+        status.appendChild(statusText);
+        els.messages.appendChild(status);
+        scrollDown();
+
+        // Answers can take a while when the AI service is busy: say so instead of looking stuck.
+        var slowTimer = window.setTimeout(function () {
+            if (statusText.textContent === '') {
+                statusText.textContent = 'Still working on it...';
+            }
+        }, 12000);
+
+        var bubble = null;
+        var answer = '';
+        var failed = '';
+
+        function onEvent(name, data) {
+            if (name === 'delta' && data.text) {
+                answer += data.text;
+                if (!bubble) {
+                    bubble = addBubble('bot', '');
+                    els.messages.insertBefore(bubble, status);
+                }
+                renderMarkdown(bubble, answer);
+                scrollDown();
+            } else if (name === 'status') {
+                statusText.textContent = data.text || '';
+            } else if (name === 'error') {
+                failed = data.message || 'Something went wrong. Please try again.';
+            } else if (name === 'done' && data.token) {
+                state.token = data.token;
+            }
+        }
+
+        function finish() {
+            window.clearTimeout(slowTimer);
+            if (status.parentNode) {
+                status.parentNode.removeChild(status);
+            }
+            if (answer === '' && failed === '') {
+                failed = 'Sorry, the assistant could not answer just now. Please try again, or use the enquiry form.';
+            }
+            if (answer !== '') {
+                state.messages.push({ role: 'bot', text: answer });
+            } else {
+                // A refused message (too fast, too long) is shown but not kept in the saved chat.
+                addBubble('bot', failed);
+                state.messages.pop();
+            }
+            save();
+            busy = false;
+            updateCount();
+            els.input.focus();
+        }
+
+        window.fetch(settings.endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ message: text, token: state.token, page_url: window.location.href })
+        }).then(function (response) {
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            if (!response.body || !response.body.getReader) {
+                return response.text().then(parseEvents);
+            }
+            var reader = response.body.getReader();
+            var decoder = new TextDecoder('utf-8');
+            var buffer = '';
+            function pump() {
+                return reader.read().then(function (chunk) {
+                    buffer += decoder.decode(chunk.value || new Uint8Array(0), { stream: !chunk.done });
+                    var blocks = buffer.split('\n\n');
+                    buffer = chunk.done ? '' : blocks.pop();
+                    parseEvents(blocks.join('\n\n'));
+                    return chunk.done ? null : pump();
+                });
+            }
+            return pump();
+        }).catch(function () {
+            if (answer === '') {
+                failed = 'Sorry, the assistant could not be reached. Please check your connection and try again.';
+            }
+        }).then(finish);
+
+        function parseEvents(text) {
+            text.split('\n\n').forEach(function (block) {
+                var name = '';
+                var data = '';
+                block.split('\n').forEach(function (line) {
+                    if (line.indexOf('event:') === 0) {
+                        name = line.slice(6).trim();
+                    } else if (line.indexOf('data:') === 0) {
+                        data += line.slice(5).trim();
+                    }
+                });
+                if (name === '' || data === '') {
+                    return;
+                }
+                try {
+                    onEvent(name, JSON.parse(data));
+                } catch (error) {
+                    // A broken event is skipped; the rest of the answer still shows.
+                }
+            });
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', build);
+    } else {
+        build();
+    }
+})();

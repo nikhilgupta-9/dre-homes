@@ -359,7 +359,7 @@ class Logger
         return 'id';
     }
 
-    // Get old record data
+        // Get old record data
     public function getOldRecordData($table_name, $record_id)
     {
         $pk = $this->getPrimaryKey($table_name);

@@ -1,56 +1,38 @@
 <?php
-
 include "../db/config.php";
 
-header('Content-Type: application/json');
+$input = $_POST['input'] ?? '';
+$devId = $_POST['devId'] ?? '';
 
-$input = trim($_POST['input'] ?? '');
-$devId = trim($_POST['devId'] ?? '');
+$output = '';
 
-if (empty($devId)) {
-    echo json_encode([
-        'success' => false,
-        'message' => 'Developer ID is required'
-    ]);
-    exit;
-}
-
-$devId = (int)$devId;
-
-if ($input === '') {
-
-    // Save NULL when input is blank
-    $sql = "UPDATE tbl_developer
-            SET dev_order_no = NULL
-            WHERE dev_id = $devId";
-
+if (isset($input) && isset($devId)) {
+    
+    // Escape values to prevent SQL injection
+    $input = mysqli_real_escape_string($conn, $input);
+    $devId = mysqli_real_escape_string($conn, $devId);
+    
+    $query = mysqli_query(
+        $conn,
+        "UPDATE `tbl_developer` SET `dev_order_no`='$input' WHERE `dev_id` = '$devId'"
+    );
+    
+    if ($query) {
+        if (mysqli_affected_rows($conn) > 0) {
+            $output = json_encode(['success' => true, 'message' => 'Developer order number updated successfully']);
+        } else {
+            $output = json_encode(['success' => false, 'message' => 'No changes made. Developer ID may not exist or value is same']);
+        }
+    } else {
+        $output = json_encode(['success' => false, 'message' => 'Database error: ' . mysqli_error($conn)]);
+    }
+    
 } else {
-
-    // Allow only numeric values
-    $input = (int)$input;
-
-    $sql = "UPDATE tbl_developer
-            SET dev_order_no = $input
-            WHERE dev_id = $devId";
+    $output = json_encode(['success' => false, 'message' => 'Missing required parameters: input or devId']);
 }
 
-$query = mysqli_query($conn, $sql);
+echo $output;
 
-if ($query) {
-
-    echo json_encode([
-        'success' => true,
-        'message' => 'Developer order number updated successfully'
-    ]);
-
-} else {
-
-    echo json_encode([
-        'success' => false,
-        'message' => mysqli_error($conn)
-    ]);
-}
-
+// Close connection
 mysqli_close($conn);
-
 ?>

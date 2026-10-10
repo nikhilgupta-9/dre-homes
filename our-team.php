@@ -5,160 +5,179 @@ include('common/header.php');
 $team_details = select_row('tbl_team_det', 'is_active=1');
 ?>
 
-<div class="wrapper">
-    <div class="content">
+        <div class="wrapper">
+            <div class="content">
 
-        <!-- HERO SECTION -->
-        <div class="section hero-section hero-section_sin">
-            <div class="hero-section-wrap">
-                <div class="hero-section-wrap-item">
-                    <div class="container">
-                        <div class="hero-section-container">
-                            <div class="hero-section-title">
-                                <h1><?= $team_details['team_heading'] ?></h1>
+                <!-- HERO SECTION -->
+                <div class="section hero-section hero-section_sin">
+                    <div class="hero-section-wrap">
+                        <div class="hero-section-wrap-item">
+                            <div class="container">
+                                <div class="hero-section-container">
+                                    <div class="hero-section-title">
+                                        <h1><?= $team_details['team_heading'] ?></h1>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-wrap bg-hero bg-parallax-wrap-gradien fs-wrapper"
+                                data-scrollax-parent="true">
+                                <div class="bg" data-bg="<?= BASE_URL_IMG ?>team/<?= $team_details['team_img'] ?>"
+                                    data-scrollax="properties: { translateY: '30%' }">
+                                </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div class="bg-wrap bg-hero bg-parallax-wrap-gradien fs-wrapper" data-scrollax-parent="true">
-                        <div class="bg" data-bg="<?= BASE_URL_IMG ?>team/<?= $team_details['team_img'] ?>"
-                            data-scrollax="properties: { translateY: '30%' }">
+                <!-- BREADCRUMB -->
+                <div class="container">
+                    <div class="breadcrumbs-list bl_flat">
+                        <a href="<?= BASE_URL ?>">Home</a><span>Our Team</span>
+                        <div class="breadcrumbs-list_dec"><i class="fa-thin fa-arrow-up"></i></div>
+                    </div>
+
+                </div>
+                <div class="ot-search">
+                    <div class="container">
+                        <div class="boxed-container">
+                            <div class="team-search-box">
+                                <div class="team-search-inner">
+                                    <i class="fa fa-search"></i>
+                                    <input type="text" id="teamSearch" placeholder="Search by name or designation..."
+                                        autocomplete="off" />
+                                    <div id="teamSuggestions" class="team-suggestions" style="display:none;"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- BREADCRUMB -->
-        <div class="container">
-            <div class="breadcrumbs-list bl_flat">
-                <a href="<?= BASE_URL ?>">Home</a><span>Our Team</span>
-                <div class="breadcrumbs-list_dec"><i class="fa-thin fa-arrow-up"></i></div>
-            </div>
+                <!-- MAIN CONTENT -->
+                <div class="container">
+                    <div class="main-content ms_vir_height">
+                        <div class="boxed-container">
+                            <div class="boxed-content">
 
-            <!-- ✅ SEARCH BAR -->
-            <!-- <div class="team-search-box">
-               <div class="team-search-inner">
-                   <i class="fa fa-search"></i>
-                   <input type="text" id="teamSearch" placeholder="Search team members..." />
-               </div>
-            </div> -->
-        </div>
+                                <div class="boxed-content-title">
+                                    <?= $team_details['team_descp'] ?>
+                                </div>
 
-        <!-- MAIN CONTENT -->
-        <div class="container">
-            <div class="main-content ms_vir_height">
-                <div class="boxed-container">
-                    <div class="boxed-content">
 
-                        <div class="boxed-content-title">
-                            <?= $team_details['team_descp'] ?>
-                        </div>
+                                <!--mobile filter-->
+                                <div class="team-filter">
+                                    <select id="mobileDepartmentFilter" class="chosen-select">
+                                        <option value="all" >All Departments</option>
+                                        <?php
+                                        $desg_query = mysqli_query($conn, "SELECT * FROM tbl_team_desg WHERE is_active='1' ORDER BY order_no ASC");
+                                        while ($desg = mysqli_fetch_array($desg_query)) {
+                                            ?>
+                                            <option value="<?= $desg['team_desg_id'] ?>">
+                                                <?= $desg['team_desg_name'] ?>
+                                            </option>
+                                        <?php } ?>
 
-                        <!-- FILTER BUTTONS -->
-                        <div class="ag-filter-tags">
-                            <button class="filter-btn active" data-id="all">All</button>
+                                    </select>
 
-                            <?php
-                            $desg_query = mysqli_query($conn, "SELECT * FROM tbl_team_desg WHERE is_active='1' ORDER BY order_no ASC");
-                            while ($desg = mysqli_fetch_array($desg_query)) {
-                                ?>
-                                <button class="filter-btn" data-id="<?= $desg['team_desg_id'] ?>">
-                                    <?= $desg['team_desg_name'] ?>
-                                </button>
-                            <?php } ?>
-                        </div>
+                                    
+                                </div>
 
-                        <div id="noResultsMessage"
-                            style="display:none; text-align:center; padding:30px; color:#ab9889;">
-                            No team members found.
-                        </div>
+                                <!--mobile filter-->
+                                <!-- FILTER BUTTONS -->
+                                <div class="ag-filter-tags">
+                                    <button class="filter-btn active" data-id="all">All</button>
 
-                        <!-- TEAM LIST -->
-                        <?php
-                        // $cat_query = select_query('tbl_team_cat', 'team_cat_id NOT IN (1,9) and is_active=1');
-                        
-                        // while ($cat_row = mysqli_fetch_array($cat_query)) {
-                        // $totl_agent = mysqli_fetch_array(mysqli_query($conn, "
-                        //     SELECT COUNT(*) as totl 
-                        //     FROM tbl_team 
-                        //     WHERE team_cat_id=" . $cat_row['team_cat_id'] . " 
-                        //     AND is_active=1
-                        // "));
-                        
-                        // if ($cat_row > 0) {
-                        ?>
+                                    <?php
+                                    $desg_query = mysqli_query($conn, "SELECT * FROM tbl_team_desg WHERE is_active='1' ORDER BY order_no ASC");
+                                    while ($desg = mysqli_fetch_array($desg_query)) {
+                                        ?>
+                                        <button class="filter-btn" data-id="<?= $desg['team_desg_id'] ?>">
+                                            <?= $desg['team_desg_name'] ?>
+                                        </button>
+                                    <?php } ?>
+                                </div>
 
-                        <div class="boxed-content-item ot-pg">
-                            <div class="agent-page-container">
+                                <div id="noResultsMessage"
+                                    style="display:none; text-align:center; padding:30px; color:#ab9889;">
+                                    No team members found.
+                                </div>
 
-                                <?php
-                                $team_query = mysqli_query($conn, "
-                                SELECT t.*, d.team_desg_name 
-                                FROM tbl_team t
-                                LEFT JOIN tbl_team_desg d 
-                                    ON t.team_desg_id = d.team_desg_id
-                                WHERE t.is_active = 1 
-                                ORDER BY d.order_no ASC, t.order_no ASC
-                            ");
 
-                                while ($team_row = mysqli_fetch_array($team_query)) {
-                                    if ($team_row['team_desg_id'] == 10) {
-                                        $redirect_url = BASE_URL . "management/" . $team_row['team_slug'];
-                                    } else {
-                                        $redirect_url = BASE_URL . "our-team/" . $team_row['team_slug'];
-                                    }
-                                    ?>
+                                <div class="boxed-content-item ot-pg">
+                                    <div class="agent-page-container">
 
-                                    <!-- TEAM CARD -->
-                                    <div class=" agent-detail-box" data-desg="<?= $team_row['team_desg_id'] ?>"
-                                        data-name="<?= strtolower($team_row['team_name']) ?>"
-                                        data-role="<?= strtolower($team_row['team_desg']) ?>">
+                                        <?php
+                                        $team_query = mysqli_query($conn, "
+                                                        SELECT t.*, d.team_desg_name 
+                                                        FROM tbl_team t
+                                                        LEFT JOIN tbl_team_desg d 
+                                                            ON t.team_desg_id = d.team_desg_id
+                                                        WHERE t.is_active = 1 
+                                                        ORDER BY 
+                                                            d.order_no IS NULL,
+                                                            d.order_no ASC,
+                                                            t.order_no ASC;
+                                                    ");
 
-                                        <div class="listing-item agent-equal-box">
-                                            <div class="geodir-category-listing">
+                                        while ($team_row = mysqli_fetch_array($team_query)) {
+                                            if ($team_row['team_desg_id'] == 10) {
+                                                $redirect_url = BASE_URL . "management/" . $team_row['team_slug'];
+                                            } else {
+                                                $redirect_url = BASE_URL . "our-team/" . $team_row['team_slug'];
+                                            }
+                                            ?>
 
-                                                <div class="geodir-category-img">
-                                                    <a href="<?= $redirect_url ?>" class="geodir-category-img_item">
-                                                        <div class="bg"
-                                                            data-bg="<?= BASE_URL_IMG ?>team/<?= $team_row['team_img'] ?>">
+                                            <!-- TEAM CARD -->
+                                            <div class=" agent-detail-box" data-desg="<?= $team_row['team_desg_id'] ?>"
+                                                data-name="<?= strtolower($team_row['team_name']) ?>"
+                                                data-role="<?= strtolower($team_row['team_desg']) ?>">
+
+                                                <div class="listing-item agent-equal-box">
+                                                    <div class="geodir-category-listing">
+
+                                                        <div class="geodir-category-img">
+                                                            <a href="<?= $redirect_url ?>" class="geodir-category-img_item">
+                                                                <div>
+                                                                    <img
+                                                                        src="<?= BASE_URL_IMG ?>team/<?= $team_row['team_img'] ?>">
+                                                                </div>
+                                                                <div class="overlay"></div>
+                                                            </a>
                                                         </div>
-                                                        <div class="overlay"></div>
-                                                    </a>
-                                                </div>
 
-                                                <div class="geodir-category-content">
-                                                    <h3>
-                                                        <a href="<?= $redirect_url ?>">
-                                                            <?= $team_row['team_name'] ?>
-                                                        </a>
-                                                    </h3>
+                                                        <div class="geodir-category-content">
+                                                            <h3>
+                                                                <a href="<?= $redirect_url ?>">
+                                                                    <?= $team_row['team_name'] ?>
+                                                                </a>
+                                                            </h3>
 
-                                                    <div class="geodir-category-content_price">
-                                                        <?= $team_row['team_desg'] ?>
+                                                            <div class="geodir-category-content_price">
+                                                                <?= $team_row['team_desg'] ?>
+                                                            </div>
+                                                        </div>
+
                                                     </div>
                                                 </div>
-
                                             </div>
-                                        </div>
-                                    </div>
 
-                                <?php } ?>
+                                        <?php } ?>
+
+                                    </div>
+                                </div>
+
+                                <?php
+                                //  }
+                                // } 
+                                ?>
 
                             </div>
                         </div>
-
-                        <?php
-                        //  }
-                        // } 
-                        ?>
-
                     </div>
                 </div>
+
             </div>
-        </div>
 
-    </div>
 
-    <?php include 'common/footer.php'; ?>
+         <?php include 'common/footer.php'; ?>
 </div>

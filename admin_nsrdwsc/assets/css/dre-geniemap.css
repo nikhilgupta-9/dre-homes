@@ -1,0 +1,599 @@
+/* Import from GenieMap: the badge used across the admin, and the import page. */
+
+/* ---- The badge ---- */
+.dre-pill.dre-pill-genie,
+.dre-genie-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border: 0;
+    border-radius: 99px;
+    background: linear-gradient(120deg, #0f8f7e, #1565c0);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    box-shadow: 0 3px 10px rgba(21, 101, 192, 0.25);
+}
+.dre-genie-source {
+    margin: 8px 0 0;
+    font-size: 0.84rem;
+    opacity: 0.95;
+}
+.dre-genie-mark {
+    display: inline-grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    margin-right: 6px;
+    border-radius: 12px;
+    background: linear-gradient(120deg, #0f8f7e, #1565c0);
+    color: #fff;
+    font-size: 1.1rem;
+    vertical-align: middle;
+}
+
+/* ---- Notices ---- */
+.dre-genie .dre-leads-notice code {
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: rgba(95, 87, 76, 0.12);
+    font-size: 0.82rem;
+}
+.dre-genie-bad {
+    color: #a13c2a;
+}
+.dre-genie-ok {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+.dre-genie-ok .dre-btn {
+    margin-left: auto;
+}
+
+/* ---- The list of GenieMap projects ---- */
+.dre-genie-refresh {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    color: var(--dd-muted);
+    font-size: 0.78rem;
+}
+.dre-genie-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+}
+.dre-genie-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 10px 12px;
+    border: 1px solid rgba(95, 87, 76, 0.14);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.7);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.dre-genie-card:hover {
+    box-shadow: 0 12px 28px rgba(60, 50, 40, 0.14);
+    transform: translateY(-2px);
+}
+.dre-genie-card.is-imported {
+    background: rgba(226, 240, 240, 0.75);
+    border-color: rgba(15, 143, 126, 0.3);
+}
+.dre-genie-thumb {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 10;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(95, 87, 76, 0.12);
+    color: var(--dd-muted);
+    font-size: 2rem;
+}
+.dre-genie-thumb img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.dre-genie-thumb .dre-pill {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-size: 0.7rem;
+}
+.dre-genie-thumb .dre-genie-badge {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+}
+.dre-genie-body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 0 4px;
+    flex: 1;
+    color: var(--dd-muted);
+    font-size: 0.8rem;
+}
+.dre-genie-name {
+    color: var(--dd-ink);
+    font-size: 0.98rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+.dre-genie-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 4px 10px;
+    margin-top: 6px;
+}
+.dre-genie-meta strong {
+    color: var(--dd-ink);
+    font-size: 0.92rem;
+}
+.dre-genie-meta em {
+    font-style: normal;
+    font-size: 0.76rem;
+}
+.dre-genie-card > .dre-btn {
+    justify-content: center;
+    text-align: center;
+}
+.dre-genie-pages {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 20px;
+    color: var(--dd-muted);
+    font-size: 0.86rem;
+}
+
+/* ---- One project ---- */
+.dre-genie-detail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 18px;
+    align-items: start;
+}
+.dre-genie-main {
+    display: grid;
+    gap: 16px;
+    min-width: 0;
+}
+.dre-genie-side {
+    position: sticky;
+    top: 92px;
+}
+.dre-genie-box {
+    padding: 20px 22px;
+}
+.dre-genie-box h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    color: var(--dd-ink);
+    font-size: 1rem;
+    font-weight: 700;
+}
+.dre-genie-title {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.dre-genie-title h2 {
+    margin: 0 0 4px;
+    color: var(--dd-ink);
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+.dre-genie-title p {
+    margin: 0;
+    color: var(--dd-muted);
+    font-size: 0.88rem;
+}
+.dre-genie-photos {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+.dre-genie-photos a {
+    aspect-ratio: 4 / 3;
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(95, 87, 76, 0.12);
+}
+.dre-genie-photos a.is-main {
+    grid-column: span 2;
+    grid-row: span 2;
+    aspect-ratio: auto;
+}
+.dre-genie-photos img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.dre-genie-note {
+    margin: 10px 0 0;
+    color: var(--dd-muted);
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+.dre-genie-warn {
+    color: #b4541a;
+}
+.dre-genie-facts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 16px 0 0;
+}
+.dre-genie-facts > div {
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(95, 87, 76, 0.07);
+}
+.dre-genie-facts dt {
+    color: var(--dd-muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.dre-genie-facts dd {
+    margin: 2px 0 0;
+    color: var(--dd-ink);
+    font-size: 0.94rem;
+    font-weight: 700;
+}
+.dre-genie-text {
+    max-height: 260px;
+    overflow: auto;
+    padding-right: 8px;
+    color: var(--dd-ink);
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+.dre-genie-plans {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+.dre-genie-plans > div {
+    padding: 12px 14px;
+    border: 1px solid rgba(95, 87, 76, 0.14);
+    border-radius: 12px;
+    font-size: 0.86rem;
+}
+.dre-genie-plans > div.is-used {
+    border-color: rgba(15, 143, 126, 0.45);
+    background: rgba(226, 240, 240, 0.6);
+}
+.dre-genie-plans ul {
+    margin: 8px 0 0;
+    padding-left: 18px;
+    color: var(--dd-muted);
+}
+.dre-genie-plans .dre-pill {
+    margin-left: 6px;
+    font-size: 0.68rem;
+}
+.dre-genie-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.dre-genie-chips span {
+    padding: 4px 11px;
+    border-radius: 99px;
+    background: rgba(95, 87, 76, 0.09);
+    color: var(--dd-ink);
+    font-size: 0.8rem;
+}
+.dre-genie-form label {
+    display: block;
+    margin: 0 0 14px;
+}
+.dre-genie-form label > span {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--dd-muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+.dre-genie-form input[type="text"],
+.dre-genie-form select {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1px solid rgba(95, 87, 76, 0.2);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--dd-ink);
+    font-size: 0.88rem;
+}
+.dre-genie-form input:focus,
+.dre-genie-form select:focus {
+    outline: 2px solid var(--dd-accent);
+    outline-offset: 1px;
+}
+.dre-genie-form small {
+    display: block;
+    margin-top: 5px;
+    color: var(--dd-muted);
+    font-size: 0.76rem;
+    line-height: 1.45;
+}
+.dre-genie-will {
+    margin: 4px 0 16px;
+    padding: 12px 14px;
+    list-style: none;
+    border-radius: 12px;
+    background: rgba(95, 87, 76, 0.07);
+    color: var(--dd-ink);
+    font-size: 0.8rem;
+    display: grid;
+    gap: 7px;
+}
+.dre-genie-will i {
+    margin-right: 6px;
+    color: var(--dd-muted);
+}
+.dre-genie-form > .dre-btn,
+.dre-genie-done > .dre-btn {
+    width: 100%;
+    justify-content: center;
+}
+.dre-genie-done h3 {
+    margin-top: 12px;
+}
+.dre-genie-done p {
+    color: var(--dd-muted);
+    font-size: 0.86rem;
+}
+@media (max-width: 1199px) {
+    .dre-genie-detail {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .dre-genie-side {
+        position: static;
+        order: -1;
+    }
+}
+@media (max-width: 700px) {
+    .dre-genie-facts {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .dre-genie-photos {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ---- Choosing the pictures and documents to import ---- */
+.dre-genie-pickbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin-bottom: 12px;
+    color: var(--dd-muted);
+    font-size: 0.82rem;
+}
+.dre-genie-pickbar strong {
+    color: var(--dd-ink);
+    font-size: 0.9rem;
+}
+.dre-genie-pickbar span {
+    flex: 1 1 220px;
+}
+.dre-genie-pick {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 10px;
+}
+.dre-genie-pic {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(95, 87, 76, 0.12);
+    outline: 3px solid transparent;
+    outline-offset: -3px;
+    transition: outline-color 0.15s ease;
+}
+.dre-genie-pic img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    opacity: 0.45;
+    filter: grayscale(0.6);
+    transition: opacity 0.15s ease, filter 0.15s ease;
+}
+.dre-genie-pic.is-on {
+    outline-color: #0f8f7e;
+}
+.dre-genie-pic.is-on img {
+    opacity: 1;
+    filter: none;
+}
+.dre-genie-pic.is-main {
+    outline-color: #d99a1c;
+}
+.dre-genie-pic label {
+    position: absolute;
+    margin: 0;
+    cursor: pointer;
+}
+.dre-genie-pic input {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    inset: 0;
+    margin: 0;
+    cursor: pointer;
+}
+/* The tick covers the picture, so a click anywhere on it ticks it. */
+.dre-genie-tick {
+    inset: 0;
+}
+.dre-genie-tick i {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border: 2px solid #fff;
+    border-radius: 8px;
+    background: rgba(30, 26, 22, 0.45);
+    color: transparent;
+    font-size: 1rem;
+}
+.dre-genie-tick input:checked + i {
+    background: #0f8f7e;
+    color: #fff;
+}
+.dre-genie-tick input:focus-visible + i,
+.dre-genie-star input:focus-visible + i {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+.dre-genie-star {
+    left: 8px;
+    bottom: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 99px;
+    background: rgba(30, 26, 22, 0.55);
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.72rem;
+    font-weight: 700;
+    z-index: 1;
+}
+.dre-genie-star span {
+    display: none;
+}
+.dre-genie-pic.is-main .dre-genie-star {
+    background: #d99a1c;
+    color: #fff;
+}
+.dre-genie-pic.is-main .dre-genie-star span {
+    display: inline;
+}
+.dre-genie-zoom {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: rgba(30, 26, 22, 0.55);
+    color: #fff;
+    font-size: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+.dre-genie-pic:hover .dre-genie-zoom,
+.dre-genie-zoom:focus {
+    opacity: 1;
+}
+.dre-genie-docs {
+    display: grid;
+    gap: 8px;
+}
+.dre-genie-docs > div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 12px;
+    padding: 10px 14px;
+    border: 1px solid rgba(95, 87, 76, 0.14);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.6);
+}
+.dre-genie-docs > div > i {
+    color: #c0392b;
+    font-size: 1.5rem;
+}
+.dre-genie-docs > div > span {
+    flex: 1 1 140px;
+    display: flex;
+    flex-direction: column;
+    color: var(--dd-ink);
+    font-size: 0.88rem;
+}
+.dre-genie-docs small {
+    color: var(--dd-muted);
+    font-size: 0.74rem;
+}
+.dre-genie-docs select {
+    padding: 8px 10px;
+    border: 1px solid rgba(95, 87, 76, 0.2);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--dd-ink);
+    font-size: 0.84rem;
+}
+.dre-genie-chosen {
+    margin: 0 0 14px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    background: rgba(15, 143, 126, 0.1);
+    color: #0b6b5e;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+.dre-genie-chosen.is-bad {
+    background: rgba(180, 84, 26, 0.12);
+    color: #b4541a;
+}
+.dre-genie-form > .dre-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ---- The quick GenieMap filter beside the type tabs of the project lists ---- */
+.dre-leads-tabs a.dre-genie-tab {
+    margin-left: auto;
+    border-color: rgba(21, 101, 192, 0.35);
+    color: #14588f;
+}
+.dre-leads-tabs a.dre-genie-tab > i:first-child {
+    color: #0f8f7e;
+}
+.dre-leads-tabs a.dre-genie-tab.is-on {
+    border-color: transparent;
+    background: linear-gradient(120deg, #0f8f7e, #1565c0);
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(21, 101, 192, 0.28);
+}
+.dre-leads-tabs a.dre-genie-tab.is-on i,
+.dre-leads-tabs a.dre-genie-tab.is-on b {
+    color: #fff;
+}
+.dre-leads-tabs a.dre-genie-tab.is-on b {
+    background: rgba(255, 255, 255, 0.22);
+}

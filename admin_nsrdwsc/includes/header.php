@@ -36,7 +36,9 @@ License: You must have a valid license purchased only from themeforest(the above
 		<link href="<?=BASE_URL?>assets/css/themes/layout/brand/dark.css" rel="stylesheet" type="text/css" />
 		<link href="<?=BASE_URL?>assets/css/themes/layout/aside/dark.css" rel="stylesheet" type="text/css" />
 		<!--end::Layout Themes-->
-		<link rel="shortcut icon" href="<?=BASE_URL?>assets/media/favicon.png" />
+		<!-- DRE Homes admin theme: sidebar, top bar and small-screen fixes -->
+		<link href="<?=BASE_URL?>assets/css/dre-admin.css?v=1" rel="stylesheet" type="text/css" />
+		<link rel="shortcut icon" href="<?=BASE_URL?>assets/media/favicon.ico" />
 		<script type="text/javascript">
 			var base_url='<?=BASE_URL?>';
 		</script>

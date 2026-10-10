@@ -1,247 +1,473 @@
-<?php 
+<?php
 include('db/config.php');
 include('includes/header.php');
-include ('lock2.php');
+include('lock2.php');
+include('includes/Logger.php');
 
-$err[]='';
-$id=base64_decode($_GET['edit']);
-if(isset($_POST['update_developer_content']))
-{
-    $dev_cont_heading=prepStr($_POST['dev_cont_heading']);
-    $dev_cont_homepage_heading=prepStr($_POST['dev_cont_homepage_heading']);
-    $dev_cont_homepage_content=prepStr($_POST['dev_cont_homepage_content']);
-	$dev_cont_img='dev_cont_img'.rand(0,10000).'_'.$_FILES['dev_cont_img']['name'];
-	$is_active=(prepStr($_POST['is_active']!='' ? 1 : 2));
-
-
-
-$allowed_image_extension = array(
-"png",
-"jpg",
-"jpeg"
-);
-
-$dev_file_extension = pathinfo($_FILES["dev_cont_img"]["name"], PATHINFO_EXTENSION);
-
-if(!in_array($dev_file_extension,$allowed_image_extension) && !empty($_FILES['dev_cont_img']['name']))
-{
-$err[]='Invalid Image. Only PNG,JPG and JPEG are allowed.';
+// Nothing below runs unless someone is signed in.
+if (empty($_SESSION['email_id'])) {
+  exit;
 }
 
+$logger = new Logger($conn);
 
+if (empty($_SESSION['admin_csrf'])) {
+  $_SESSION['admin_csrf'] = bin2hex(random_bytes(16));
+}
 
-	if(!empty($_FILES['dev_cont_img']['name']))
+function devc_e($text)
 {
-$dev_cont_img='dev_img_'.rand(0,10000).'_'.$_FILES['dev_cont_img']['name'];
+  return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
 }
-else
+
+// Runs a prepared query and returns its rows (or true for a write).
+function devc_query($conn, $sql, array $params = [])
 {
-$dev_cont_img=$_POST['dev_cont_img_hidden'];
+  $stmt = mysqli_prepare($conn, $sql);
+  if (!$stmt) {
+    error_log('Developer content query failed: ' . mysqli_error($conn));
+    return false;
+  }
+  if ($params) {
+    $types = '';
+    foreach ($params as $param) {
+      $types .= is_int($param) ? 'i' : 's';
+    }
+    mysqli_stmt_bind_param($stmt, $types, ...$params);
+  }
+  if (!mysqli_stmt_execute($stmt)) {
+    error_log('Developer content query failed: ' . mysqli_stmt_error($stmt));
+    mysqli_stmt_close($stmt);
+    return false;
+  }
+  $result = mysqli_stmt_get_result($stmt);
+  mysqli_stmt_close($stmt);
+  if ($result === false) {
+    return true;
+  }
+  $rows = [];
+  while ($row = mysqli_fetch_assoc($result)) {
+    $rows[] = $row;
+  }
+  return $rows;
 }
 
-if(count($err)==1)
-{
+const DEVC_IMAGE = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp'];
+const DEVC_IMAGE_MAX = 5 * 1024 * 1024;
 
-	if(!empty($_FILES['dev_cont_img']['name']))
-	{
-	move_uploaded_file($_FILES['dev_cont_img']['tmp_name'], "assets/media/developer/$dev_cont_img");
-	unlink('assets/media/developer/'.$_POST['dev_cont_img_hidden']);
-	}
+$id = (int) base64_decode(is_string($_GET['edit'] ?? null) ? $_GET['edit'] : '', true);
+$details = $id > 0 ? (devc_query($conn, "SELECT * FROM tbl_developer_content WHERE dev_cont_id = ?", [$id]) ?: []) : [];
+$details = $details ? $details[0] : null;
 
-	$query=mysqli_query($conn,"update tbl_developer_content
-	                    SET dev_cont_img='$dev_cont_img',
-	                        dev_cont_heading='$dev_cont_heading',
-	                         dev_cont_homepage_heading='$dev_cont_homepage_heading',
-	                          dev_cont_homepage_content='$dev_cont_homepage_content',
-	                        is_active='$is_active',
-	                         tstp='".$date."' where dev_cont_id=$id");
-	if($query)
-	{
-
-	header('Location:'.BASE_URL.'edit-developer-content.php?edit='.$_GET['edit'].'');
-	}
-
+$errors = [];
+$old = ['dev_cont_heading' => '', 'dev_cont_homepage_heading' => '', 'dev_cont_homepage_content' => '', 'is_active' => ''];
+if ($details) {
+  $old = [
+    'dev_cont_heading' => (string) $details['dev_cont_heading'],
+    'dev_cont_homepage_heading' => (string) $details['dev_cont_homepage_heading'],
+    'dev_cont_homepage_content' => (string) $details['dev_cont_homepage_content'],
+    'is_active' => $details['is_active'] === '1' ? '1' : '',
+  ];
 }
 
+if ($details && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['update_developer_content'])) {
+  foreach (['dev_cont_heading' => 255, 'dev_cont_homepage_heading' => 255, 'dev_cont_homepage_content' => 0] as $field => $max) {
+    $value = isset($_POST[$field]) && is_string($_POST[$field]) ? trim($_POST[$field]) : '';
+    $old[$field] = $max > 0 ? mb_substr($value, 0, $max) : $value;
+  }
+  $old['is_active'] = isset($_POST['is_active']) ? '1' : '';
+
+  if (!is_string($_POST['csrf'] ?? null) || !hash_equals($_SESSION['admin_csrf'], $_POST['csrf'])) {
+    $errors[] = 'The form expired. Please check your entries and save again.';
+  }
+  if ($old['dev_cont_heading'] === '') {
+    $errors[] = 'Page heading is needed.';
+  }
+
+  // The banner keeps its saved picture unless a new one is chosen. A new one is checked by
+  // extension and by its real content, and stored under a name made here.
+  $stored = (string) $details['dev_cont_img'];
+  $new_file = '';
+  $file = $_FILES['dev_cont_img'] ?? null;
+  if (is_array($file) && !is_array($file['name']) && $file['error'] !== UPLOAD_ERR_NO_FILE && (string) $file['name'] !== '') {
+    if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE || $file['size'] > DEVC_IMAGE_MAX) {
+      $errors[] = 'The banner image is too large (maximum 5 MB).';
+    } elseif ($file['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
+      $errors[] = 'The banner image could not be uploaded. Please try again.';
+    } else {
+      $extension = strtolower(pathinfo((string) $file['name'], PATHINFO_EXTENSION));
+      $finfo = new finfo(FILEINFO_MIME_TYPE);
+      $real_extension = array_search($finfo->file($file['tmp_name']), ['jpg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp'], true);
+      if (!isset(DEVC_IMAGE[$extension]) || $real_extension === false) {
+        $errors[] = 'The banner image must be one of: JPG, PNG, WEBP.';
+      } else {
+        $new_file = 'dev_cont_img_' . bin2hex(random_bytes(6)) . '.' . $real_extension;
+      }
+    }
+  }
+
+  if (!$errors && $new_file !== '' && !move_uploaded_file($file['tmp_name'], 'assets/media/developer/' . $new_file)) {
+    $errors[] = 'The banner image could not be stored on the server. Nothing was saved.';
+  }
+
+  if (!$errors) {
+    $old_data = $logger->getOldRecordData('tbl_developer_content', $id);
+    $saved = devc_query(
+      $conn,
+      "UPDATE tbl_developer_content SET dev_cont_img = ?, dev_cont_heading = ?, dev_cont_homepage_heading = ?, dev_cont_homepage_content = ?, is_active = ?, tstp = NOW() WHERE dev_cont_id = ?",
+      [$new_file !== '' ? $new_file : $stored, $old['dev_cont_heading'], $old['dev_cont_homepage_heading'], $old['dev_cont_homepage_content'], $old['is_active'] === '1' ? '1' : '2', $id]
+    );
+    if (!$saved) {
+      if ($new_file !== '' && is_file('assets/media/developer/' . $new_file)) {
+        @unlink('assets/media/developer/' . $new_file);
+      }
+      $errors[] = 'The changes could not be saved. Please try again.';
+    } else {
+      $old_name = basename(trim($stored));
+      if ($new_file !== '' && $old_name !== '' && is_file('assets/media/developer/' . $old_name)) {
+        @unlink('assets/media/developer/' . $old_name);
+      }
+      $logger->log('UPDATE', 'tbl_developer_content', $id, $old_data, $logger->getOldRecordData('tbl_developer_content', $id), 'Developers page content updated');
+      header('Location: ' . BASE_URL . 'edit-developer-content.php?edit=' . base64_encode($id) . '&saved=1');
+      exit;
+    }
+  }
 }
 
-$details=mysqli_fetch_array(mysqli_query($conn,"select * from tbl_developer_content where dev_cont_id=$id"));
+$just_saved = $details && isset($_GET['saved']) && !$errors;
+$banner_url = $details && trim((string) $details['dev_cont_img']) !== '' ? BASE_URL . 'assets/media/developer/' . rawurlencode($details['dev_cont_img']) : '';
+$live_developers = devc_query($conn, "SELECT COUNT(*) AS n FROM tbl_developer WHERE is_active = '1'");
+$live_developers = $live_developers ? (int) $live_developers[0]['n'] : 0;
 ?>
-	<!--begin::Body-->
-	<body id="kt_body" class="header-fixed header-mobile-fixed subheader-enabled subheader-fixed aside-enabled aside-fixed aside-minimize-hoverable page-loading">
-		<!--begin::Main-->
-		<!--begin::Header Mobile-->
-		<div id="kt_header_mobile" class="header-mobile align-items-center header-mobile-fixed">
-			<!--begin::Logo-->
-			<a href="index.html">
-				<img alt="Logo" src="<?=BASE_URL?>assets/media/logos/logo-light.png" />
-			</a>
-			<!--end::Logo-->
-			<!--begin::Toolbar-->
-			<div class="d-flex align-items-center">
-				<!--begin::Aside Mobile Toggle-->
-				<button class="btn p-0 burger-icon burger-icon-left" id="kt_aside_mobile_toggle">
-					<span></span>
-				</button>
-				<!--end::Aside Mobile Toggle-->
-				<!--begin::Header Menu Mobile Toggle-->
-				<button class="btn p-0 burger-icon ml-4" id="kt_header_mobile_toggle">
-					<span></span>
-				</button>
-				<!--end::Header Menu Mobile Toggle-->
-				<!--begin::Topbar Mobile Toggle-->
-				<button class="btn btn-hover-text-primary p-0 ml-2" id="kt_header_mobile_topbar_toggle">
-					<span class="svg-icon svg-icon-xl">
-						<!--begin::Svg Icon | path:<?=BASE_URL?>assets/media/svg/icons/General/User.svg-->
-						<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
-							<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-								<polygon points="0 0 24 0 24 24 0 24" />
-								<path d="M12,11 C9.790861,11 8,9.209139 8,7 C8,4.790861 9.790861,3 12,3 C14.209139,3 16,4.790861 16,7 C16,9.209139 14.209139,11 12,11 Z" fill="#000000" fill-rule="nonzero" opacity="0.3" />
-								<path d="M3.00065168,20.1992055 C3.38825852,15.4265159 7.26191235,13 11.9833413,13 C16.7712164,13 20.7048837,15.2931929 20.9979143,20.2 C21.0095879,20.3954741 20.9979143,21 20.2466999,21 C16.541124,21 11.0347247,21 3.72750223,21 C3.47671215,21 2.97953825,20.45918 3.00065168,20.1992055 Z" fill="#000000" fill-rule="nonzero" />
-							</g>
-						</svg>
-						<!--end::Svg Icon-->
-					</span>
-				</button>
-				<!--end::Topbar Mobile Toggle-->
-			</div>
-			<!--end::Toolbar-->
-		</div>
-		<!--end::Header Mobile-->
-		<div class="d-flex flex-column flex-root">
-			<!--begin::Page-->
-			<div class="d-flex flex-row flex-column-fluid page">
-				<!--begin::Aside-->
-				<?php include('includes/sidebar.php');?>
-				<!--end::Aside-->
-				<!--begin::Wrapper-->
-				<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
-					<!--begin::Header-->
-					<div id="kt_header" class="header header-fixed">
-						<!--begin::Container-->
-						<div class="container-fluid d-flex align-items-stretch justify-content-between">
-							<!--begin::Header Menu Wrapper-->
-							<div class="header-menu-wrapper header-menu-wrapper-left" id="kt_header_menu_wrapper">
-								<!--begin::Header Menu-->
-								<div id="kt_header_menu" class="header-menu header-menu-mobile header-menu-layout-default">
-									
-								</div>
-								<!--end::Header Menu-->
-							</div>
-							<!--end::Header Menu Wrapper-->
-							<!--begin::Topbar-->
-							<div class="topbar">
-							
-								<!--begin::User-->
-								<div class="topbar-item">
-									<div class="btn btn-icon btn-icon-mobile w-auto btn-clean d-flex align-items-center btn-lg px-2" id="kt_quick_user_toggle">
-										<span class="text-muted font-weight-bold font-size-base d-none d-md-inline mr-1">Hi,</span>
-										<span class="text-dark-50 font-weight-bolder font-size-base d-none d-md-inline mr-3"><?=$_SESSION['username']?></span>
-										<span class="symbol symbol-lg-35 symbol-25 symbol-light-success">
-											<span class="symbol-label font-size-h5 font-weight-bold"><?=substr($_SESSION['username'],0,1)?></span>
-										</span>
-									</div>
-								</div>
-								<!--end::User-->
-							</div>
-							<!--end::Topbar-->
-						</div>
-						<!--end::Container-->
-					</div>
-					<!--end::Header-->
-					<!--begin::Content-->
-					<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
-				
-						<!--begin::Entry-->
-					<div class="d-flex flex-column-fluid">
-<!--begin::Container-->
-<div class="container">
+<!--begin::Body-->
 
-<!--begin::Card-->
-<div class="card card-custom gutter-b">
-<div class="card-header flex-wrap py-3">
-<div class="card-title">
-<h3 class="card-label">Developer Content</h3>
-</div>
-</div>
-<div class="card-body">
-<?php if(count($err)>1){?>
-<ul class="err_list">
-<?php foreach($err as $list_err){ ?>
-<li><?=$list_err?></li>
-<?php } ?>
-</ul>
-<?php }?>
+<body id="kt_body"
+  class="header-fixed header-mobile-fixed subheader-enabled subheader-fixed aside-enabled aside-fixed aside-minimize-hoverable page-loading">
+  <!--begin::Main-->
+  <!--begin::Header Mobile-->
+  <div id="kt_header_mobile" class="header-mobile align-items-center header-mobile-fixed">
+    <!--begin::Logo-->
+    <a href="index.html">
+      <img alt="Logo" src="<?= BASE_URL ?>assets/media/logos/logo-light.png" />
+    </a>
+    <!--end::Logo-->
+    <!--begin::Toolbar-->
+    <div class="d-flex align-items-center">
+      <!--begin::Aside Mobile Toggle-->
+      <button class="btn p-0 burger-icon burger-icon-left" id="kt_aside_mobile_toggle">
+        <span></span>
+      </button>
+      <!--end::Aside Mobile Toggle-->
+      <!--begin::Header Menu Mobile Toggle-->
+      <button class="btn p-0 burger-icon ml-4" id="kt_header_mobile_toggle">
+        <span></span>
+      </button>
+      <!--end::Header Menu Mobile Toggle-->
+      <!--begin::Topbar Mobile Toggle-->
+      <button class="btn btn-hover-text-primary p-0 ml-2" id="kt_header_mobile_topbar_toggle">
+        <span class="svg-icon svg-icon-xl">
+          <!--begin::Svg Icon | path:<?= BASE_URL ?>assets/media/svg/icons/General/User.svg-->
+          <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px"
+            viewBox="0 0 24 24" version="1.1">
+            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+              <polygon points="0 0 24 0 24 24 0 24" />
+              <path
+                d="M12,11 C9.790861,11 8,9.209139 8,7 C8,4.790861 9.790861,3 12,3 C14.209139,3 16,4.790861 16,7 C16,9.209139 14.209139,11 12,11 Z"
+                fill="#000000" fill-rule="nonzero" opacity="0.3" />
+              <path
+                d="M3.00065168,20.1992055 C3.38825852,15.4265159 7.26191235,13 11.9833413,13 C16.7712164,13 20.7048837,15.2931929 20.9979143,20.2 C21.0095879,20.3954741 20.9979143,21 20.2466999,21 C16.541124,21 11.0347247,21 3.72750223,21 C3.47671215,21 2.97953825,20.45918 3.00065168,20.1992055 Z"
+                fill="#000000" fill-rule="nonzero" />
+            </g>
+          </svg>
+          <!--end::Svg Icon-->
+        </span>
+      </button>
+      <!--end::Topbar Mobile Toggle-->
+    </div>
+    <!--end::Toolbar-->
+  </div>
+  <!--end::Header Mobile-->
+  <div class="d-flex flex-column flex-root">
+    <!--begin::Page-->
+    <div class="d-flex flex-row flex-column-fluid page">
+      <!--begin::Aside-->
+      <?php include('includes/sidebar.php'); ?>
+      <!--end::Aside-->
+      <!--begin::Wrapper-->
+      <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+        <!--begin::Header-->
+        <div id="kt_header" class="header header-fixed">
+          <!--begin::Container-->
+          <div class="container-fluid d-flex align-items-stretch justify-content-between">
+            <!--begin::Header Menu Wrapper-->
+            <div class="header-menu-wrapper header-menu-wrapper-left" id="kt_header_menu_wrapper">
+              <!--begin::Header Menu-->
+              <div id="kt_header_menu" class="header-menu header-menu-mobile header-menu-layout-default">
 
-<div class=" card-custom gutter-b example example-compact">
+              </div>
+              <!--end::Header Menu-->
+            </div>
+            <!--end::Header Menu Wrapper-->
+            <!--begin::Topbar-->
+            <div class="topbar">
 
+              <!--begin::User-->
+              <div class="topbar-item">
+                <div class="btn btn-icon btn-icon-mobile w-auto btn-clean d-flex align-items-center btn-lg px-2"
+                  id="kt_quick_user_toggle">
+                  <span class="text-muted font-weight-bold font-size-base d-none d-md-inline mr-1">Hi,</span>
+                  <span
+                    class="text-dark-50 font-weight-bolder font-size-base d-none d-md-inline mr-3"><?= $_SESSION['username'] ?></span>
+                  <span class="symbol symbol-lg-35 symbol-25 symbol-light-success">
+                    <span
+                      class="symbol-label font-size-h5 font-weight-bold"><?= substr($_SESSION['username'], 0, 1) ?></span>
+                  </span>
+                </div>
+              </div>
+              <!--end::User-->
+            </div>
+            <!--end::Topbar-->
+          </div>
+          <!--end::Container-->
+        </div>
+        <!--end::Header-->
+        <!--begin::Content-->
+        <div class="content d-flex flex-column flex-column-fluid dre-dash-content" id="kt_content">
 
-<!--begin::Form-->
-<form action="" enctype="multipart/form-data" method="post"  id
-="edit-community-content">
-<div class="card-body">
+          <!--begin::Entry-->
+          <div class="d-flex flex-column-fluid">
+            <!--begin::Container-->
+            <div class="container">
 
+              <!--begin::Developers page content-->
+              <link href="<?= BASE_URL ?>assets/css/dre-dashboard.css?v=1" rel="stylesheet" type="text/css" />
+              <link href="<?= BASE_URL ?>assets/css/dre-form.css?v=1" rel="stylesheet" type="text/css" />
+              <link href="<?= BASE_URL ?>assets/css/dre-content.css?v=1" rel="stylesheet" type="text/css" />
 
-<div class="form-group">
-<label for="exampleInputPassword1">Image
-<span class="text-danger">*</span></label>
-<input type="file" id="dev_cont_img" name="dev_cont_img" value="" class="form-control">
-<?php if(!empty($details['dev_cont_img'])){?>
-<img src="<?=BASE_URL?>assets/media/developer/<?=$details['dev_cont_img']?>" width='50' class="mt-3">
-<?php }?>
- <input type="hidden" name="dev_cont_img_hidden" value="<?=$details['dev_cont_img']?>">
-</div>
+              <div class="dre-dash dre-form-page dre-content-page">
 
+                <div class="dre-glass dre-glass-dark dre-hero">
+                  <div>
+                    <h1>Developers page content</h1>
+                    <p>The banner and headings of the Developers page, and the developers block on the homepage.</p>
+                  </div>
+                  <div class="dre-actions">
+                    <a href="<?= BASE_URL ?>manage-developer.php"><i class="bi bi-building"></i> All developers</a>
+                    <a href="<?= devc_e(BASE_URL_HOME) ?>developer" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> View the page</a>
+                  </div>
+                </div>
 
-	<div class="form-group">
-<label for="exampleInputPassword1">Heading</label>
-<input type="text" id="dev_cont_heading" name="dev_cont_heading" value="<?=$details['dev_cont_heading']?>" class="form-control" placeholder="Heading">
-</div>
+                <?php if (!$details): ?>
+                  <div class="dre-form-alert dre-form-bad" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <div><strong>This content could not be found.</strong> Open it from the menu: Developers, then Page Content.</div>
+                  </div>
+                <?php elseif ($just_saved): ?>
+                  <div class="dre-form-alert dre-form-ok" role="status" id="devcSaved">
+                    <i class="bi bi-check-circle"></i>
+                    <div><strong>The changes were saved.</strong> <a href="<?= devc_e(BASE_URL_HOME) ?>developer" target="_blank" rel="noopener">View the page</a></div>
+                  </div>
+                <?php endif; ?>
 
+                <?php if ($errors): ?>
+                  <div class="dre-form-alert dre-form-bad" role="alert" id="devcErrors" tabindex="-1">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <div>
+                      <strong>The changes were not saved. Please fix <?= count($errors) === 1 ? 'this' : 'these ' . count($errors) . ' things' ?>:</strong>
+                      <ul>
+                        <?php foreach ($errors as $error): ?>
+                          <li><?= devc_e($error) ?></li>
+                        <?php endforeach; ?>
+                      </ul>
+                    </div>
+                  </div>
+                <?php endif; ?>
 
-	<div class="form-group">
-<label for="exampleInputPassword1">Homepage Heading</label>
-<input type="text" id="dev_cont_heading" name="dev_cont_homepage_heading" value="<?=$details['dev_cont_homepage_heading']?>" class="form-control" placeholder="Homepage Heading">
-</div>
+                <?php if ($details): ?>
+                <div class="dre-content-layout">
 
+                  <!--begin::Form-->
+                  <form action="<?= BASE_URL ?>edit-developer-content.php?edit=<?= base64_encode($id) ?>" enctype="multipart/form-data" method="post" id="developer-content-form" class="dre-form">
+                    <input type="hidden" name="csrf" value="<?= devc_e($_SESSION['admin_csrf']) ?>">
+                    <input type="hidden" name="update_developer_content" value="1">
 
-	<div class="form-group">
-<label for="exampleInputPassword1">Homepage Content</label>
-<textarea name="dev_cont_homepage_content" class="form-control" placeholder="Homepage Content" id="kt-tinymce-2"><?=$details['dev_cont_homepage_content']?></textarea>
-</div>
+                    <!-- Developers page -->
+                    <section class="dre-glass dre-form-section">
+                      <h2><i class="bi bi-window"></i> Developers page</h2>
+                      <label class="dre-field">
+                        <span>Page heading <b>*</b></span>
+                        <input type="text" name="dev_cont_heading" id="devcHeading" value="<?= devc_e($old['dev_cont_heading']) ?>" maxlength="255" autocomplete="off" placeholder="Developers" required>
+                        <small>The title over the banner.</small>
+                      </label>
+                      <label class="dre-field">
+                        <span>Banner image</span>
+                        <input type="file" name="dev_cont_img" id="devcImage" accept="image/jpeg,image/png,image/webp">
+                        <small>JPG, PNG or WEBP, up to 5 MB. A wide picture works best (about 1920 &times; 600). Leave empty to keep the current one.</small>
+                      </label>
+                    </section>
 
+                    <!-- Homepage block -->
+                    <section class="dre-glass dre-form-section">
+                      <h2><i class="bi bi-house-heart"></i> Homepage block</h2>
+                      <label class="dre-field">
+                        <span>Heading</span>
+                        <input type="text" name="dev_cont_homepage_heading" id="devcHomeHeading" value="<?= devc_e($old['dev_cont_homepage_heading']) ?>" maxlength="255" autocomplete="off" placeholder="Our Channel Partner">
+                        <small>Shown above the developers strip on the homepage.</small>
+                      </label>
+                      <div class="dre-field">
+                        <label for="kt-tinymce-2"><span>Text</span></label>
+                        <textarea name="dev_cont_homepage_content" class="tinymce-editor" id="kt-tinymce-2" rows="8"><?= devc_e($old['dev_cont_homepage_content']) ?></textarea>
+                      </div>
+                    </section>
 
+                    <!-- Publishing -->
+                    <section class="dre-glass dre-form-section">
+                      <h2><i class="bi bi-send"></i> Publishing</h2>
+                      <label class="dre-toggle">
+                        <input type="checkbox" name="is_active" value="1" id="devcActive" <?= $old['is_active'] === '1' ? 'checked' : '' ?>>
+                        <i></i>
+                        <span><strong>Use this content on the website</strong><small>Off = the Developers page loses its banner and heading. Keep it on unless you are replacing this content.</small></span>
+                      </label>
+                    </section>
 
-<div class="form-group">
-<label for="exampleInputPassword1">Status</label>
-<span class="switch switch-md switch-icon">
-<label>
-<input type="checkbox" name="is_active" value="1" <?=($details['is_active']==1 ? 'checked' : '')?>>
-<span></span>
-</label>
-</span>
-</div>
+                    <div class="dre-form-bar">
+                      <div class="dre-form-progress">
+                        <div id="devcState">No unsaved changes</div>
+                      </div>
+                      <div class="dre-form-bar-buttons">
+                        <button type="submit" class="dre-btn dre-btn-main"><i class="bi bi-check2"></i> Save changes</button>
+                      </div>
+                    </div>
+                  </form>
+                  <!--end::Form-->
 
-</div>
-<div class="card-footer">
-<button type="submit" name="update_developer_content" class="btn btn-primary mr-2">Update</button>
-<button type="reset" class="btn btn-secondary">Reset</button>
-</div>
-</form><!--end::Form-->
-</div>
+                  <!-- How it will look -->
+                  <aside class="dre-content-side" aria-label="Preview">
+                    <div class="dre-glass dre-preview-card">
+                      <span class="dre-preview-label"><i class="bi bi-eye"></i> Developers page banner</span>
+                      <div class="dre-preview-banner" id="devcBanner"<?= $banner_url !== '' ? ' style="background-image: url(\'' . devc_e($banner_url) . '\')"' : '' ?>>
+                        <div class="dre-preview-glass">
+                          <strong id="devcBannerTitle"><?= devc_e($old['dev_cont_heading']) ?></strong>
+                          <span>Home &rsaquo; Developers</span>
+                        </div>
+                      </div>
+                      <small id="devcBannerNote"><?= $banner_url !== '' ? 'Current banner.' : 'No banner picture yet.' ?></small>
+                    </div>
+                    <div class="dre-glass dre-preview-card">
+                      <span class="dre-preview-label"><i class="bi bi-eye"></i> Homepage block</span>
+                      <div class="dre-preview-home">
+                        <strong id="devcHomeTitle"><?= devc_e($old['dev_cont_homepage_heading']) ?></strong>
+                        <p id="devcHomeText"></p>
+                        <div class="dre-preview-logos" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+                      </div>
+                      <small>A rough preview. <?= number_format($live_developers) ?> live <?= $live_developers === 1 ? 'developer' : 'developers' ?> can appear here.</small>
+                    </div>
+                  </aside>
+                </div>
+                <?php endif; ?>
+              </div>
+              <!--end::Developers page content-->
 
+            </div>
+            <!--end::Container-->
+          </div>
+          <!--end::Entry-->
+        </div>
+        <!--end::Content-->
 
+        <?php
+        include('includes/footer-inner.php');
+        ?>
 
-</div>
-</div>
-<!--end::Card-->
+        <script>
+          // Developers page content: a live preview next to the form, and a warning before leaving unsaved changes.
+          (function () {
+            var form = document.getElementById('developer-content-form');
+            if (!form) {
+              return;
+            }
+            var dirty = false;
+            var state = document.getElementById('devcState');
+            function changed() {
+              dirty = true;
+              state.textContent = 'Unsaved changes';
+              state.classList.add('dre-warn-text');
+            }
 
-</div>
-<!--end::Container-->
-</div>
-						<!--end::Entry-->
-					</div>
-					<!--end::Content-->
-<?php 
-include('includes/footer-inner.php');
-?>	
+            var heading = document.getElementById('devcHeading');
+            var homeHeading = document.getElementById('devcHomeHeading');
+            function plainText(html) {
+              var holder = document.createElement('div');
+              holder.innerHTML = html.replace(/<(script|style)[\s\S]*?<\/\1>/gi, '');
+              return (holder.textContent || '').replace(/\s+/g, ' ').trim();
+            }
+            function preview() {
+              document.getElementById('devcBannerTitle').textContent = heading.value.trim() || 'Page heading';
+              document.getElementById('devcHomeTitle').textContent = homeHeading.value.trim() || 'Homepage heading';
+              var editor = window.tinymce && window.tinymce.get('kt-tinymce-2');
+              var text = plainText(editor ? editor.getContent() : document.getElementById('kt-tinymce-2').value);
+              document.getElementById('devcHomeText').textContent = text.length > 220 ? text.slice(0, 220) + '...' : (text || 'Homepage text');
+            }
+            form.addEventListener('input', function (event) {
+              event.target.classList.remove('dre-invalid');
+              changed();
+              preview();
+            });
+            form.addEventListener('change', changed);
+            preview();
+            // The editor loads after this script, so connect to it once it is ready.
+            window.addEventListener('load', function () {
+              setTimeout(function () {
+                preview();
+                var editor = window.tinymce && window.tinymce.get('kt-tinymce-2');
+                if (editor) {
+                  editor.on('change keyup', function () { changed(); preview(); });
+                }
+              }, 1200);
+            });
+
+            // A newly picked banner is shown straight away, or refused with the reason.
+            var image = document.getElementById('devcImage');
+            var banner = document.getElementById('devcBanner');
+            var note = document.getElementById('devcBannerNote');
+            var savedBackground = banner.style.backgroundImage;
+            var savedNote = note.textContent;
+            image.addEventListener('change', function () {
+              var file = image.files[0];
+              var bad = '';
+              if (file && ['image/jpeg', 'image/png', 'image/webp'].indexOf(file.type) === -1) {
+                bad = '"' + file.name + '" is not a JPG, PNG or WEBP picture.';
+              } else if (file && file.size > 5 * 1024 * 1024) {
+                bad = '"' + file.name + '" is larger than 5 MB.';
+              }
+              image.setCustomValidity(bad);
+              image.classList.toggle('dre-invalid', bad !== '');
+              if (bad !== '') {
+                image.reportValidity();
+              }
+              if (file && bad === '') {
+                banner.style.backgroundImage = 'url("' + URL.createObjectURL(file) + '")';
+                note.textContent = 'New banner, not saved yet.';
+              } else {
+                banner.style.backgroundImage = savedBackground;
+                note.textContent = savedNote;
+              }
+            });
+
+            form.addEventListener('invalid', function (event) { event.target.classList.add('dre-invalid'); }, true);
+            form.addEventListener('submit', function () {
+              if (window.tinymce) { window.tinymce.triggerSave(); }
+              dirty = false;
+            });
+            window.addEventListener('beforeunload', function (event) {
+              if (dirty) { event.preventDefault(); event.returnValue = ''; }
+            });
+
+            if (document.getElementById('devcSaved') && window.history.replaceState) {
+              // Reloading the page should not show "saved" again.
+              window.history.replaceState(null, '', window.location.href.replace(/&saved=1/, ''));
+            }
+            var errorBox = document.getElementById('devcErrors');
+            if (errorBox) { errorBox.focus(); errorBox.scrollIntoView({ block: 'start' }); }
+          })();
+        </script>

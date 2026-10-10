@@ -130,7 +130,7 @@ if (isset($_POST['team_id']) && isset($_POST['order_no'])) {
 
     $old_data = $logger->getOldRecordData('tbl_team', $team_id);
 
-    // check if order already exist     
+    // check if order already exist 
     checkExist($team_id, $order_no, $team_desg_id);
 
     // Update order number using prepared statement

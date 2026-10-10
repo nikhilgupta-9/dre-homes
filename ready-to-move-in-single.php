@@ -359,9 +359,7 @@ include('common/header.php');
                                             <div class="boxed-content-item p-4">
                                                 <p class="form-heading">Fill the form. And book a viewing</p>
                                                 <div class="custom-form" id="single_cf">
-                                                   <?php
-                                                    include_once "common/sidebare-form.php";
-                                                    ?>
+                                                    <?php include_once "common/sidebare-form.php";?>
                                                     <!--<div class="log-separator py-3"><span>or</span></div>-->
 
                                                 </div>
@@ -409,7 +407,12 @@ include('common/header.php');
                     <div class="limit-box"></div>
                 </div>
                 <?php
-                $prj_query = select_query('tbl_proj', 'prj_dev_id="' . $proj_detail['prj_dev_id'] . '" and proj_slug!="' . $proj_detail['proj_slug'] . '" and is_active=1 ORDER BY proj_posted_on desc');
+                // Similar properties worked out by ai/cron/build_similar.php, with the old list as fallback.
+                require_once __DIR__ . '/ai/SimilarProjects.php';
+                $prj_query = SimilarProjects::forPage($proj_detail['prj_id'], 2);
+                if (!$prj_query) {
+                    $prj_query = db_query("SELECT * FROM tbl_proj WHERE prj_dev_id = ? AND proj_slug != ? AND is_active = 1 ORDER BY proj_posted_on DESC", [(int) $proj_detail['prj_dev_id'], (string) $proj_detail['proj_slug']]);
+                }
                 if(mysqli_num_rows($prj_query) > 0){
                 ?>
                 <div class="boxed-container proj-sim-box">
@@ -530,132 +533,133 @@ include('common/header.php');
     <!--content  end-->
     
     <!--register form -->
-    <div class="main-register-container">
-        <div class="main-register_box">
-            <div class="main-register-holder">
-                <div class="main-register-wrap ">
-                    <div class="main-register_bg">
-                        <div class="mr_title">
-                            <h4>Welcome to Drehomes</h4>
-                            <h5>Premium Real Estate Agency</h5>
-                        </div>
-                        <div class="main-register_contacts-wrap">
-                            <h4>Have a questions?</h4>
-                            <a href="<?= BASE_URL ?>contact-us.php"> Get in Touch</a>
-                            <div class="svg-corner svg-corner_white" style="bottom:0;left:  -39px;"></div>
-                            <div class="svg-corner svg-corner_white"
-                                style="bottom:0;right:  -39px;transform: rotate(90deg)"></div>
-                        </div>
-                        <div class="main-register_bg-dec"></div>
+<div class="main-register-container">
+    <div class="main-register_box">
+        <div class="main-register-holder">
+            <div class="main-register-wrap ">
+                <div class="main-register_bg">
+                    <div class="mr_title">
+                        <h4>Welcome to Drehomes</h4>
+                        <h5>Premium Real Estate Agency</h5>
                     </div>
-                    <div class="main-register tabs-act fl-wrap">
-                        <ul class="tabs-menu">
-                            <?php if (!empty($proj_detail['proj_brochure'])): ?>
-                                <li class="current">
-                                    <a href="#tab-1"><i class="fa-light fa-download"></i>Brochure</a>
-                                </li>
-                            <?php endif; ?>
-
-                            <?php if (!empty($proj_detail['proj_payplan'])): ?>
-                                <li>
-                                    <a href="#tab-2"><i class="fa-light fa-download"></i>Payment Plan</a>
-                                </li>
-                            <?php endif; ?>
-
-                            <?php if (!empty($proj_detail['proj_floorplan'])): ?>
-                                <li>
-                                    <a href="#tab-3"><i class="fa-light fa-download"></i>Floor Plan</a>
-                                </li>
-                            <?php endif; ?>
-                        </ul>
-
-                        
-                        <!--tabs -->
-                        <div id="tabs-container">
-                            <div class="tab">
-                                <!-- Tab 1: Brochure -->
-                                <div id="tab-1" class="tab-content first-tab">
-                                    <div class="custom-form">
-                                        <form method="post" name="brochureform" id="brochure-frm">
-                                            <div class="cs-intputwrap">
-                                                <i class="fa-light fa-user"></i>
-                                                <input type="text" placeholder="Name" name="brochure_name" required>
-                                            </div>
-                                            <div class="cs-intputwrap">
-                                                <i class="fa-light fa-envelope"></i>
-                                                <input type="email" placeholder="Email Address" name="brochure_email" required>
-                                            </div>
-                                            <div class="cs-intputwrap">
-                                                <input type="text" placeholder="Phone Number" id="brochure_phone" name="brochure_phone" required>
-                                            </div>
-                                            <input type="hidden" name="download_type" value="Brochure">
-                                            <input type="hidden" name="page_url" value="<?= current_url() ?>">
-                                            <input type="hidden" name="brochure_number_hidden" value="">
-                                            <input type="hidden" name="brochure_url" value="<?= $proj_detail['proj_brochure'] ?>">
-                                            <button type="submit" class="commentssubmit" data-url="<?= $proj_detail['proj_brochure'] ?>" name="brochure_submit">Download Brochure</button>
-                                        </form>
-                                    </div>
-                                </div>
-
-                                <!-- Tab 2: Payment Plan -->
-                                <div id="tab-2" class="tab-content">
-                                    <div class="custom-form">
-                                        <form method="post" name="payplanform" id="payplan-frm">
-                                            <div class="cs-intputwrap">
-                                                <i class="fa-light fa-user"></i>
-                                                <input type="text" placeholder="Name" name="payplan_name" >
-                                            </div>
-                                            <div class="cs-intputwrap">
-                                                <i class="fa-light fa-envelope"></i>
-                                                <input type="email" placeholder="Email Address" name="payplan_email" >
-                                            </div>
-                                            <div class="cs-intputwrap">
-                                                <input type="text" placeholder="Phone Number" id="payplan_phone" name="payplan_phone" >
-                                            </div>
-                                            <input type="hidden" name="download_type" value="Pay Plan">
-                                            <input type="hidden" name="page_url" value="<?= current_url() ?>">
-                                            <input type="hidden" name="payplan_number_hidden" value="">
-                                            <input type="hidden" name="payplan_url" value="<?= $proj_detail['proj_payplan'] ?>">
-                                            <button type="submit" class="commentssubmit" data-url="<?= $proj_detail['proj_payplan'] ?>" name="payplan_submit">Download Payplan</button>
-                                        </form>
-                                    </div>
-                                </div>
-
-                                <!-- Tab 3: Floor Plan -->
-                                <div id="tab-3" class="tab-content">
-                                    <div class="custom-form">
-                                        <form method="post" name="floorplanform" id="floorplan-frm">
-                                            <div class="cs-intputwrap">
-                                                <i class="fa-light fa-user"></i>
-                                                <input type="text" placeholder="Name" name="floorplan_name">
-                                            </div>
-                                            <div class="cs-intputwrap">
-                                                <i class="fa-light fa-envelope"></i>
-                                                <input type="email" placeholder="Email Address" name="floorplan_email">
-                                            </div>
-                                            <div class="cs-intputwrap">
-                                                <input type="text" placeholder="Phone Number" id="floorplan_phone" name="floorplan_phone">
-                                            </div>
-                                            <input type="hidden" name="download_type" value="Floor Plan">
-                                            <input type="hidden" name="page_url" value="<?= current_url() ?>">
-                                            <input type="hidden" name="floorplan_number_hidden" value="">
-                                            <input type="hidden" name="floorplan_url" value="<?= $proj_detail['proj_floorplan'] ?>">
-                                            <button type="submit" class="commentssubmit" data-url="<?= $proj_detail['proj_floorplan'] ?>" name="floorplan_submit">
-                                                <span>Download Floor Plan</span>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-
-                                <button type="button" class="commentssubmit close-modal close-reg-form">Close</button>
-                            </div>
-                        </div>
+                    <div class="main-register_contacts-wrap">
+                        <h4>Have a questions?</h4>
+                        <a href="<?= BASE_URL ?>contact-us.php"> Get in Touch</a>
+                        <div class="svg-corner svg-corner_white" style="bottom:0;left:  -39px;"></div>
+                        <div class="svg-corner svg-corner_white"
+                            style="bottom:0;right:  -39px;transform: rotate(90deg)"></div>
                     </div>
+                    <div class="main-register_bg-dec"></div>
+                </div>
+                <div class="main-register tabs-act fl-wrap">
+                  <ul class="tabs-menu">
+    <?php if (!empty($proj_detail['proj_brochure'])): ?>
+        <li class="current">
+            <a href="#tab-1"><i class="fa-light fa-download"></i>Brochure</a>
+        </li>
+    <?php endif; ?>
+
+    <?php if (!empty($proj_detail['proj_payplan'])): ?>
+        <li>
+            <a href="#tab-2"><i class="fa-light fa-download"></i>Payment Plan</a>
+        </li>
+    <?php endif; ?>
+
+    <?php if (!empty($proj_detail['proj_floorplan'])): ?>
+        <li>
+            <a href="#tab-3"><i class="fa-light fa-download"></i>Floor Plan</a>
+        </li>
+    <?php endif; ?>
+</ul>
+
+                    
+                    <!--tabs -->
+<div id="tabs-container">
+    <div class="tab">
+        <!-- Tab 1: Brochure -->
+        <div id="tab-1" class="tab-content first-tab">
+            <div class="custom-form">
+                <form method="post" name="brochureform" id="brochure-frm">
+                    <div class="cs-intputwrap">
+                        <i class="fa-light fa-user"></i>
+                        <input type="text" placeholder="Name" name="brochure_name" required>
+                    </div>
+                    <div class="cs-intputwrap">
+                        <i class="fa-light fa-envelope"></i>
+                        <input type="email" placeholder="Email Address" name="brochure_email" required>
+                    </div>
+                    <div class="cs-intputwrap">
+                        <input type="text" placeholder="Phone Number" id="brochure_phone" name="brochure_phone" required>
+                    </div>
+                    <input type="hidden" name="download_type" value="Brochure">
+                    <input type="hidden" name="page_url" value="<?= current_url() ?>">
+                    <input type="hidden" name="brochure_number_hidden" value="">
+                    <input type="hidden" name="brochure_url" value="<?= $proj_detail['proj_brochure'] ?>">
+                    <button type="submit" class="commentssubmit" data-url="<?= $proj_detail['proj_brochure'] ?>" name="brochure_submit">Download Brochure</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tab 2: Payment Plan -->
+        <div id="tab-2" class="tab-content">
+            <div class="custom-form">
+                <form method="post" name="payplanform" id="payplan-frm">
+                    <div class="cs-intputwrap">
+                        <i class="fa-light fa-user"></i>
+                        <input type="text" placeholder="Name" name="payplan_name" >
+                    </div>
+                    <div class="cs-intputwrap">
+                        <i class="fa-light fa-envelope"></i>
+                        <input type="email" placeholder="Email Address" name="payplan_email" >
+                    </div>
+                    <div class="cs-intputwrap">
+                        <input type="text" placeholder="Phone Number" id="payplan_phone" name="payplan_phone" >
+                    </div>
+                    <input type="hidden" name="download_type" value="Pay Plan">
+                    <input type="hidden" name="page_url" value="<?= current_url() ?>">
+                    <input type="hidden" name="payplan_number_hidden" value="">
+                    <input type="hidden" name="payplan_url" value="<?= $proj_detail['proj_payplan'] ?>">
+                    <button type="submit" class="commentssubmit" data-url="<?= $proj_detail['proj_payplan'] ?>" name="payplan_submit">Download Payplan</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tab 3: Floor Plan -->
+<!-- Tab 3: Floor Plan -->
+<div id="tab-3" class="tab-content">
+    <div class="custom-form">
+        <form method="post" name="floorplanform" id="floorplan-frm">
+            <div class="cs-intputwrap">
+                <i class="fa-light fa-user"></i>
+                <input type="text" placeholder="Name" name="floorplan_name">
+            </div>
+            <div class="cs-intputwrap">
+                <i class="fa-light fa-envelope"></i>
+                <input type="email" placeholder="Email Address" name="floorplan_email">
+            </div>
+            <div class="cs-intputwrap">
+                <input type="text" placeholder="Phone Number" id="floorplan_phone" name="floorplan_phone">
+            </div>
+            <input type="hidden" name="download_type" value="Floor Plan">
+            <input type="hidden" name="page_url" value="<?= current_url() ?>">
+            <input type="hidden" name="floorplan_number_hidden" value="">
+            <input type="hidden" name="floorplan_url" value="<?= $proj_detail['proj_floorplan'] ?>">
+            <button type="submit" class="commentssubmit" data-url="<?= $proj_detail['proj_floorplan'] ?>" name="floorplan_submit">
+                <span>Download Floor Plan</span>
+            </button>
+        </form>
+    </div>
+</div>
+
+        <button type="button" class="commentssubmit close-modal close-reg-form">Close</button>
+    </div>
+</div>
                 </div>
             </div>
         </div>
-        <div class="body-overlay fs-wrapper reg-overlay close-reg-form"></div>
     </div>
-    <!--register form end -->
+    <div class="body-overlay fs-wrapper reg-overlay close-reg-form"></div>
+</div>
+<!--register form end -->
 
     <?php include 'common/footer.php'; ?>

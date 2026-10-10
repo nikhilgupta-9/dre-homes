@@ -28,8 +28,6 @@ include "../db/config.php";
     }
     
     return $details;
-    $country_code_input = $_POST['sideform_country_code'] ?? '';
-$phone = $country_code_input . ' ' . ($_POST['phone'] ?? '');
 }*/
 
 // Get and sanitize form inputs
@@ -99,17 +97,17 @@ if ($query) {
     $email_body .= "Property Channel: $channel\r\n";
     $email_body .= "Property Leads Nature: $leads_nature\r\n";
     $email_body .= "Page URL: $page_url\r\n";
+    $email_body .= "Download Type: $download_type\r\n";
     $email_body .= "IP Address: $ip_address\r\n";
     $email_body .= "Country: $country_code\r\n";
     $email_body .= "City: $city\r\n";
     $email_body .= "Date: $ddate\r\n";
     
     // Email headers
-    // $to = "leads@drehomes.ae";
-    $to = "iamnikhilgupta9@gmail.com";
+    $to = "leads@drehomes.ae";
     $headers = "From: donotreply@drehomes.com\r\n";
     $headers .= "Reply-To: donotreply@drehomes.com\r\n";
-    // $headers .= "Cc: internal-leads@drehomes.ae, leads@drehomes.ae\r\n";
+    $headers .= "Cc: internal-leads@drehomes.ae, leads@drehomes.ae\r\n";
     $headers .= "MIME-Version: 1.0\r\n";
     $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
     

@@ -1095,4 +1095,3 @@ $(document).ready(function () {
 
     updateHeaderStyle();
 });
-

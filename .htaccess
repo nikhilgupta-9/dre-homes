@@ -1,79 +1,300 @@
-RewriteEngine On
+# === Page speed: compress text files, let browsers keep static files ===
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml application/javascript text/javascript application/json application/xml image/svg+xml font/ttf application/x-font-ttf
+</IfModule>
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/webp "access plus 1 month"
+  ExpiresByType image/gif "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType image/x-icon "access plus 1 month"
+  ExpiresByType video/mp4 "access plus 1 month"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType font/woff "access plus 1 year"
+  ExpiresByType font/ttf "access plus 1 year"
+  ExpiresByType text/css "access plus 1 week"
+  ExpiresByType application/javascript "access plus 1 week"
+  ExpiresByType text/javascript "access plus 1 week"
+</IfModule>
 
-# ===============================
-# Prevent direct access to real files/folders
-# ===============================
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP_HOST} ^(www\.)?drehomes\.com$ [NC]
+RewriteRule ^(.*)$ https://drehomes.com/$1 [L,R=301]
+</IfModule>
+
+RewriteEngine on
+
+# Never serve internal files (config, database layer, AI internals, dumps, logs)
+RewriteRule (^|/)\.(git|env) - [F,L]
+RewriteRule \.(md|log|sql|bak|lock)$ - [F,L,NC]
+RewriteRule ^(config|db)/ - [F,L]
+RewriteRule ^ai/(cron|tests|storage)/ - [F,L]
+# Class and settings files in ai/ are included by PHP, never requested
+RewriteRule ^ai/(config|[A-Z][A-Za-z]*)\.php$ - [F,L]
+
+#RewriteCond %{HTTPS} off
+#RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+#ErrorDocument 404 /404.php
+
+## If the request is for a valid directory
 RewriteCond %{REQUEST_FILENAME} -d [OR]
+## If the request is for a valid file
 RewriteCond %{REQUEST_FILENAME} -f [OR]
+## If the request is for a valid link
 RewriteCond %{REQUEST_FILENAME} -l
+## don't do anything
 RewriteRule ^ - [L]
 
-
-# ===============================
-# Sitemaps
-# ===============================
 RewriteRule ^sitemap\.xml$ sitemap.php [L,QSA]
 RewriteRule ^blog-sitemap\.xml$ blog-sitemap.php [L,QSA]
 RewriteRule ^developer-sitemap\.xml$ developer-sitemap.php [L,QSA]
 RewriteRule ^community-sitemap\.xml$ community-sitemap.php [L,QSA]
 RewriteRule ^property-sitemap\.xml$ property-sitemap.php [L,QSA]
+RewriteRule ^property2-sitemap\.xml$ property2-sitemap.php [L,QSA]
 
-# ===============================
-# Clean URLs (Static Pages)
-# ===============================
-RewriteRule ^about-us/?$ about-us.php [L,NC]
-RewriteRule ^our-media/?$ gallery.php [L,NC]
-RewriteRule ^our-team/?$ our-team.php [L,NC]
-RewriteRule ^our-awards/?$ our-awards.php [L,NC]
-RewriteRule ^company-news/?$ company-news.php [L,NC]
-RewriteRule ^our-blogs/?$ blogs.php [L,NC]
-RewriteRule ^community/?$ communities.php [L,NC]
-RewriteRule ^developer/?$ developers.php [L,NC]
-RewriteRule ^residential-properties/?$ residential-properties.php [L,NC]
-RewriteRule ^offplan-properties/?$ off-plans.php [L,NC]
-RewriteRule ^buy-property/?$ buy-property.php [L,NC]
-RewriteRule ^rent-property/?$ rent-property.php [L,NC]
-RewriteRule ^international-properties/?$ international-properties.php [L,NC]
-RewriteRule ^ready-to-move-in/?$ ready-to-move-in.php [L,NC]
-RewriteRule ^commercial-properties/?$ commercial-properties.php [L,NC]
-RewriteRule ^dre-brand-video/?$ dre-brand-video.php [L,NC]
-RewriteRule ^careers/?$ careers.php [L,NC]
-RewriteRule ^podcast/?$ podcast.php [L,NC]
 
-# ===============================
-# Dynamic Pages
-# ===============================
-RewriteRule ^our-team/(.+)$ agent-single.php?detail=$1 [L,QSA]
-RewriteRule ^management/(.+)$ agent-single.php?detail=$1 [L,QSA]
-RewriteRule ^company-news/(.+)$ company-news-single.php?detail=$1 [L,QSA]
-RewriteRule ^our-blogs/(.+)$ blog-single.php?detail=$1 [L,QSA]
-RewriteRule ^community/(.+)$ community-single.php?detail=$1 [L,QSA]
-RewriteRule ^developer/(.+)$ developers-single.php?detail=$1 [L,QSA]
-RewriteRule ^buy-property/(.+)$ buy-property-single.php?detail=$1 [L,QSA]
-RewriteRule ^rent-property/(.+)$ rent-property-single.php?detail=$1 [L,QSA]
-RewriteRule ^international-properties/(.+)$ international-properties-single.php?detail=$1 [L,QSA]
-RewriteRule ^ready-to-move-in/(.+)$ ready-to-move-in-single.php?detail=$1 [L,QSA]
-RewriteRule ^property/(.+)$ single-property.php?detail=$1 [L,QSA]
-RewriteRule ^services/(.+)$ services.php?detail=$1 [L,QSA]
 
-# ===============================
-# Block invalid URLs with "=" inside path
-# ===============================
-RewriteCond %{REQUEST_URI} (community|property|buy-property|rent-property|international-properties|ready-to-move-in|offplan-properties|careers|podcast)/.*=.*$ [NC]
+Redirect /404/ https://drehomes.com/404
+
+# === Block direct access to certain .php files under disallowed sub-directories ===
+
+# List of subdirectories to protect
+SetEnvIf Request_URI ^/community/ baddir
+SetEnvIf Request_URI ^/property/ baddir
+SetEnvIf Request_URI ^/buy-property/ baddir
+SetEnvIf Request_URI ^/rent-property/ baddir
+SetEnvIf Request_URI ^/international-properties/ baddir
+SetEnvIf Request_URI ^/ready-to-move-in/ baddir
+SetEnvIf Request_URI ^/offplan-properties/ baddir
+SetEnvIf Request_URI ^/careers/ baddir
+
+# If the request is for .php files like about-us.php, contact-us.php, index.php, etc., in those dirs => 404
+RewriteCond %{ENV:baddir} =1
+RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/[^?\s]*\.(?:php)\s [NC]
 RewriteRule ^ - [R=404,L]
 
-# ===============================
-# Custom 404
-# ===============================
-ErrorDocument 404 /404.php
-ErrorDocument 404 /dre_homes_new/404.php
+# Also block /property/width= or other malformed queryless “paths”
+RewriteCond %{ENV:baddir} =1
+# If after the directory there's something with = (i.e. not a clean URL) or extension not allowed
+RewriteRule ^(community|property|buy-property|rent-property|international-properties|ready-to-move-in|offplan-properties|careers)/.*=.*$  - [R=404,L]
 
-# ===============================
-# Security (Apache 2.4+)
-# ===============================
-<RequireAll>
-    Require all granted
-    Require not ip 138.226.238.27
-    Require not ip 194.246.100.25
-    Require not ip 3.7.42.158
-</RequireAll>
+
+
+# Set a custom 404 error page
+ErrorDocument 404 https://drehomes.com/404
+
+RewriteRule   ^404?$   404.php  [NC]
+RewriteRule   ^404/?$   404.php  [NC]
+
+RewriteRule   ^our-media?$   gallery.php  [NC]
+RewriteRule   ^our-media/?$   gallery.php  [NC]
+
+RewriteRule   ^about-us?$   about-us.php  [NC]
+RewriteRule   ^about-us/?$   about-us.php  [NC]
+
+RewriteRule   ^clients-testimonials?$   clients-testimonials.php  [NC]
+RewriteRule   ^clients-testimonials/?$   clients-testimonials.php  [NC]
+
+
+RewriteRule   ^our-team?$   our-team.php [NC]
+#RewriteRule   ^our-team/?$  our-team.php [NC]
+RewriteRule   ^town-square-team?$   town-square-team.php [NC]
+
+RewriteRule   ^our-team/(.*)?$  agent-single.php?detail=$1  [L]
+
+RewriteRule   ^our-team-town-square?$   our-team-town-square.php [NC]
+
+RewriteRule   ^podcast?$   podcast.php [NC]
+
+RewriteRule   ^management/(.*)?$   agent-single.php?detail=$1   [L]
+
+RewriteRule   ^index2?$   index2.php  [NC]
+RewriteRule   ^index2/?$   index2.php  [NC]
+
+RewriteRule   ^our-awards?$   our-awards.php  [NC]
+RewriteRule   ^our-awards/?$   our-awards.php  [NC]
+
+
+RewriteRule   ^company-news?$   company-news.php  [NC]
+RewriteRule   ^company-news/?$   company-news.php  [NC]
+
+RewriteRule   ^company-news/(.*)?$   company-news-single.php?detail=$1  [L]
+
+
+RewriteRule   ^our-blogs?$   blogs.php  [NC]
+RewriteRule   ^our-blogs/?$   blogs.php  [NC]
+
+RewriteRule   ^our-blogs/(.*)?$   blog-single.php?detail=$1  [L]
+
+RewriteRule   ^community?$   communities.php  [NC]
+RewriteRule   ^community/?$   communities.php  [NC]
+
+RewriteRule   ^community/(.*)?$   community-single.php?detail=$1  [L]
+
+RewriteRule   ^developer?$   developers.php  [NC]
+RewriteRule   ^developer/?$   developers.php  [NC]
+
+RewriteRule   ^developer/(.*)?$   developers-single.php?detail=$1  [L]
+
+RewriteRule   ^residential-properties?$   residential-properties.php  [NC]
+RewriteRule   ^residential-properties/?$   residential-properties.php  [NC]
+
+RewriteRule   ^offplan-properties?$   off-plans.php  [NC]
+RewriteRule   ^offplan-properties/?$  off-plans.php  [NC]
+
+
+RewriteRule   ^buy-property?$   buy-property.php  [NC]
+RewriteRule   ^buy-property/?$  buy-property.php  [NC]
+
+
+RewriteRule   ^buy-property/(.*)?$   buy-property-single.php?detail=$1  [L]
+
+
+
+RewriteRule   ^rent-property?$   rent-property.php  [NC]
+RewriteRule   ^rent-property/?$  rent-property.php  [NC]
+
+RewriteRule   ^rent-property/(.*)?$   rent-property-single.php?detail=$1  [L]
+
+
+
+RewriteRule   ^international-properties?$   international-properties.php  [NC]
+RewriteRule   ^international-properties/?$  international-properties.php  [NC]
+
+
+RewriteRule   ^international-properties/(.*)?$   international-properties-single.php?detail=$1  [L]
+
+
+RewriteRule   ^ready-to-move-in?$   ready-to-move-in.php  [NC]
+RewriteRule   ^ready-to-move-in/?$  ready-to-move-in.php  [NC]
+
+
+RewriteRule   ^ready-to-move-in/(.*)?$   ready-to-move-in-single.php?detail=$1  [L]
+
+
+RewriteRule   ^commercial-properties?$   commercial-properties.php  [NC]
+RewriteRule   ^commercial-properties/?$   commercial-properties.php  [NC]
+
+RewriteRule   ^clients-testimonials?$   clients-testimonials.php  [NC]
+RewriteRule   ^clients-testimonials/?$   clients-testimonials.php  [NC]
+
+
+
+RewriteRule   ^property/(.*)?$    single-property.php?detail=$1  [L]
+
+
+Redirect /career https://drehomes.com/404
+
+
+RewriteRule   ^careers?$   careers.php  [NC]
+RewriteRule   ^careers/?$   careers.php  [NC]
+
+RewriteRule   ^buy-property?$   buy.php  [NC]
+RewriteRule   ^buy-property/?$  buy.php  [NC]
+
+RewriteRule   ^rent-property?$   rent.php  [NC]
+RewriteRule   ^rent-property/?$  rent.php  [NC]
+
+RewriteRule   ^project-internal?$   project-internal.php  [NC]
+RewriteRule   ^project-internal/?$  project-internal.php  [NC]
+
+RewriteRule   ^golden-visa?$   golden-visa.php  [NC]
+RewriteRule   ^golden-visa/?$  golden-visa.php  [NC]
+
+RewriteRule   ^buyer-guide?$   buyer-guide.php  [NC]
+RewriteRule   ^buyer-guide/?$  buyer-guide.php  [NC]
+
+RewriteRule   ^seller-guide?$   seller-guide.php  [NC]
+RewriteRule   ^seller-guide/?$  seller-guide.php  [NC]
+
+RewriteRule   ^tenant-guide?$   tenant-guide.php  [NC]
+RewriteRule   ^tenant-guide/?$  tenant-guide.php  [NC]
+
+RewriteRule   ^landlord-guide?$   landlord-guide.php  [NC]
+RewriteRule   ^landlord-guide/?$  landlord-guide.php  [NC]
+
+RewriteRule   ^mortgage-calculator?$   mortgage-calculator.php  [NC]
+RewriteRule   ^mortgage-calculator/?$  mortgage-calculator.php  [NC]
+
+RewriteRule   ^message-from-co-founder-and-clo?$   message-from-co-founder-and-clo.php  [NC]
+RewriteRule   ^message-from-co-founder-and-clo/?$  message-from-co-founder-and-clo.php  [NC]
+
+RewriteRule   ^message-from-co-founder-and-ceo?$   message-from-co-founder-and-ceo.php  [NC]
+RewriteRule   ^message-from-co-founder-and-ceo/?$  message-from-co-founder-and-ceo.php  [NC]
+
+RewriteRule   ^message-from-managing-partner?$   message-from-managing-partner.php  [NC]
+RewriteRule   ^message-from-managing-partner/?$  message-from-managing-partner.php  [NC]
+
+
+RewriteRule   ^services/(.*)?$   services.php?detail=$1  [L]
+
+
+RewriteRule   ^privacy-policy?$   privacy-policy.php  [NC]
+RewriteRule   ^privacy-policy/?$  privacy-policy.php  [NC]
+
+RewriteRule   ^terms-conditions?$   terms-conditions.php  [NC]
+RewriteRule   ^terms-conditions/?$  terms-conditions.php  [NC]
+
+RewriteRule   ^property-management?$   property-management.php  [NC]
+RewriteRule   ^property-management/?$   property-management.php  [NC]
+
+RewriteRule   ^dre-brand-video?$   dre-brand-video.php  [NC]
+RewriteRule   ^dre-brand-video/?$   dre-brand-video.php  [NC]
+
+RewriteRule   ^dubai-evolution?$   dubai-evolution.php  [NC]
+RewriteRule   ^dubai-evolution/?$   dubai-evolution.php  [NC]
+
+RewriteRule   ^property-management?$   property-management.php  [NC]
+RewriteRule   ^property-management/?$   property-management.php  [NC]
+
+<Files 403.shtml>
+order allow,deny
+allow from all
+</Files>
+
+deny from 138.226.238.27
+deny from 194.246.100.25
+deny from 3.7.42.158
+
+# BEGIN cPanel-generated php ini directives, do not edit
+# Manual editing of this file may result in unexpected behavior.
+# To make changes to this file, use the cPanel MultiPHP INI Editor (Home >> Software >> MultiPHP INI Editor)
+# For more information, read our documentation (https://go.cpanel.net/EA4ModifyINI)
+<IfModule php8_module>
+   php_flag display_errors Off
+   php_value max_execution_time 100
+   php_value max_input_time 100
+   php_value max_input_vars 1000
+   php_value memory_limit 1600M
+   php_value post_max_size 35M
+   php_value session.gc_maxlifetime 1440
+   php_value session.save_path "/var/cpanel/php/sessions/ea-php80"
+   php_value upload_max_filesize 35M
+   php_flag zlib.output_compression Off
+</IfModule>
+<IfModule lsapi_module>
+   php_flag display_errors Off
+   php_value max_execution_time 100
+   php_value max_input_time 100
+   php_value max_input_vars 1000
+   php_value memory_limit 1600M
+   php_value post_max_size 35M
+   php_value session.gc_maxlifetime 1440
+   php_value session.save_path "/var/cpanel/php/sessions/ea-php80"
+   php_value upload_max_filesize 35M
+   php_flag zlib.output_compression Off
+</IfModule>
+# END cPanel-generated php ini directives, do not edit
+
+# php -- BEGIN cPanel-generated handler, do not edit
+# Set the “ea-php82” package as the default “PHP” programming language.
+<IfModule mime_module>
+  # disabled for local XAMPP (re-enable on cPanel)
+  #AddHandler application/x-httpd-ea-php82 .php .php8 .phtml
+</IfModule>
+# php -- END cPanel-generated handler, do not edit

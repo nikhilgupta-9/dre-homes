@@ -4,36 +4,315 @@ include('includes/header.php');
 include('lock2.php');
 include('includes/Logger.php');
 
-$logger = new Logger($conn);
-
-if (isset($_GET['del'])) {
-	$id = intval($_GET['del']);
-	$img_name = mysqli_fetch_array(mysqli_query($conn, "select * from tbl_team where team_id=$id"));
-
-	$old_data = $logger->getOldRecordData('tbl_team', $id);
-
-	$logger->log(
-		'DELETE',
-		'tbl_team',
-		$id,
-		$old_data,
-		null,
-		'Team Member Deleted: ' . $id
-	);
-
-	$delete_record = $logger->archiveDeletedRecord('tbl_team', $id, $old_data);
-
-	unlink('assets/media/team/' . $img_name['team_img']);
-	unlink('assets/media/team/' . $img_name['team_inner_img']);
-
-
-	$query = mysqli_query($conn, "delete from tbl_team where team_id=$id");
-
-	if ($query) {
-		header('Location:' . BASE_URL . 'manage-team.php');
-	}
+// Nothing below runs unless someone is signed in.
+if (empty($_SESSION['email_id'])) {
+	exit;
 }
 
+$logger = new Logger($conn);
+
+if (empty($_SESSION['admin_csrf'])) {
+	$_SESSION['admin_csrf'] = bin2hex(random_bytes(16));
+}
+
+// What this page works on: its table, its columns and where it shows on the website.
+$entity = [
+	'one' => 'team member',
+	'many' => 'team members',
+	'title' => 'Team members',
+	'blurb' => 'Everyone on the Our Team page. Each person also has a profile page of their own.',
+	'icon' => 'bi-people',
+	'table' => 'tbl_team',
+	'id' => 'team_id',
+	'heading' => 'team_name',
+	'public_path' => 'our-team/',
+	'public_slug' => 'team_slug',
+	'page_label' => 'Profile page of a real estate agent at DRE Homes, a Dubai brokerage',
+	'active_label' => 'Shown on the website',
+	'active_off' => 'Off = hidden from the team pages, and the profile link stops working.',
+	'site_note' => '',
+	'profile' => 'image:Photo|alt:Photo description|desg:Designation|cont:About text|orn:BRN|mobile:Mobile|whatsapp:WhatsApp|email:Email|order_no:Position in the group|meta_title:Meta title|meta_description:Meta description',
+	'list_file' => 'manage-team.php', 'add_file' => 'add-team.php', 'edit_file' => 'edit-team.php',
+	'head_label' => 'Team member', 'summary' => '(CONCAT(a.team_desg, IF(a.order_no IS NULL, \' · no position\', CONCAT(\' · position \', a.order_no))))', 'thumb' => 'team_img', 'folder' => 'assets/media/team/', 'icon_col' => '',
+	'search' => ['team_name', 'team_desg', 'team_emailid', 'team_mobile', 'team_orn', 'team_slug'],
+	'missing' => ['image' => ['Photo', "TRIM(a.team_img) = ''"], 'text' => ['About text', "TRIM(a.team_cont) = ''"], 'meta' => ['Meta description', "CHAR_LENGTH(TRIM(a.meta_description)) < 70"], 'order' => ['Position', "a.order_no IS NULL"]],
+	'in_use_sql' => "", 'in_use_note' => '',
+	'content_file' => 'edit-team-details.php',
+	'links' => [['Arrange the order', 'arrange-team.php', 'bi-arrows-move'], ['Designations', 'manage-team-designation.php', 'bi-award'], ['Categories', 'manage-team-category.php', 'bi-diagram-3']],
+	'sections' => [['The person', 'bi-person', ''], ['Where they appear', 'bi-list-ol', ''], ['Contact', 'bi-telephone', 'Shown on the profile page. Leave one empty to hide it.'], ['Social links', 'bi-share', 'Leave one empty to hide its icon.'], ['Search engines and sharing', 'bi-search', 'What search engines and social networks show for the profile page.']],
+	'fields' => [
+	['name' => 'name', 'col' => 'team_name', 'label' => 'Name', 'type' => 'text', 'required' => true, 'placeholder' => 'Sujan Thapa'],
+	['name' => 'desg', 'col' => 'team_desg', 'label' => 'Designation shown under the name', 'type' => 'text', 'placeholder' => 'Senior Property Associate'],
+	['name' => 'image', 'col' => 'team_img', 'label' => 'Photo', 'type' => 'image', 'folder' => 'assets/media/team/', 'required' => true, 'help' => 'A portrait photo works best.'],
+	['name' => 'alt', 'col' => 'team_img_alt', 'label' => 'Photo description (alt text)', 'type' => 'text', 'ai' => 'alt_text', 'help' => 'Read out by screen readers.'],
+	['name' => 'orn', 'col' => 'team_orn', 'label' => 'BRN (broker registration number)', 'type' => 'text', 'max' => 50],
+	['name' => 'inner_heading', 'col' => 'team_inner_heading', 'label' => 'Name in the page path', 'type' => 'text', 'help' => 'The last part of the "Home / Our Team / …" line on the profile page.'],
+	['name' => 'cont', 'col' => 'team_cont', 'label' => 'About', 'type' => 'rich', 'max' => 0, 'ai' => 'improve', 'help' => 'The introduction on the profile page.'],
+	['name' => 'desg_id', 'col' => 'team_desg_id', 'label' => 'Designation group', 'type' => 'select', 'required' => true, 'options_sql' => 'SELECT team_desg_id, team_desg_name FROM tbl_team_desg ORDER BY order_no IS NULL, order_no, team_desg_name', 'section' => 'Where they appear', 'help' => 'The heading this person stands under on the Our Team page.'],
+	['name' => 'cat_id', 'col' => 'team_cat_id', 'label' => 'Category', 'type' => 'select', 'required' => true, 'options_sql' => 'SELECT team_cat_id, team_cat_name FROM tbl_team_cat ORDER BY team_cat_name', 'section' => 'Where they appear'],
+	['name' => 'order_no', 'col' => 'order_no', 'label' => 'Position in the group', 'type' => 'number', 'section' => 'Where they appear', 'help' => 'People of one group are shown from the smallest number to the largest.'],
+	['name' => 'pos', 'col' => 'team_pos', 'label' => 'Older position number', 'type' => 'number', 'empty' => 0, 'section' => 'Where they appear', 'help' => 'Kept from an older way of ordering; the website does not read it.'],
+	['name' => 'company_owner', 'col' => 'team_company_owner', 'label' => 'Show in the leadership block of the About Us page', 'type' => 'toggle', 'section' => 'Where they appear', 'help' => 'For the founders and managing partners.'],
+	['name' => 'town_square', 'col' => 'is_time_square_team', 'label' => 'Town Square office', 'type' => 'toggle', 'section' => 'Where they appear', 'help' => 'On = listed on the Town Square team page.'],
+	['name' => 'mobile', 'col' => 'team_mobile', 'label' => 'Mobile', 'type' => 'text', 'max' => 30, 'placeholder' => '+971 50 000 0000', 'section' => 'Contact'],
+	['name' => 'whatsapp', 'col' => 'team_whtsapp', 'label' => 'WhatsApp number', 'type' => 'text', 'max' => 30, 'placeholder' => '+971 50 000 0000', 'section' => 'Contact'],
+	['name' => 'email', 'col' => 'team_emailid', 'label' => 'Email', 'type' => 'email', 'placeholder' => 'name@drehomes.com', 'section' => 'Contact'],
+	['name' => 'address', 'col' => 'team_address', 'label' => 'Address', 'type' => 'text', 'section' => 'Contact'],
+	['name' => 'fb', 'col' => 'team_fblink', 'label' => 'Facebook', 'type' => 'link', 'section' => 'Social links'],
+	['name' => 'twitter', 'col' => 'team_twitterlink', 'label' => 'X (Twitter)', 'type' => 'link', 'section' => 'Social links'],
+	['name' => 'linkedin', 'col' => 'team_linkedinlink', 'label' => 'LinkedIn', 'type' => 'link', 'section' => 'Social links'],
+	['name' => 'instagram', 'col' => 'team_instagramlink', 'label' => 'Instagram', 'type' => 'link', 'section' => 'Social links'],
+	['name' => 'slug', 'col' => 'team_slug', 'label' => 'Page address (slug)', 'type' => 'slug', 'from' => 'name', 'max' => 200, 'section' => 'Search engines and sharing'],
+	['name' => 'meta_title', 'col' => 'meta_title', 'label' => 'Meta title', 'type' => 'text', 'count' => 60, 'ai' => 'meta_title', 'section' => 'Search engines and sharing'],
+	['name' => 'meta_keyword', 'col' => 'meta_keyword', 'label' => 'Meta keywords', 'type' => 'text', 'ai' => 'keywords', 'section' => 'Search engines and sharing'],
+	['name' => 'meta_description', 'col' => 'meta_description', 'label' => 'Meta description', 'type' => 'textarea', 'max' => 0, 'count' => 160, 'ai' => 'meta_description', 'section' => 'Search engines and sharing'],
+	['name' => 'meta_tags', 'col' => 'meta_tags', 'label' => 'Meta tags', 'type' => 'textarea', 'max' => 0, 'section' => 'Search engines and sharing', 'help' => 'Extra tags for the page head. Leave empty if unsure.'],
+	],
+];
+// The list uses a few more settings than the form; the ones a page does not need stay empty.
+$kind = $entity + ['date' => '', 'flag' => '', 'flag_label' => '', 'rating' => '', 'export_file' => ''];
+$t = $kind['table'];
+$id_col = $kind['id'];
+// The column the website orders by: the date when there is one, otherwise the order of adding.
+$when = $kind['date'] !== '' ? 'a.' . $kind['date'] : 'a.tstp';
+
+$sim_sorts = ['newest' => 'Newest first', 'oldest' => 'Oldest first', 'name' => 'Name A-Z', 'changed' => 'Last changed first'];
+
+// ---------------------------------------------------------------
+// Filters (all optional, all from the address bar)
+// ---------------------------------------------------------------
+$f_status = in_array($_GET['status'] ?? '', ['active', 'inactive'], true) ? $_GET['status'] : '';
+$f_year = isset($_GET['year']) && preg_match('/^(19|20)\d\d$/', (string) $_GET['year']) ? (int) $_GET['year'] : 0;
+$f_flag = $kind['flag'] !== '' && ($_GET['flag'] ?? '') === '1' ? '1' : '';
+$f_missing = isset($_GET['missing']) && is_string($_GET['missing']) && isset($kind['missing'][$_GET['missing']]) ? $_GET['missing'] : '';
+$f_sort = isset($_GET['sort']) && is_string($_GET['sort']) && isset($sim_sorts[$_GET['sort']]) ? $_GET['sort'] : 'newest';
+$f_search = isset($_GET['q']) && is_string($_GET['q']) ? trim(mb_substr($_GET['q'], 0, 100)) : '';
+$f_per_page = (int) ($_GET['per'] ?? 25);
+if (!in_array($f_per_page, [25, 50, 100], true)) {
+	$f_per_page = 25;
+}
+$f_page = max(1, (int) ($_GET['page'] ?? 1));
+
+// Address of this page with the current filters, with some of them changed.
+function sim_url(array $change = [])
+{
+	global $kind, $f_status, $f_year, $f_flag, $f_missing, $f_sort, $f_search, $f_per_page, $f_page;
+	$params = array_merge([
+		'status' => $f_status, 'year' => $f_year ?: '', 'flag' => $f_flag, 'missing' => $f_missing,
+		'sort' => $f_sort === 'newest' ? '' : $f_sort, 'q' => $f_search,
+		'per' => $f_per_page === 25 ? '' : $f_per_page, 'page' => $f_page === 1 ? '' : $f_page,
+	], $change);
+	$params = array_filter($params, function ($value) {
+		return $value !== '' && $value !== null;
+	});
+	return BASE_URL . $kind['list_file'] . ($params ? '?' . http_build_query($params) : '');
+}
+
+function sim_e($text)
+{
+	return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
+}
+
+// Runs a prepared query and returns its rows (or true for a write).
+function sim_query($conn, $sql, array $params = [])
+{
+	$stmt = mysqli_prepare($conn, $sql);
+	if (!$stmt) {
+		error_log('List query failed: ' . mysqli_error($conn));
+		return false;
+	}
+	if ($params) {
+		$types = '';
+		foreach ($params as $param) {
+			$types .= is_int($param) ? 'i' : 's';
+		}
+		mysqli_stmt_bind_param($stmt, $types, ...$params);
+	}
+	if (!mysqli_stmt_execute($stmt)) {
+		error_log('List query failed: ' . mysqli_stmt_error($stmt));
+		mysqli_stmt_close($stmt);
+		return false;
+	}
+	$result = mysqli_stmt_get_result($stmt);
+	mysqli_stmt_close($stmt);
+	if ($result === false) {
+		return true;
+	}
+	$rows = [];
+	while ($row = mysqli_fetch_assoc($result)) {
+		$rows[] = $row;
+	}
+	return $rows;
+}
+
+// Changes one on/off column of one record and records the change. $column is 'is_active' or the homepage column.
+function sim_set_flag($conn, $logger, $id, $column, $on, $what)
+{
+	global $kind, $t, $id_col;
+	$old = sim_query($conn, "SELECT {$kind['heading']} AS heading, $column AS flag FROM $t WHERE $id_col = ?", [$id]);
+	if (!$old) {
+		return false;
+	}
+	$value = $on ? '1' : '2';
+	if ($old[0]['flag'] === $value) {
+		return true;
+	}
+	if (!sim_query($conn, "UPDATE $t SET $column = ? WHERE $id_col = ?", [$value, $id])) {
+		return false;
+	}
+	$logger->log('UPDATE', $t, $id, [$column => $old[0]['flag']], [$column => $value], ucfirst($kind['one']) . ' ' . $what . ': ' . $old[0]['heading']);
+	return true;
+}
+
+// ---------------------------------------------------------------
+// Changes (POST only, with a token)
+// ---------------------------------------------------------------
+$notice = '';
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['sim_action'])) {
+	$token_ok = is_string($_POST['csrf'] ?? null) && hash_equals($_SESSION['admin_csrf'], $_POST['csrf']);
+	$action = is_string($_POST['sim_action']) ? $_POST['sim_action'] : '';
+	// One record, or every ticked record.
+	$ids = isset($_POST['sim_id']) ? [(int) $_POST['sim_id']] : array_map('intval', (array) ($_POST['sim_ids'] ?? []));
+	$ids = array_slice(array_unique(array_filter($ids)), 0, 200);
+	$done = '';
+
+	if ($token_ok && ($action === 'show' || $action === 'hide')) {
+		$changed = 0;
+		foreach ($ids as $id) {
+			$changed += sim_set_flag($conn, $logger, $id, 'is_active', $action === 'show', $action === 'show' ? 'shown on website' : 'hidden from website') ? 1 : 0;
+		}
+		$done = $changed > 0 ? ($action === 'show' ? 'shown' : 'hidden') . '-' . $changed : 'none';
+	} elseif ($token_ok && $kind['flag'] !== '' && ($action === 'flag' || $action === 'unflag')) {
+		$changed = 0;
+		foreach ($ids as $id) {
+			$changed += sim_set_flag($conn, $logger, $id, $kind['flag'], $action === 'flag', $action === 'flag' ? 'put on the homepage' : 'taken off the homepage') ? 1 : 0;
+		}
+		$done = $changed > 0 ? $action . '-' . $changed : 'none';
+	} elseif ($token_ok && $action === 'delete') {
+		$deleted = 0;
+		foreach ($ids as $id) {
+			$record = sim_query($conn, "SELECT * FROM $t WHERE $id_col = ?", [$id]);
+			if (!$record) {
+				continue;
+			}
+			// Some records cannot go while others depend on them.
+			$used = $kind['in_use_sql'] !== '' ? sim_query($conn, $kind['in_use_sql'], [$id]) : [];
+			if ($used && (int) $used[0]['n'] > 0) {
+				$blocked = true;
+				continue;
+			}
+			$old_data = $logger->getOldRecordData($t, $id);
+			$logger->log('DELETE', $t, $id, $old_data, null, ucfirst($kind['one']) . ' deleted: ' . $record[0][$kind['heading']]);
+			$logger->archiveDeletedRecord($t, $id, $old_data);
+			if (sim_query($conn, "DELETE FROM $t WHERE $id_col = ?", [$id])) {
+				// The picture is removed only when a name is stored and the file is really there.
+				$name = $kind['thumb'] !== '' ? basename(trim((string) $record[0][$kind['thumb']])) : '';
+				if ($name !== '' && is_file($kind['folder'] . $name)) {
+					@unlink($kind['folder'] . $name);
+				}
+				$deleted++;
+			}
+		}
+		$done = $deleted > 0 ? 'deleted-' . $deleted : (!empty($blocked) ? 'inuse' : 'none');
+	}
+
+	if ($done !== '') {
+		header('Location: ' . sim_url(['done' => $done]));
+		exit;
+	}
+	$notice = 'Nothing was changed. Please reload the page and try again.';
+}
+
+// ---------------------------------------------------------------
+// The list
+// ---------------------------------------------------------------
+$where = ['1 = 1'];
+$params = [];
+if ($f_search !== '') {
+	$like = '%' . addcslashes($f_search, '%_\\') . '%';
+	$parts = [];
+	foreach ($kind['search'] as $column) {
+		$parts[] = "a.$column LIKE ?";
+		$params[] = $like;
+	}
+	$where[] = '(' . implode(' OR ', $parts) . ')';
+}
+if ($f_status !== '') {
+	$where[] = $f_status === 'active' ? "a.is_active = '1'" : "a.is_active <> '1'";
+}
+if ($f_year > 0) {
+	$where[] = "YEAR($when) = ?";
+	$params[] = $f_year;
+}
+if ($f_flag !== '') {
+	$where[] = "a.{$kind['flag']} = '1'";
+}
+if ($f_missing !== '') {
+	$where[] = $kind['missing'][$f_missing][1];
+}
+$where_sql = 'WHERE ' . implode(' AND ', $where);
+
+$counted = sim_query($conn, "SELECT COUNT(*) AS n FROM $t AS a $where_sql", $params);
+$total = $counted ? (int) $counted[0]['n'] : 0;
+
+// "Newest" is the order the website uses.
+$site_order = $kind['date'] !== '' ? "a.{$kind['date']} DESC, a.$id_col DESC" : "a.$id_col DESC";
+$order_sql = [
+	'newest' => $site_order,
+	'oldest' => $kind['date'] !== '' ? "a.{$kind['date']} ASC, a.$id_col ASC" : "a.$id_col ASC",
+	'name' => "a.{$kind['heading']} ASC",
+	'changed' => "a.tstp DESC, a.$id_col DESC",
+][$f_sort];
+
+$pages = max(1, (int) ceil($total / $f_per_page));
+$f_page = min($f_page, $pages);
+$offset = ($f_page - 1) * $f_per_page;
+
+$missing_selects = '';
+foreach ($kind['missing'] as $key => $spec) {
+	$missing_selects .= ", ({$spec[1]}) AS miss_$key";
+}
+$records = sim_query(
+	$conn,
+	"SELECT a.$id_col AS id, a.{$kind['heading']} AS heading, " . ($kind['summary'][0] === '(' ? $kind['summary'] : 'a.' . $kind['summary']) . " AS summary, a.is_active, a.tstp, $when AS shown_on"
+		. ($kind['thumb'] !== '' ? ", a.{$kind['thumb']} AS thumb" : ", '' AS thumb")
+		. ($kind['flag'] !== '' ? ", a.{$kind['flag']} AS flag" : ", '2' AS flag")
+		. ($kind['rating'] !== '' ? ", a.{$kind['rating']} AS rating" : ", '' AS rating")
+		. ($kind['icon_col'] !== '' ? ", a.{$kind['icon_col']} AS icon_value" : ", '' AS icon_value")
+		. ($kind['public_slug'] !== '' ? ", a.{$kind['public_slug']} AS slug_value" : ", '' AS slug_value")
+		. $missing_selects . "
+	FROM $t AS a $where_sql ORDER BY $order_sql LIMIT ?, ?",
+	array_merge($params, [$offset, $f_per_page])
+) ?: [];
+
+$stat = sim_query($conn, "SELECT COUNT(*) AS total, SUM(a.is_active = '1') AS active, SUM(a.is_active <> '1') AS hidden, SUM(YEAR($when) = YEAR(CURDATE())) AS this_year"
+	. ($kind['flag'] !== '' ? ", SUM(a.{$kind['flag']} = '1' AND a.is_active = '1') AS flagged" : ", 0 AS flagged")
+	. ($kind['rating'] !== '' ? ", AVG(CASE WHEN a.is_active = '1' AND a.{$kind['rating']} REGEXP '^[0-9]+(\\\\.[0-9]+)?$' THEN a.{$kind['rating']} + 0 END) AS average" : ", NULL AS average")
+	. " FROM $t AS a");
+$stat = $stat ? $stat[0] : ['total' => 0, 'active' => 0, 'hidden' => 0, 'this_year' => 0, 'flagged' => 0, 'average' => null];
+$years = array_column(sim_query($conn, "SELECT DISTINCT YEAR($when) AS y FROM $t AS a WHERE $when IS NOT NULL ORDER BY y DESC") ?: [], 'y');
+
+$filters_on = $f_search !== '' || $f_status !== '' || $f_year > 0 || $f_flag !== '' || $f_missing !== '';
+
+// Messages after an action
+$done = is_string($_GET['done'] ?? null) ? $_GET['done'] : '';
+if ($done === 'added') {
+	$notice = 'The ' . $kind['one'] . ' was added.';
+} elseif ($done === 'saved') {
+	$notice = 'The changes were saved.';
+} elseif (preg_match('/^(shown|hidden|flag|unflag|deleted)-(\d+)$/', $done, $match)) {
+	$n = (int) $match[2];
+	$who = $n . ' ' . ($n === 1 ? $kind['one'] . ' is' : $kind['many'] . ' are');
+	$notice = [
+		'shown' => "$who now live on the website.", 'hidden' => "$who now hidden from the website.",
+		'flag' => "$who now on the homepage.", 'unflag' => "$who no longer on the homepage.",
+		'deleted' => $n . ' ' . ($n === 1 ? $kind['one'] . ' was' : $kind['many'] . ' were') . ' deleted. A copy of each record is kept in the delete log.',
+	][$match[1]];
+} elseif ($done === 'inuse') {
+	$notice = $kind['in_use_note'];
+} elseif ($done === 'none') {
+	$notice = 'Nothing was changed.';
+}
 ?>
 <!--begin::Body-->
 
@@ -62,6 +341,7 @@ if (isset($_GET['del'])) {
 			<!--begin::Topbar Mobile Toggle-->
 			<button class="btn btn-hover-text-primary p-0 ml-2" id="kt_header_mobile_topbar_toggle">
 				<span class="svg-icon svg-icon-xl">
+					<!--begin::Svg Icon | path:<?= BASE_URL ?>assets/media/svg/icons/General/User.svg-->
 					<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px"
 						height="24px" viewBox="0 0 24 24" version="1.1">
 						<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -74,6 +354,7 @@ if (isset($_GET['del'])) {
 								fill="#000000" fill-rule="nonzero" />
 						</g>
 					</svg>
+					<!--end::Svg Icon-->
 				</span>
 			</button>
 			<!--end::Topbar Mobile Toggle-->
@@ -95,13 +376,16 @@ if (isset($_GET['del'])) {
 					<div class="container-fluid d-flex align-items-stretch justify-content-between">
 						<!--begin::Header Menu Wrapper-->
 						<div class="header-menu-wrapper header-menu-wrapper-left" id="kt_header_menu_wrapper">
+							<!--begin::Header Menu-->
 							<div id="kt_header_menu" class="header-menu header-menu-mobile header-menu-layout-default">
+
 							</div>
 							<!--end::Header Menu-->
 						</div>
 						<!--end::Header Menu Wrapper-->
 						<!--begin::Topbar-->
 						<div class="topbar">
+
 							<!--begin::User-->
 							<div class="topbar-item">
 								<div class="btn btn-icon btn-icon-mobile w-auto btn-clean d-flex align-items-center btn-lg px-2"
@@ -124,249 +408,336 @@ if (isset($_GET['del'])) {
 				</div>
 				<!--end::Header-->
 
+
 				<!--begin::Content-->
-				<div class="d-flex flex-column flex-column-fluid" id="kt_content">
+				<div class="content d-flex flex-column flex-column-fluid dre-dash-content" id="kt_content">
 					<!--begin::Entry-->
 					<div class="d-flex flex-column-fluid">
 						<!--begin::Container-->
 						<div class="container">
+							<!--begin::List-->
+							<link href="<?= BASE_URL ?>assets/css/dre-dashboard.css?v=1" rel="stylesheet" type="text/css" />
+							<link href="<?= BASE_URL ?>assets/css/dre-leads.css?v=1" rel="stylesheet" type="text/css" />
+							<link href="<?= BASE_URL ?>assets/css/dre-projects.css?v=1" rel="stylesheet" type="text/css" />
+							<link href="<?= BASE_URL ?>assets/css/dre-articles.css?v=1" rel="stylesheet" type="text/css" />
+							<link href="<?= BASE_URL ?>assets/css/dre-simple.css?v=1" rel="stylesheet" type="text/css" />
+							<link href="<?= BASE_URL ?>assets/css/dre-careers.css?v=1" rel="stylesheet" type="text/css" />
 
-							<!--begin::Card-->
-							<div class="card card-custom gutter-b">
-								<div class="card-header flex-wrap py-3">
-									<div class="card-title">
-										<h3 class="card-label">Manage Team</h3>
+							<div class="dre-dash dre-leads dre-projects dre-articles dre-simple dre-careers">
+
+								<!-- Title, numbers, main actions -->
+								<div class="dre-glass dre-glass-dark dre-hero dre-leads-hero">
+									<div>
+										<h1><?= sim_e($kind['title']) ?></h1>
+										<p><?= sim_e($kind['blurb']) ?></p>
 									</div>
-
-									<div class="card-toolbar">
-										<div class="dropdown dropdown-inline mr-2">
-											<button type="button"
-												class="btn btn-light-primary font-weight-bolder dropdown-toggle"
-												data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-												<span class="svg-icon svg-icon-md">
-													<svg xmlns="http://www.w3.org/2000/svg"
-														xmlns:xlink="http://www.w3.org/1999/xlink" width="24px"
-														height="24px" viewBox="0 0 24 24" version="1.1">
-														<g stroke="none" stroke-width="1" fill="none"
-															fill-rule="evenodd">
-															<rect x="0" y="0" width="24" height="24"></rect>
-															<path
-																d="M3,16 L5,16 C5.55228475,16 6,15.5522847 6,15 C6,14.4477153 5.55228475,14 5,14 L3,14 L3,12 L5,12 C5.55228475,12 6,11.5522847 6,11 C6,10.4477153 5.55228475,10 5,10 L3,10 L3,8 L5,8 C5.55228475,8 6,7.55228475 6,7 C6,6.44771525 5.55228475,6 5,6 L3,6 L3,4 C3,3.44771525 3.44771525,3 4,3 L10,3 C10.5522847,3 11,3.44771525 11,4 L11,19 C11,19.5522847 10.5522847,20 10,20 L4,20 C3.44771525,20 3,19.5522847 3,19 L3,16 Z"
-																fill="#000000" opacity="0.3"></path>
-															<path
-																d="M16,3 L19,3 C20.1045695,3 21,3.8954305 21,5 L21,15.2485298 C21,15.7329761 20.8241635,16.200956 20.5051534,16.565539 L17.8762883,19.5699562 C17.6944473,19.7777745 17.378566,19.7988332 17.1707477,19.6169922 C17.1540423,19.602375 17.1383289,19.5866616 17.1237117,19.5699562 L14.4948466,16.565539 C14.1758365,16.200956 14,15.7329761 14,15.2485298 L14,5 C14,3.8954305 14.8954305,3 16,3 Z"
-																fill="#000000"></path>
-														</g>
-													</svg>
-												</span>Export</button>
-											<div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">
-												<ul class="navi flex-column navi-hover py-2">
-													<li
-														class="navi-header font-weight-bolder text-uppercase font-size-sm text-primary pb-2">
-														Choose an option:</li>
-													<li class="navi-item">
-														<a href="<?= BASE_URL ?>export-team.php" class="navi-link">
-															<span class="navi-icon">
-																<i class="la la-file-text-o"></i>
-															</span>
-															<span class="navi-text">XLS</span>
-														</a>
-													</li>
-												</ul>
-											</div>
-										</div>
-										<a href="<?= BASE_URL ?>add-team.php"
-											class="btn btn-primary font-weight-bolder">
-											<span class="svg-icon svg-icon-md">
-												<svg xmlns="http://www.w3.org/2000/svg"
-													xmlns:xlink="http://www.w3.org/1999/xlink" width="24px"
-													height="24px" viewBox="0 0 24 24" version="1.1">
-													<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-														<rect x="0" y="0" width="24" height="24"></rect>
-														<circle fill="#000000" cx="9" cy="15" r="6"></circle>
-														<path
-															d="M8.8012943,7.00241953 C9.83837775,5.20768121 11.7781543,4 14,4 C17.3137085,4 20,6.6862915 20,10 C20,12.2218457 18.7923188,14.1616223 16.9975805,15.1987057 C16.9991904,15.1326658 17,15.0664274 17,15 C17,10.581722 13.418278,7 9,7 C8.93357256,7 8.86733422,7.00080962 8.8012943,7.00241953 Z"
-															fill="#000000" opacity="0.3"></path>
-													</g>
-												</svg>
-											</span>Add Team</a>
+									<div class="dre-leads-stats">
+										<div><strong><?= number_format((int) $stat['active']) ?></strong><span>Live</span></div>
+										<div><strong><?= number_format((int) $stat['hidden']) ?></strong><span>Hidden</span></div>
+										<div><strong><?= number_format((int) $stat['this_year']) ?></strong><span><?= $kind['date'] !== '' ? 'Dated this year' : 'Added this year' ?></span></div>
+										<?php if ($kind['flag'] !== ''): ?>
+											<div><strong><?= number_format((int) $stat['flagged']) ?></strong><span>On homepage</span></div>
+										<?php elseif ($kind['rating'] !== ''): ?>
+											<div><strong><?= $stat['average'] !== null ? number_format((float) $stat['average'], 2) : '&ndash;' ?></strong><span>Average rating</span></div>
+										<?php endif; ?>
+									</div>
+									<div class="dre-actions">
+										<a class="dre-primary" href="<?= BASE_URL . $kind['add_file'] ?>"><i class="bi bi-plus-lg"></i> Add <?= sim_e($kind['one']) ?></a>
+										<a href="<?= BASE_URL ?>arrange-team.php"><i class="bi bi-arrows-move"></i> Arrange the order</a>
+										<?php if ($kind['content_file'] !== ''): ?>
+											<a href="<?= BASE_URL . $kind['content_file'] ?>?edit=<?= base64_encode(1) ?>"><i class="bi bi-window"></i> Page content</a>
+										<?php endif; ?>
+										<?php if ($kind['public_path'] !== '' && $kind['public_slug'] === ''): ?>
+											<a href="<?= sim_e(BASE_URL_HOME . $kind['public_path']) ?>" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> View the page</a>
+										<?php endif; ?>
 									</div>
 								</div>
 
-								<!-- Filter Controls -->
-								<div class="card-body pb-0">
-									<div class="row mb-4">
-										<div class="col-md-3">
-											<label class="form-label">Filter by Status:</label>
-											<select id="statusFilter" class="form-control">
-												<option value="">All</option>
-												<option value="1">Active</option>
-												<option value="2">Inactive</option>
-											</select>
+								<?php if ($kind['site_note'] !== ''): ?>
+									<div class="dre-leads-notice dre-site-note" role="note"><i class="bi bi-eye-slash"></i> <?= sim_e($kind['site_note']) ?></div>
+								<?php endif; ?>
+								<?php if ($notice !== ''): ?>
+									<div class="dre-leads-notice" role="status" id="simNotice"><i class="bi bi-info-circle"></i> <?= sim_e($notice) ?></div>
+								<?php endif; ?>
+
+								<!-- Search and filters -->
+								<form method="get" action="<?= BASE_URL . $kind['list_file'] ?>" class="dre-glass dre-leads-filter dre-proj-filter">
+									<label class="dre-leads-search">
+										<span>Search</span>
+										<i class="bi bi-search"></i>
+										<input type="search" name="q" value="<?= sim_e($f_search) ?>" placeholder="Name or text" autocomplete="off">
+									</label>
+									<label>
+										<span>Website status</span>
+										<select name="status">
+											<option value="">Any</option>
+											<option value="active" <?= $f_status === 'active' ? 'selected' : '' ?>>Live</option>
+											<option value="inactive" <?= $f_status === 'inactive' ? 'selected' : '' ?>>Hidden</option>
+										</select>
+									</label>
+									<?php if ($kind['missing']): ?>
+									<label>
+										<span>Missing</span>
+										<select name="missing">
+											<option value="">Nothing selected</option>
+											<?php foreach ($kind['missing'] as $key => $spec): ?>
+												<option value="<?= sim_e($key) ?>" <?= $f_missing === $key ? 'selected' : '' ?>><?= sim_e($spec[0]) ?></option>
+											<?php endforeach; ?>
+										</select>
+									</label>
+									<?php endif; ?>
+									<label>
+										<span>Sort by</span>
+										<select name="sort">
+											<?php foreach ($sim_sorts as $key => $label): ?>
+												<option value="<?= $key ?>" <?= $f_sort === $key ? 'selected' : '' ?>><?= sim_e($label) ?></option>
+											<?php endforeach; ?>
+										</select>
+									</label>
+									<label>
+										<span>Per page</span>
+										<select name="per">
+											<?php foreach ([25, 50, 100] as $option): ?>
+												<option value="<?= $option ?>" <?= $f_per_page === $option ? 'selected' : '' ?>><?= $option ?></option>
+											<?php endforeach; ?>
+										</select>
+									</label>
+									<?php if ($kind['flag'] !== ''): ?>
+										<label class="dre-proj-check">
+											<input type="checkbox" name="flag" value="1" <?= $f_flag !== '' ? 'checked' : '' ?>> On the homepage only
+										</label>
+									<?php endif; ?>
+									<div class="dre-leads-filter-buttons">
+										<button type="submit" class="dre-btn dre-btn-main"><i class="bi bi-funnel"></i> Apply</button>
+										<?php if ($filters_on || $f_sort !== 'newest'): ?>
+											<a class="dre-btn" href="<?= BASE_URL . $kind['list_file'] ?>">Clear</a>
+										<?php endif; ?>
+									</div>
+								</form>
+
+								<!-- The form the ticked records belong to. Its buttons choose what happens. -->
+								<form method="post" action="<?= sim_e(sim_url()) ?>" id="simBulkForm">
+									<input type="hidden" name="csrf" value="<?= sim_e($_SESSION['admin_csrf']) ?>">
+								</form>
+
+								<!-- The list -->
+								<div class="dre-glass dre-leads-list">
+									<div class="dre-h">
+										<h3>
+											<?= number_format($total) ?> <?= sim_e($total === 1 ? $kind['one'] : $kind['many']) ?>
+											<small>
+												<?php if ($total > 0): ?>
+													Showing <?= number_format($offset + 1) ?>&ndash;<?= number_format($offset + count($records)) ?><?= $filters_on ? ' &middot; filtered' : '' ?>
+												<?php else: ?>
+													Nothing matches<?= $filters_on ? ' these filters' : '' ?>
+												<?php endif; ?>
+											</small>
+										</h3>
+										<?php if ($records): ?>
+											<label class="dre-proj-all"><input type="checkbox" id="simSelectAll"> Select all on this page</label>
+										<?php endif; ?>
+									</div>
+
+									<?php if (!$records): ?>
+										<div class="dre-empty">
+											<i class="bi <?= sim_e($kind['icon']) ?>" style="font-size: 2rem;"></i><br>
+											Nothing to show.
+											<?php if ($filters_on): ?>
+												<a href="<?= BASE_URL . $kind['list_file'] ?>">Show everything</a>
+											<?php endif; ?>
 										</div>
-										<div class="col-md-3">
-											<label class="form-label">Filter by Designation:</label>
-											<select id="designationFilter" class="form-control">
-												<option value="">All</option>
-												<?php
-												$desg_query = mysqli_query($conn, "SELECT team_desg_id, team_desg_name FROM tbl_team_desg WHERE team_desg_name != '' ORDER BY team_desg_name ASC");
-												while ($d = mysqli_fetch_assoc($desg_query)) {
-													?>
-													<option value="<?= $d['team_desg_id'] ?>">
-														<?= htmlspecialchars($d['team_desg_name']) ?>
-													</option>
-													<?php
+									<?php else: ?>
+										<div class="dre-proj-table" role="table" aria-label="<?= sim_e($kind['title']) ?>">
+											<div class="dre-proj-row dre-proj-head" role="row">
+												<div role="columnheader"><span class="sr-only">Select</span></div>
+												<div role="columnheader"><?= sim_e($kind['head_label']) ?></div>
+												<div role="columnheader">Details</div>
+												<div role="columnheader">Last changed</div>
+												<div role="columnheader">Status</div>
+												<div role="columnheader"><span class="sr-only">Actions</span></div>
+											</div>
+											<?php foreach ($records as $row):
+												$id = (int) $row['id'];
+												$is_live = $row['is_active'] === '1';
+												$is_flagged = $row['flag'] === '1';
+												$thumb = trim((string) $row['thumb']);
+												$edit_url = BASE_URL . $kind['edit_file'] . '?edit=' . base64_encode($id);
+												$summary = trim(preg_replace('/\s+/', ' ', str_replace("\xC2\xA0", ' ', html_entity_decode(strip_tags((string) $row['summary']), ENT_QUOTES, 'UTF-8'))));
+												$shown_on = $row['shown_on'] ? strtotime($row['shown_on']) : false;
+												$rating = is_numeric($row['rating']) ? max(0, min(5, (float) $row['rating'])) : null;
+												$missing = [];
+												foreach ($kind['missing'] as $key => $spec) {
+													if ((int) $row['miss_' . $key] === 1) {
+														$missing[] = strtolower($spec[0]);
+													}
 												}
-												?>
-											</select>
-										</div>
-										<div class="col-md-3">
-											<label class="form-label">Search:</label>
-											<input type="text" id="searchFilter"
-												placeholder="Search by name, designation..." class="form-control">
-										</div>
-										<div class="col-md-3">
-											<label class="form-label">&nbsp;</label>
-											<button id="clearFilters" class="btn btn-secondary form-control">Clear All
-												Filters</button>
-										</div>
-									</div>
-								</div>
-
-								<!-- Stats Cards -->
-								<div class="card m-3 p-3">
-									<div class="row align-items-end">
-										<div class="col-md-3">
-											<div class="card text-center bg-primary text-white">
-												<div class="card-body p-2">
-													<h6>Total</h6>
-													<h4><?= mysqli_num_rows(mysqli_query($conn, "SELECT * FROM tbl_team")) ?>
-													</h4>
-												</div>
-											</div>
-										</div>
-										<div class="col-md-3">
-											<div class="card text-center bg-primary text-white">
-												<div class="card-body p-2">
-													<h6>Active</h6>
-													<h4><?= mysqli_num_rows(mysqli_query($conn, "SELECT * FROM tbl_team WHERE is_active=1")) ?>
-													</h4>
-												</div>
-											</div>
-										</div>
-										<div class="col-md-3">
-											<div class="card text-center bg-primary text-white">
-												<div class="card-body p-2">
-													<h6>Inactive</h6>
-													<h4><?= mysqli_num_rows(mysqli_query($conn, "SELECT * FROM tbl_team WHERE is_active=2")) ?>
-													</h4>
-												</div>
-											</div>
-										</div>
-										<div class="col-md-3">
-											<div class="card text-center bg-primary text-white">
-												<div class="card-body p-2">
-													<h6>Designations</h6>
-													<h4><?= mysqli_num_rows(mysqli_query($conn, "SELECT DISTINCT team_desg FROM tbl_team")) ?>
-													</h4>
-												</div>
-											</div>
-										</div>
-									</div>
-								</div>
-
-								<div class="card-body">
-									<table id="teamTable" class="table table-bordered dataTable" style="width:100%">
-										<thead>
-											<tr>
-												<th>ID</th>
-												<th>Order No.</th>
-												<th>Image</th>
-												<th>Name</th>
-												<th>Designation</th>
-												<th>Date Added</th>
-												<th>View</th>
-												<th>Status</th>
-												<th>Edit</th>
-												<th>Delete</th>
-											</tr>
-										</thead>
-										<tbody>
-											<?php
-											$key = 0;
-											$query = mysqli_query($conn, "select * from tbl_team order by team_id desc");
-											while ($row = mysqli_fetch_array($query)) {
-												?>
-												<!-- <tr data-status="<?= $row['is_active'] ?>" data-designation="<?= htmlspecialchars($row['team_desg']) ?>" data-name="<?= htmlspecialchars(strtolower($row['team_name'])) ?>" data-dname="<?= htmlspecialchars(strtolower($row['team_desg'])) ?>"> -->
-												<tr data-status="<?= $row['is_active'] ?>"
-													data-designation="<?= htmlspecialchars($row['team_desg']) ?>"
-													data-desig-id="<?= $row['team_desg_id'] ?>"
-													data-name="<?= htmlspecialchars(strtolower($row['team_name'])) ?>"
-													data-dname="<?= htmlspecialchars(strtolower($row['team_desg'])) ?>">
-													<td><?= ++$key ?></td>
-													<td>
-														<form action="" method="post"
-															id="update_team_order_<?= $row['team_id'] ?>"
-															class="d-flex align-items-center gap-2">
-															<input type="hidden" name="team_id"
-																value="<?= $row['team_id'] ?>">
-															<input type="hidden" name="team_desg_id"
-																value="<?= $row['team_desg_id'] ?>">
-															<input type="number" value="<?= $row['order_no'] ?? '' ?>"
-																name="order_no"
-																class="form-control form-control-sm text-center"
-																style="width:80px;" placeholder="Order">
-															<button type="submit" name="update_order_numbers"
-																class="btn btn-sm btn-primary">✓</button>
+											?>
+												<div class="dre-proj-row<?= $is_live ? '' : ' is-hidden' ?>" role="row">
+													<div class="dre-proj-pick" role="cell">
+														<input type="checkbox" name="sim_ids[]" value="<?= $id ?>" form="simBulkForm" class="dre-proj-box" aria-label="Select <?= sim_e($row['heading']) ?>">
+													</div>
+													<div class="dre-proj-main" role="cell">
+														<a class="dre-proj-thumb<?= $kind['thumb'] === '' ? ' dre-sim-initial' : '' ?>" href="<?= sim_e($edit_url) ?>" tabindex="-1" aria-hidden="true">
+															<?php if ($thumb !== ''): ?>
+																<img src="<?= BASE_URL . $kind['folder'] . sim_e(rawurlencode($thumb)) ?>" alt="" loading="lazy" onerror="this.remove()">
+															<?php endif; ?>
+															<?php if ($kind['icon_col'] !== ''): ?>
+																<i class="<?= sim_e(preg_replace('/^(fal|far|fad|fat|fa-light|fa-regular|fa-thin|fa-duotone)\\b/', 'fas', trim(preg_replace('/[^A-Za-z0-9 _-]/', '', (string) $row['icon_value'])))) ?>"></i>
+															<?php elseif ($kind['thumb'] === ''): ?>
+																<span><?= sim_e(mb_strtoupper(mb_substr(trim((string) $row['heading']), 0, 1)) ?: '?') ?></span>
+															<?php else: ?>
+																<i class="bi <?= sim_e($kind['icon']) ?>"></i>
+															<?php endif; ?>
+														</a>
+														<div>
+															<a class="dre-proj-name" href="<?= sim_e($edit_url) ?>"><?= trim((string) $row['heading']) !== '' ? sim_e($row['heading']) : 'No name' ?></a>
+															<?php if ($rating !== null): ?>
+																<span class="dre-sim-stars" title="<?= sim_e($row['rating']) ?> out of 5" aria-label="Rated <?= sim_e($row['rating']) ?> out of 5"><i style="width: <?= round($rating * 20) ?>%"></i></span>
+																<span class="dre-proj-sub"><?= sim_e($row['rating']) ?> out of 5</span>
+															<?php endif; ?>
+															<?php if ($is_flagged): ?>
+																<div class="dre-proj-pills"><span class="dre-pill dre-pill-ai"><i class="bi bi-house-heart"></i> <?= sim_e($kind['flag_label']) ?></span></div>
+															<?php endif; ?>
+														</div>
+													</div>
+													<div class="dre-art-summary" role="cell">
+														<span><?= $summary !== '' ? sim_e(mb_strimwidth($summary, 0, 150, '...')) : '<em>No text</em>' ?></span>
+														<?php if ($missing): ?>
+															<span class="dre-proj-missing" title="Details that are not filled in"><i class="bi bi-exclamation-triangle"></i> Missing: <?= sim_e(implode(', ', $missing)) ?></span>
+														<?php endif; ?>
+													</div>
+													<div class="dre-proj-facts" role="cell">
+														<strong><?= $shown_on ? date('d M Y', $shown_on) : 'No date' ?></strong>
+													</div>
+													<div class="dre-proj-status" role="cell">
+														<form method="post" action="<?= sim_e(sim_url()) ?>">
+															<input type="hidden" name="csrf" value="<?= sim_e($_SESSION['admin_csrf']) ?>">
+															<input type="hidden" name="sim_id" value="<?= $id ?>">
+															<button type="submit" name="sim_action" value="<?= $is_live ? 'hide' : 'show' ?>" class="dre-switch<?= $is_live ? ' is-on' : '' ?>" role="switch" aria-checked="<?= $is_live ? 'true' : 'false' ?>" title="<?= $is_live ? 'Live on the website. Click to hide.' : 'Hidden from the website. Click to show.' ?>">
+																<i></i><span><?= $is_live ? 'Live' : 'Hidden' ?></span>
+															</button>
 														</form>
-													</td>
-													<td><img src="<?= BASE_URL ?>assets/media/team/<?= $row['team_img'] ?>"
-															width="50"></td>
-													<td>
-														<?= htmlspecialchars($row['team_name']) ?>
+														<span class="dre-proj-sync"><i class="bi bi-clock-history"></i> Changed <?= strtotime((string) $row['tstp']) > 0 ? date('d M Y', strtotime($row['tstp'])) : 'not known' ?></span>
+													</div>
+													<div class="dre-proj-actions" role="cell">
+														<a class="dre-icon-btn" href="<?= sim_e($edit_url) ?>" title="Edit" aria-label="Edit <?= sim_e($row['heading']) ?>"><i class="bi bi-pencil"></i></a>
+														<?php if ($kind['public_slug'] !== ''): ?>
+															<a class="dre-icon-btn" href="<?= sim_e(BASE_URL_HOME . $kind['public_path'] . trim((string) $row['slug_value'])) ?>" target="_blank" rel="noopener" title="View on the website" aria-label="View <?= sim_e($row['heading']) ?> on the website"><i class="bi bi-box-arrow-up-right"></i></a>
+														<?php endif; ?>
+														<div class="dropdown">
+															<button type="button" class="dre-icon-btn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="More" aria-label="More actions for <?= sim_e($row['heading']) ?>"><i class="bi bi-three-dots"></i></button>
+															<div class="dropdown-menu dropdown-menu-right">
+																<form method="post" action="<?= sim_e(sim_url()) ?>" class="dre-sim-row-form" data-name="<?= sim_e($row['heading']) ?>">
+																	<input type="hidden" name="csrf" value="<?= sim_e($_SESSION['admin_csrf']) ?>">
+																	<input type="hidden" name="sim_id" value="<?= $id ?>">
+																	<?php if ($kind['flag'] !== ''): ?>
+																		<button type="submit" name="sim_action" value="<?= $is_flagged ? 'unflag' : 'flag' ?>" class="dropdown-item"><i class="bi bi-house-heart mr-2"></i><?= $is_flagged ? 'Take off the homepage' : 'Put on the homepage' ?></button>
+																		<div class="dropdown-divider"></div>
+																	<?php endif; ?>
+																	<button type="submit" name="sim_action" value="delete" class="dropdown-item text-danger"><i class="bi bi-trash3 mr-2"></i>Delete</button>
+																</form>
+															</div>
+														</div>
+													</div>
+												</div>
+											<?php endforeach; ?>
+										</div>
 
-														<?php
-														if ($row['is_time_square_team'] == 1) {
-															echo '<span class="badge badge-pills badge-success">Time square Team</span>';
-														}
-														?>
+										<?php if ($pages > 1): ?>
+											<nav class="dre-leads-pages" aria-label="Pages">
+												<?php if ($f_page > 1): ?>
+													<a href="<?= sim_e(sim_url(['page' => $f_page - 1])) ?>" aria-label="Previous page"><i class="bi bi-chevron-left"></i></a>
+												<?php endif; ?>
+												<?php
+												$shown = [];
+												foreach ([1, 2, $f_page - 1, $f_page, $f_page + 1, $pages - 1, $pages] as $number) {
+													if ($number >= 1 && $number <= $pages) {
+														$shown[$number] = true;
+													}
+												}
+												ksort($shown);
+												$previous = 0;
+												foreach (array_keys($shown) as $number):
+													if ($number > $previous + 1): ?><span>&hellip;</span><?php endif; ?>
+													<a href="<?= sim_e(sim_url(['page' => $number])) ?>" class="<?= $number === $f_page ? 'is-on' : '' ?>" <?= $number === $f_page ? 'aria-current="page"' : '' ?>><?= $number ?></a>
+												<?php $previous = $number;
+												endforeach; ?>
+												<?php if ($f_page < $pages): ?>
+													<a href="<?= sim_e(sim_url(['page' => $f_page + 1])) ?>" aria-label="Next page"><i class="bi bi-chevron-right"></i></a>
+												<?php endif; ?>
+											</nav>
+										<?php endif; ?>
+									<?php endif; ?>
+								</div>
 
-													</td>
-													<td>
-														<?= htmlspecialchars($row['team_desg']) ?>
-													</td>
-													<td><?= date('d/m/Y H:i:s', strtotime($row['tstp'])) ?></td>
-													<td><a href="<?= BASE_URL_HOME ?>about-us/" target="_blank">View</a>
-													</td>
-													<td><span
-															class="label label-lg font-weight-bold <?= ($row['is_active'] == 1 ? 'label-light-success' : 'label-light-danger') ?> label-inline"><?= ($row['is_active'] == 1 ? 'Active' : 'Inactive') ?></span>
-													</td>
-													<td><a href="<?= BASE_URL ?>edit-team.php?edit=<?= base64_encode($row['team_id']) ?>"
-															class="btn btn-warning">Edit</a></td>
-													<td><a href="<?= BASE_URL ?>manage-team.php?edit=<?= base64_encode($row['team_id']) ?>"
-															data-url="<?= BASE_URL ?>manage-team.php?del=<?= $row['team_id'] ?>"
-															class="btn btn-danger del_rec">Delete</a></td>
-												</tr>
-											<?php } ?>
-										</tbody>
-										<tfoot>
-											<tr>
-												<th>ID</th>
-												<th>Order No.</th>
-												<th>Image</th>
-												<th>Name</th>
-												<th>Designation</th>
-												<th>Date Added</th>
-												<th>View</th>
-												<th>Status</th>
-												<th>Edit</th>
-												<th>Delete</th>
-											</tr>
-										</tfoot>
-									</table>
+								<!-- Appears when at least one record is ticked -->
+								<div class="dre-proj-bulk" id="simBulkBar" hidden>
+									<strong><span id="simBulkCount">0</span> selected</strong>
+									<div>
+										<button type="submit" form="simBulkForm" name="sim_action" value="show" class="dre-btn dre-btn-main"><i class="bi bi-eye"></i> Show on website</button>
+										<button type="submit" form="simBulkForm" name="sim_action" value="hide" class="dre-btn"><i class="bi bi-eye-slash"></i> Hide</button>
+										<?php if ($kind['flag'] !== ''): ?>
+											<button type="submit" form="simBulkForm" name="sim_action" value="flag" class="dre-btn"><i class="bi bi-house-heart"></i> Put on homepage</button>
+											<button type="submit" form="simBulkForm" name="sim_action" value="unflag" class="dre-btn">Take off homepage</button>
+										<?php endif; ?>
+										<button type="submit" form="simBulkForm" name="sim_action" value="delete" class="dre-btn" data-confirm="Delete the selected <?= sim_e($kind['many']) ?>? A copy of each record is kept in the delete log."><i class="bi bi-trash3"></i> Delete</button>
+										<button type="button" class="dre-btn" id="simBulkClear">Clear</button>
+									</div>
 								</div>
 							</div>
-							<!--end::Card-->
+
+							<script>
+								// Selection bar, confirmations, and the message that fades out.
+								(function () {
+									var boxes = Array.prototype.slice.call(document.querySelectorAll('.dre-proj-box'));
+									var all = document.getElementById('simSelectAll');
+									var bar = document.getElementById('simBulkBar');
+									var count = document.getElementById('simBulkCount');
+
+									function refresh() {
+										var picked = boxes.filter(function (box) { return box.checked; }).length;
+										count.textContent = picked;
+										bar.hidden = picked === 0;
+										if (all) {
+											all.checked = picked > 0 && picked === boxes.length;
+											all.indeterminate = picked > 0 && picked < boxes.length;
+										}
+									}
+									boxes.forEach(function (box) { box.addEventListener('change', refresh); });
+									if (all) {
+										all.addEventListener('change', function () {
+											boxes.forEach(function (box) { box.checked = all.checked; });
+											refresh();
+										});
+									}
+									document.getElementById('simBulkClear').addEventListener('click', function () {
+										boxes.forEach(function (box) { box.checked = false; });
+										refresh();
+									});
+									bar.querySelectorAll('[data-confirm]').forEach(function (button) {
+										button.addEventListener('click', function (event) {
+											if (!window.confirm(button.getAttribute('data-confirm'))) {
+												event.preventDefault();
+											}
+										});
+									});
+									document.querySelectorAll('.dre-sim-row-form').forEach(function (form) {
+										form.addEventListener('submit', function (event) {
+											var button = event.submitter;
+											if (button && button.value === 'delete' && !window.confirm('Delete "' + form.getAttribute('data-name') + '"? A copy of the record is kept in the delete log.')) {
+												event.preventDefault();
+											}
+										});
+									});
+									refresh();
+
+									var notice = document.getElementById('simNotice');
+									if (notice) {
+										setTimeout(function () { notice.style.display = 'none'; }, 8000);
+									}
+								})();
+							</script>
+							<!--end::List-->
 
 						</div>
 						<!--end::Container-->
@@ -374,69 +745,12 @@ if (isset($_GET['del'])) {
 					<!--end::Entry-->
 				</div>
 				<!--end::Content-->
+
 				<?php
 				include('includes/footer-inner.php');
 				?>
 
-				<script>
-					$(document).ready(function () {
-						// Initialize DataTable with pagination
-						var table = $('#teamTable').DataTable({
-							"pageLength": 10,
-							"order": [
-								[0, 'asc']
-							],
-							"language": {
-								"paginate": {
-									"previous": "Previous",
-									"next": "Next"
-								}
-							}
-						});
 
-						// Custom filter function
-						$.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
-							var status = $('#statusFilter').val();
-							var designationId = $('#designationFilter').val();
-							var search = $('#searchFilter').val().toLowerCase();
-
-							var row = table.row(dataIndex).node();
-							var rowStatus = $(row).data('status').toString();
-							var rowDesignationId = $(row).data('desig-id');
-							var rowName = $(row).data('name');
-							var rowDname = $(row).data('dname');
-
-							// Status filter
-							if (status !== '' && rowStatus !== status) {
-								return false;
-							}
-
-							// Designation filter (compare by ID)
-							if (designationId !== '' && rowDesignationId != designationId) {
-								return false;
-							}
-
-							// Search filter
-							if (search !== '') {
-								if (rowName.indexOf(search) === -1 && rowDname.indexOf(search) === -1) {
-									return false;
-								}
-							}
-
-							return true;
-						});
-
-						// Event listeners
-						$('#statusFilter, #designationFilter, #searchFilter').on('keyup change', function () {
-							table.draw();
-						});
-
-						// Clear filters
-						$('#clearFilters').on('click', function () {
-							$('#statusFilter').val('');
-							$('#designationFilter').val('');
-							$('#searchFilter').val('');
-							table.draw();
-						});
-					});
-				</script>
+<?php
+// Don't add extra closing tags
+?>

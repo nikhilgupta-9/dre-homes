@@ -1,235 +1,259 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 include('db/config.php');
 include('includes/header.php');
 include('lock2.php');
+include('includes/Logger.php');
 
+// Leads are personal data: nothing below runs unless an administrator is signed in.
+if (empty($_SESSION['email_id'])) {
+    exit;
+}
+if ((int) ($_SESSION['login_type'] ?? 0) !== 1) {
+    header('Location: ' . BASE_URL . 'dashboard.php');
+    exit;
+}
 
-if (isset($_GET['del']) && isset($_GET['source'])) {
+// One entry per enquiry table: label in the address bar => table, key column, name shown, icon.
+$lead_sources = [
+    'Offplan' => ['table' => 'tbl_offplan_enq', 'key' => 'id', 'label' => 'Enquiry form', 'icon' => 'bi-envelope-paper'],
+    'PDF Download' => ['table' => 'tbl_pdf_enquiry', 'key' => 'pdf_enq_id', 'label' => 'Downloads', 'icon' => 'bi-file-earmark-arrow-down'],
+    'Gold Visa' => ['table' => 'tbl_goldvisa_enq', 'key' => 'id', 'label' => 'Golden visa', 'icon' => 'bi-gem'],
+    'General Enquiry' => ['table' => 'tbl_enq', 'key' => 'enq_id', 'label' => 'Contact us', 'icon' => 'bi-chat-left-text'],
+    'Book Valuation' => ['table' => 'tbl_book_val_enquiry', 'key' => 'book_val_id', 'label' => 'Valuation', 'icon' => 'bi-clipboard-check'],
+    'Commercial Dev' => ['table' => 'tbl_comm_dev_enquiry', 'key' => 'comm_dev_id', 'label' => 'Community / developer', 'icon' => 'bi-building'],
+    'Visa Enquiry' => ['table' => 'tbl_visa_enquiry', 'key' => 'visa_enq_id', 'label' => 'Visa', 'icon' => 'bi-passport'],
+    'Newsletter' => ['table' => 'tbl_subscribe_frm', 'key' => 'subscribe_frm_id', 'label' => 'Newsletter', 'icon' => 'bi-newspaper'],
+];
 
-    $id = intval($_GET['del']);
-    $source = $_GET['source'];
+if (empty($_SESSION['leads_csrf'])) {
+    $_SESSION['leads_csrf'] = bin2hex(random_bytes(16));
+}
 
-    switch ($source) {
+// ---------------------------------------------------------------
+// Filters (all optional, all from the address bar)
+// ---------------------------------------------------------------
+$f_source = isset($_GET['source']) && isset($lead_sources[$_GET['source']]) ? $_GET['source'] : '';
+$f_search = isset($_GET['q']) && is_string($_GET['q']) ? trim(mb_substr($_GET['q'], 0, 100)) : '';
+$f_from = isset($_GET['from']) && is_string($_GET['from']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['from']) ? $_GET['from'] : '';
+$f_to = isset($_GET['to']) && is_string($_GET['to']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['to']) ? $_GET['to'] : '';
+$f_per_page = (int) ($_GET['per'] ?? 25);
+if (!in_array($f_per_page, [25, 50, 100], true)) {
+    $f_per_page = 25;
+}
+$f_page = max(1, (int) ($_GET['page'] ?? 1));
 
-        case 'Book Valuation':
-            $table = 'tbl_book_val_enquiry';
-            $column = 'book_val_id';
-            break;
+// Address of this page with the current filters, with some of them changed.
+function leads_url(array $change = [])
+{
+    global $f_source, $f_search, $f_from, $f_to, $f_per_page, $f_page;
+    $params = array_merge(['source' => $f_source, 'q' => $f_search, 'from' => $f_from, 'to' => $f_to, 'per' => $f_per_page === 25 ? '' : $f_per_page, 'page' => $f_page === 1 ? '' : $f_page], $change);
+    $params = array_filter($params, function ($value) {
+        return $value !== '' && $value !== null;
+    });
+    return BASE_URL . 'manage-leads.php' . ($params ? '?' . http_build_query($params) : '');
+}
 
-        case 'Commercial Dev':
-            $table = 'tbl_comm_dev_enquiry';
-            $column = 'comm_dev_id';
-            break;
+function leads_e($text)
+{
+    return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
+}
 
-        case 'General Enquiry':
-            $table = 'tbl_enq';
-            $column = 'enq_id';
-            break;
-
-        case 'Gold Visa':
-            $table = 'tbl_goldvisa_enq';
-            $column = 'id';
-            break;
-
-        case 'Offplan':
-            $table = 'tbl_offplan_enq';
-            $column = 'id';
-            break;
-
-        case 'PDF Download':
-            $table = 'tbl_pdf_enquiry';
-            $column = 'pdf_enq_id';
-            break;
-
-        case 'Newsletter':
-            $table = 'tbl_subscribe_frm';
-            $column = 'subscribe_frm_id';
-            break;
-
-        case 'Visa Enquiry':
-            $table = 'tbl_visa_enquiry';
-            $column = 'visa_enq_id';
-            break;
-
-        default:
-            die("Invalid source");
+// Runs a prepared query and returns its rows (or true for a write).
+function leads_query($conn, $sql, array $params = [])
+{
+    $stmt = mysqli_prepare($conn, $sql);
+    if (!$stmt) {
+        error_log('Leads query failed: ' . mysqli_error($conn));
+        return false;
     }
+    if ($params) {
+        $types = '';
+        foreach ($params as $param) {
+            $types .= is_int($param) ? 'i' : 's';
+        }
+        mysqli_stmt_bind_param($stmt, $types, ...$params);
+    }
+    if (!mysqli_stmt_execute($stmt)) {
+        error_log('Leads query failed: ' . mysqli_stmt_error($stmt));
+        mysqli_stmt_close($stmt);
+        return false;
+    }
+    $result = mysqli_stmt_get_result($stmt);
+    mysqli_stmt_close($stmt);
+    if ($result === false) {
+        return true;
+    }
+    $rows = [];
+    while ($row = mysqli_fetch_assoc($result)) {
+        $rows[] = $row;
+    }
+    return $rows;
+}
 
-    $query = mysqli_query($conn, "DELETE FROM $table WHERE $column = $id");
+// ---------------------------------------------------------------
+// Delete one lead (POST only, with a token, kept in the delete log)
+// ---------------------------------------------------------------
+$notice = '';
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['delete_id'])) {
+    $delete_source = is_string($_POST['delete_source'] ?? null) ? $_POST['delete_source'] : '';
+    $delete_id = (int) $_POST['delete_id'];
+    $token_ok = is_string($_POST['csrf'] ?? null) && hash_equals($_SESSION['leads_csrf'], $_POST['csrf']);
 
-    if ($query) {
-        header("Location: " . BASE_URL . "manage-leads.php?source=" . $source . "");
+    if ($token_ok && isset($lead_sources[$delete_source]) && $delete_id > 0) {
+        $table = $lead_sources[$delete_source]['table'];
+        $key = $lead_sources[$delete_source]['key'];
+        $old = leads_query($conn, "SELECT * FROM $table WHERE $key = ?", [$delete_id]);
+        if ($old) {
+            $logger = new Logger($conn);
+            $logger->log('DELETE', $table, $delete_id, $old[0], null, 'Lead deleted: ' . $delete_source . ' #' . $delete_id);
+            $logger->archiveDeletedRecord($table, $delete_id, $old[0]);
+            leads_query($conn, "DELETE FROM $table WHERE $key = ?", [$delete_id]);
+        }
+        header('Location: ' . leads_url(['deleted' => 1]));
         exit;
-    } else {
-        echo "Delete failed: " . mysqli_error($conn);
     }
+    $notice = 'The lead was not deleted. Please reload the page and try again.';
 }
 
+// ---------------------------------------------------------------
+// All enquiry tables as one list
+// ---------------------------------------------------------------
+$lead_union = "
+    SELECT book_val_id AS id, name, email_id AS email, mobile AS phone, enq_about AS message,
+           location AS d1, appointment_date AS d2, appointment_time AS d3, enq_type AS d4, totl_bedr AS d5, area_sqft AS d6,
+           'Book Valuation' AS source, tstp AS date FROM tbl_book_val_enquiry
+    UNION ALL
+    SELECT comm_dev_id, name, email_id, phone, comment, page_name, '', '', '', '', '', 'Commercial Dev', tstp FROM tbl_comm_dev_enquiry
+    UNION ALL
+    SELECT enq_id, CONCAT(first_name, ' ', last_name), email_id, enquiry_phone, enq_comment, '', '', '', '', '', '', 'General Enquiry', tstp FROM tbl_enq
+    UNION ALL
+    SELECT id, name, email_id, number, message, '', '', '', '', '', '', 'Gold Visa', tstp FROM tbl_goldvisa_enq
+    UNION ALL
+    SELECT id, name, email, phone, message, prop_name, prop_location, prop_bedroom, developer, channel, leads_nature, 'Offplan', created_at FROM tbl_offplan_enq
+    UNION ALL
+    SELECT pdf_enq_id, name, email_id, phone, download_type, prop_name, prop_location, prop_bedroom, developer, channel, leads_nature, 'PDF Download', tstp FROM tbl_pdf_enquiry
+    UNION ALL
+    SELECT subscribe_frm_id, '', subscribe_frm_email, '', '', '', '', '', '', '', '', 'Newsletter', tstp FROM tbl_subscribe_frm
+    UNION ALL
+    SELECT visa_enq_id, username, email_id, visa_phone, message, '', '', '', '', '', '', 'Visa Enquiry', tstp FROM tbl_visa_enquiry";
 
-$source_filter = "";
-if (!empty($_GET['source'])) {
-    $source = mysqli_real_escape_string($conn, $_GET['source']);
-    $source_filter = "WHERE source = '$source'";
+// Search and dates apply to every tab; the source is added on top for the list itself.
+$where = [];
+$params = [];
+if ($f_search !== '') {
+    $like = '%' . addcslashes($f_search, '%_\\') . '%';
+    $where[] = '(name LIKE ? OR email LIKE ? OR phone LIKE ? OR message LIKE ? OR d1 LIKE ? OR d4 LIKE ?)';
+    array_push($params, $like, $like, $like, $like, $like, $like);
+}
+if ($f_from !== '') {
+    $where[] = 'date >= ?';
+    $params[] = $f_from . ' 00:00:00';
+}
+if ($f_to !== '') {
+    $where[] = 'date <= ?';
+    $params[] = $f_to . ' 23:59:59';
+}
+$where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+
+$source_counts = [];
+$count_rows = leads_query($conn, "SELECT source, COUNT(*) AS n FROM ($lead_union) l $where_sql GROUP BY source", $params);
+foreach ($count_rows ?: [] as $row) {
+    $source_counts[$row['source']] = (int) $row['n'];
+}
+$count_all = array_sum($source_counts);
+
+$list_where = $where;
+$list_params = $params;
+if ($f_source !== '') {
+    $list_where[] = 'source = ?';
+    $list_params[] = $f_source;
+}
+$list_where_sql = $list_where ? 'WHERE ' . implode(' AND ', $list_where) : '';
+$total = $f_source !== '' ? ($source_counts[$f_source] ?? 0) : $count_all;
+
+// What a lead says about the property, with the right label for each kind of form.
+function leads_details(array $row)
+{
+    if ($row['source'] === 'Book Valuation') {
+        $labels = ['d1' => 'Location', 'd2' => 'Appointment date', 'd3' => 'Time', 'd4' => 'Type', 'd5' => 'Bedrooms', 'd6' => 'Area (sq ft)'];
+    } elseif ($row['source'] === 'Commercial Dev') {
+        $labels = ['d1' => 'Page'];
+    } else {
+        $labels = ['d1' => 'Property', 'd2' => 'Location', 'd3' => 'Unit type', 'd4' => 'Developer', 'd5' => 'Channel', 'd6' => 'Lead type'];
+    }
+    $details = [];
+    foreach ($labels as $column => $label) {
+        if (trim((string) $row[$column]) !== '') {
+            $details[$label] = trim($row[$column]);
+        }
+    }
+    return $details;
 }
 
-$sql = "
-SELECT * FROM (
+// ---------------------------------------------------------------
+// Download the filtered list as a spreadsheet file
+// ---------------------------------------------------------------
+if (isset($_GET['export']) && $_GET['export'] === 'csv') {
+    $rows = leads_query($conn, "SELECT * FROM ($lead_union) l $list_where_sql ORDER BY date DESC", $list_params) ?: [];
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="dre-leads-' . date('Y-m-d') . '.csv"');
+    header('Cache-Control: no-store');
+    $out = fopen('php://output', 'w');
+    fwrite($out, "\xEF\xBB\xBF");
+    // A cell that starts like a formula is written as text, so a spreadsheet program does not run it.
+    $safe = function ($value) {
+        $value = (string) $value;
+        // A plain phone number such as "+971 50 000 0000" is left as it is.
+        if (preg_match('/^\+[\d\s().-]+$/', $value)) {
+            return $value;
+        }
+        return preg_match('/^[=+\-@\t\r]/', $value) ? "'" . $value : $value;
+    };
+    fputcsv($out, ['Date', 'Source', 'Name', 'Phone', 'Email', 'Message', 'Details']);
+    foreach ($rows as $row) {
+        $details = [];
+        foreach (leads_details($row) as $label => $value) {
+            $details[] = "$label: $value";
+        }
+        fputcsv($out, array_map($safe, [$row['date'], $lead_sources[$row['source']]['label'], $row['name'], $row['phone'], $row['email'], $row['message'], implode(' | ', $details)]));
+    }
+    fclose($out);
+    exit;
+}
 
-    SELECT 
-        book_val_id AS id,
-        name,
-        email_id AS email,
-        mobile AS phone,
-        enq_about AS message,
-        location AS prop_name,
-        appointment_date AS prop_location,
-        appointment_time AS prop_bedroom,
-        enq_type AS developer,
-        totl_bedr AS channel,
-        area_sqft AS leads_nature,
-        'Book Valuation' AS source,
-        tstp AS date
-    FROM tbl_book_val_enquiry
+$pages = max(1, (int) ceil($total / $f_per_page));
+$f_page = min($f_page, $pages);
+$offset = ($f_page - 1) * $f_per_page;
+$leads = leads_query($conn, "SELECT * FROM ($lead_union) l $list_where_sql ORDER BY date DESC LIMIT ?, ?", array_merge($list_params, [$offset, $f_per_page])) ?: [];
 
-    UNION ALL
+$stat = leads_query($conn, "SELECT SUM(date >= CURDATE()) AS today, SUM(date >= CURDATE() - INTERVAL 6 DAY) AS week, SUM(date >= CURDATE() - INTERVAL 29 DAY) AS month, COUNT(*) AS total FROM ($lead_union) l");
+$stat = $stat ? $stat[0] : ['today' => 0, 'week' => 0, 'month' => 0, 'total' => 0];
 
-    SELECT 
-        comm_dev_id AS id,
-        name,
-        email_id AS email,
-        phone,
-        comment AS message,
-        '' AS prop_name,
-        '' AS prop_location,
-        '' AS prop_bedroom,
-        '' AS developer,
-        '' AS channel,
-        '' AS leads_nature,
-        'Commercial Dev' AS source,
-        tstp AS date
-    FROM tbl_comm_dev_enquiry
+if (isset($_GET['deleted'])) {
+    $notice = 'The lead was deleted. A copy is kept in the delete log.';
+}
+$filters_on = $f_search !== '' || $f_from !== '' || $f_to !== '';
 
-    UNION ALL
-
-    SELECT 
-        enq_id AS id,
-        CONCAT(first_name,' ',last_name) AS name,
-        email_id AS email,
-        enquiry_phone AS phone,
-        enq_comment AS message,
-        '' AS prop_name,
-        '' AS prop_location,
-        '' AS prop_bedroom,
-        '' AS developer,
-        '' AS channel,
-        '' AS leads_nature,
-        'General Enquiry' AS source,
-        tstp AS date
-    FROM tbl_enq
-
-    UNION ALL
-
-    SELECT 
-        id,
-        name,
-        email_id AS email,
-        number AS phone,
-        message,
-        '' AS prop_name,
-        '' AS prop_location,
-        '' AS prop_bedroom,
-        '' AS developer,
-        '' AS channel,
-        '' AS leads_nature,
-        'Gold Visa' AS source,
-        tstp AS date
-    FROM tbl_goldvisa_enq
-
-    UNION ALL
-
-    SELECT 
-        id,
-        name,
-        email,
-        phone,
-        message,
-        prop_name,
-        prop_location,
-        prop_bedroom,
-        developer,
-        channel,
-        leads_nature,
-        'Offplan' AS source,
-        created_at AS date
-    FROM tbl_offplan_enq
-
-    UNION ALL
-
-    SELECT 
-        pdf_enq_id AS id,
-        name,
-        email_id AS email,
-        phone,
-        download_type AS message,
-         prop_name,
-        prop_location,
-        prop_bedroom,
-        developer,
-        channel,
-        leads_nature,
-        'PDF Download' AS source,
-        tstp AS date
-    FROM tbl_pdf_enquiry
-
-    UNION ALL
-
-    SELECT 
-        subscribe_frm_id AS id,
-        subscribe_frm_email AS name,
-        subscribe_frm_email AS email,
-        '' AS phone,
-        'Subscribed' AS message,
-        '' AS prop_name,
-        '' AS prop_location,
-        '' AS prop_bedroom,
-        '' AS developer,
-        '' AS channel,
-        '' AS leads_nature,
-        'Newsletter' AS source,
-        tstp AS date
-    FROM tbl_subscribe_frm
-
-    UNION ALL
-
-    SELECT 
-        visa_enq_id AS id,
-        username AS name,
-        email_id AS email,
-        visa_phone AS phone,
-        message,
-        '' AS prop_name,
-        '' AS prop_location,
-        '' AS prop_bedroom,
-        '' AS developer,
-        '' AS channel,
-        '' AS leads_nature,
-        'Visa Enquiry' AS source,
-        tstp AS date
-    FROM tbl_visa_enquiry
-
-) AS combined
-
-$source_filter
-
-ORDER BY date DESC
-";
-$query = mysqli_query($conn, $sql);
-
-if (!$query) {
-    die("SQL Error: " . mysqli_error($conn));
+function leads_phone_digits($phone)
+{
+    // "United Arab Emirates: +971 58 578 3994" -> 971585783994
+    if (preg_match('/\+?\d[\d\s().-]{5,}\d/', (string) $phone, $match)) {
+        return preg_replace('/\D+/', '', $match[0]);
+    }
+    return '';
+}
+function leads_when($datetime)
+{
+    $time = strtotime((string) $datetime);
+    if (!$time) {
+        return ['', ''];
+    }
+    $days = (int) floor((strtotime('today') - strtotime(date('Y-m-d', $time))) / 86400);
+    $day = $days === 0 ? 'Today' : ($days === 1 ? 'Yesterday' : date('d M Y', $time));
+    return [$day, date('h:i A', $time)];
 }
 ?>
 <!--begin::Body-->
@@ -328,223 +352,231 @@ if (!$query) {
 
 
                 <!--begin::Content-->
-                <div class="d-flex flex-column flex-column-fluid" id="kt_content">
+                <div class="content d-flex flex-column flex-column-fluid dre-dash-content" id="kt_content">
                     <!--begin::Entry-->
                     <div class="d-flex flex-column-fluid">
                         <!--begin::Container-->
                         <div class="container">
 
-                            <!--begin::Card-->
-                            <div class="card card-custom gutter-b">
-                                <div class="card-header flex-wrap py-3">
-                                    <div class="card-title">
-                                        <h3 class="card-label">Manage Leads</h3>
+                            <!--begin::Leads-->
+                            <link href="<?= BASE_URL ?>assets/css/dre-dashboard.css?v=1" rel="stylesheet" type="text/css" />
+                            <link href="<?= BASE_URL ?>assets/css/dre-leads.css?v=1" rel="stylesheet" type="text/css" />
+
+                            <div class="dre-dash dre-leads">
+
+                                <!-- Title, numbers, download -->
+                                <div class="dre-glass dre-glass-dark dre-hero dre-leads-hero">
+                                    <div>
+                                        <h1>Leads</h1>
+                                        <p>Every enquiry from the website in one list, newest first.</p>
                                     </div>
-                                    <div class="card-toolbar">
-                                        <div class="dropdown dropdown-inline mr-2">
-                                            <button type="button"
-                                                class="btn btn-light-primary font-weight-bolder dropdown-toggle"
-                                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                <span class="svg-icon svg-icon-md">
-                                                    <!--begin::Svg Icon | path:assets/media/svg/icons/Design/PenAndRuller.svg-->
-                                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                                        xmlns:xlink="http://www.w3.org/1999/xlink" width="24px"
-                                                        height="24px" viewBox="0 0 24 24" version="1.1">
-                                                        <g stroke="none" stroke-width="1" fill="none"
-                                                            fill-rule="evenodd">
-                                                            <rect x="0" y="0" width="24" height="24"></rect>
-                                                            <path
-                                                                d="M3,16 L5,16 C5.55228475,16 6,15.5522847 6,15 C6,14.4477153 5.55228475,14 5,14 L3,14 L3,12 L5,12 C5.55228475,12 6,11.5522847 6,11 C6,10.4477153 5.55228475,10 5,10 L3,10 L3,8 L5,8 C5.55228475,8 6,7.55228475 6,7 C6,6.44771525 5.55228475,6 5,6 L3,6 L3,4 C3,3.44771525 3.44771525,3 4,3 L10,3 C10.5522847,3 11,3.44771525 11,4 L11,19 C11,19.5522847 10.5522847,20 10,20 L4,20 C3.44771525,20 3,19.5522847 3,19 L3,16 Z"
-                                                                fill="#000000" opacity="0.3"></path>
-                                                            <path
-                                                                d="M16,3 L19,3 C20.1045695,3 21,3.8954305 21,5 L21,15.2485298 C21,15.7329761 20.8241635,16.200956 20.5051534,16.565539 L17.8762883,19.5699562 C17.6944473,19.7777745 17.378566,19.7988332 17.1707477,19.6169922 C17.1540423,19.602375 17.1383289,19.5866616 17.1237117,19.5699562 L14.4948466,16.565539 C14.1758365,16.200956 14,15.7329761 14,15.2485298 L14,5 C14,3.8954305 14.8954305,3 16,3 Z"
-                                                                fill="#000000"></path>
-                                                        </g>
-                                                    </svg>
-                                                    <!--end::Svg Icon-->
-                                                </span>Export
-                                            </button>
+                                    <div class="dre-leads-stats">
+                                        <div><strong><?= number_format((int) $stat['today']) ?></strong><span>Today</span></div>
+                                        <div><strong><?= number_format((int) $stat['week']) ?></strong><span>7 days</span></div>
+                                        <div><strong><?= number_format((int) $stat['month']) ?></strong><span>30 days</span></div>
+                                        <div><strong><?= number_format((int) $stat['total']) ?></strong><span>All time</span></div>
+                                    </div>
+                                    <div class="dre-actions">
+                                        <a class="dre-primary" href="<?= leads_e(leads_url(['export' => 'csv', 'page' => ''])) ?>"><i class="bi bi-download"></i> Download <?= number_format($total) ?> as CSV</a>
+                                    </div>
+                                </div>
 
-                                            <!--begin::Dropdown Menu-->
-                                            <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right" style="">
-                                                <!--begin::Navigation-->
-                                                <ul class="navi flex-column navi-hover py-2">
-                                                    <li
-                                                        class="navi-header font-weight-bolder text-uppercase font-size-sm text-primary pb-2">
-                                                        Choose an option:</li>
+                                <?php if ($notice !== ''): ?>
+                                    <div class="dre-leads-notice" role="status"><i class="bi bi-info-circle"></i> <?= leads_e($notice) ?></div>
+                                <?php endif; ?>
 
-                                                    <li class="navi-item">
-                                                        <a href="<?= BASE_URL ?>export-tags.php" class="navi-link">
-                                                            <span class="navi-icon">
-                                                                <i class="la la-file-text-o"></i>
-                                                            </span>
-                                                            <span class="navi-text">XLS</span>
-                                                        </a>
-                                                    </li>
+                                <!-- Kind of enquiry -->
+                                <nav class="dre-leads-tabs" aria-label="Kind of enquiry">
+                                    <a href="<?= leads_e(leads_url(['source' => '', 'page' => ''])) ?>" class="<?= $f_source === '' ? 'is-on' : '' ?>">
+                                        <i class="bi bi-collection"></i> All <b><?= number_format($count_all) ?></b>
+                                    </a>
+                                    <?php foreach ($lead_sources as $key => $source): ?>
+                                        <a href="<?= leads_e(leads_url(['source' => $key, 'page' => ''])) ?>" class="<?= $f_source === $key ? 'is-on' : '' ?>">
+                                            <i class="bi <?= $source['icon'] ?>"></i> <?= leads_e($source['label']) ?> <b><?= number_format($source_counts[$key] ?? 0) ?></b>
+                                        </a>
+                                    <?php endforeach; ?>
+                                </nav>
 
-                                                </ul>
-                                                <!--end::Navigation-->
+                                <!-- Search and dates -->
+                                <form method="get" action="<?= BASE_URL ?>manage-leads.php" class="dre-glass dre-leads-filter">
+                                    <?php if ($f_source !== ''): ?><input type="hidden" name="source" value="<?= leads_e($f_source) ?>"><?php endif; ?>
+                                    <label class="dre-leads-search">
+                                        <span>Search</span>
+                                        <i class="bi bi-search"></i>
+                                        <input type="search" name="q" value="<?= leads_e($f_search) ?>" placeholder="Name, phone, email, property or developer" autocomplete="off">
+                                    </label>
+                                    <label>
+                                        <span>From</span>
+                                        <input type="date" name="from" value="<?= leads_e($f_from) ?>" max="<?= date('Y-m-d') ?>">
+                                    </label>
+                                    <label>
+                                        <span>To</span>
+                                        <input type="date" name="to" value="<?= leads_e($f_to) ?>" max="<?= date('Y-m-d') ?>">
+                                    </label>
+                                    <label>
+                                        <span>Per page</span>
+                                        <select name="per">
+                                            <?php foreach ([25, 50, 100] as $option): ?>
+                                                <option value="<?= $option ?>" <?= $f_per_page === $option ? 'selected' : '' ?>><?= $option ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </label>
+                                    <div class="dre-leads-filter-buttons">
+                                        <button type="submit" class="dre-btn dre-btn-main"><i class="bi bi-funnel"></i> Apply</button>
+                                        <?php if ($filters_on): ?>
+                                            <a class="dre-btn" href="<?= leads_e(leads_url(['q' => '', 'from' => '', 'to' => '', 'page' => ''])) ?>">Clear</a>
+                                        <?php endif; ?>
+                                    </div>
+                                </form>
+
+                                <!-- The list -->
+                                <div class="dre-glass dre-leads-list">
+                                    <div class="dre-h">
+                                        <h3>
+                                            <?= number_format($total) ?> <?= $total === 1 ? 'lead' : 'leads' ?><?= $f_source !== '' ? ' &middot; ' . leads_e($lead_sources[$f_source]['label']) : '' ?>
+                                            <small>
+                                                <?php if ($total > 0): ?>
+                                                    Showing <?= number_format($offset + 1) ?>&ndash;<?= number_format($offset + count($leads)) ?><?= $filters_on ? ' &middot; filtered' : '' ?>
+                                                <?php else: ?>
+                                                    Nothing matches<?= $filters_on ? ' these filters' : '' ?>
+                                                <?php endif; ?>
+                                            </small>
+                                        </h3>
+                                    </div>
+
+                                    <?php if (!$leads): ?>
+                                        <div class="dre-empty">
+                                            <i class="bi bi-inbox" style="font-size: 2rem;"></i><br>
+                                            No leads to show.
+                                            <?php if ($filters_on || $f_source !== ''): ?>
+                                                <a href="<?= BASE_URL ?>manage-leads.php">Show all leads</a>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="dre-leads-table" role="table" aria-label="Leads">
+                                            <div class="dre-leads-row dre-leads-head" role="row">
+                                                <div role="columnheader">Lead</div>
+                                                <div role="columnheader">Contact</div>
+                                                <div role="columnheader">Interested in</div>
+                                                <div role="columnheader">Received</div>
+                                                <div role="columnheader"><span class="sr-only">Actions</span></div>
                                             </div>
-                                            <!--end::Dropdown Menu-->
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="card-body pb-0">
-                                    <div class="row">
-                                        <?php $selected_source = $_GET['source'] ?? ''; ?>
-                                        <div class="col-md-4">
-                                            <form method="GET" class="mb-4">
-                                                <select name="source" class="form-control"
-                                                    onchange="this.form.submit()">
-                                                    <option value="">All Leads</option>
-                                                    <option value="Book Valuation" <?= ($selected_source == "Book Valuation") ? 'selected' : '' ?>>Book Valuation</option>
-                                                    <option value="Commercial Dev" <?= ($selected_source == "Commercial Dev") ? 'selected' : '' ?>>Commercial Dev</option>
-                                                    <option value="General Enquiry" <?= ($selected_source == "General Enquiry") ? 'selected' : '' ?>>General Enquiry</option>
-                                                    <option value="Gold Visa" <?= ($selected_source == "Gold Visa") ? 'selected' : '' ?>>Gold Visa</option>
-                                                    <option value="Offplan" <?= ($selected_source == "Offplan") ? 'selected' : '' ?>>Offplan</option>
-                                                    <option value="PDF Download" <?= ($selected_source == "PDF Download") ? 'selected' : '' ?>>PDF Download</option>
-                                                    <option value="Newsletter" <?= ($selected_source == "Newsletter") ? 'selected' : '' ?>>Newsletter</option>
-                                                    <option value="Visa Enquiry" <?= ($selected_source == "Visa Enquiry") ? 'selected' : '' ?>>Visa Enquiry</option>
-                                                </select>
-                                            </form>
-                                        </div>
-                                        <div class="col-md-4"></div>
-                                        <div class="col-md-4"></div>
-                                    </div>
-
-                                </div>
-                                <div class="card-body">
-
-                                    <table id="example" class="table table-bordered  dataTable " style="width:100%">
-                                        <thead>
-                                            <tr>
-                                                <th>ID</th>
-                                                <th style="width: 200px;">Name</th>
-                                                <th style="width: 200px;">Email</th>
-                                                <th style="width: 200px;">Phone</th>
-                                                <th>Message</th>
-                                                <th>Source</th>
-                                                <th>Date</th>
-                                                <th>Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php
-                                            $key = 0;
-                                            while ($row = mysqli_fetch_assoc($query)) {
-                                                ?>
-                                                <tr>
-                                                    <td><?= ++$key ?></td>
-                                                    <td id="firstName"><?= $row['name'] ?></td>
-                                                    <td id="leadEmail"><?= $row['email'] ?></td>
-                                                    <td id="phoneNo"><?= $row['phone'] ?></td>
-                                                    <td>
+                                            <?php foreach ($leads as $lead):
+                                                $name = trim((string) $lead['name']);
+                                                $email = trim((string) $lead['email']);
+                                                $phone = trim((string) $lead['phone']);
+                                                $message = trim((string) $lead['message']);
+                                                $digits = leads_phone_digits($phone);
+                                                $details = leads_details($lead);
+                                                $is_ai = ($details['Channel'] ?? '') === 'AI Chat';
+                                                list($day, $clock) = leads_when($lead['date']);
+                                                $display_name = $name !== '' ? $name : ($email !== '' ? $email : 'No name');
+                                                $headline = $details['Property'] ?? ($details['Location'] ?? ($details['Page'] ?? ''));
+                                                unset($details['Channel']);
+                                                $extra = $details;
+                                                if (isset($extra['Property']) && $extra['Property'] === $headline) {
+                                                    unset($extra['Property']);
+                                                } elseif (isset($extra['Location']) && $extra['Location'] === $headline) {
+                                                    unset($extra['Location']);
+                                                } elseif (isset($extra['Page'])) {
+                                                    unset($extra['Page']);
+                                                }
+                                            ?>
+                                                <div class="dre-leads-row" role="row">
+                                                    <div class="dre-leads-who" role="cell">
+                                                        <span class="dre-avatar"><?= leads_e(mb_substr($display_name, 0, 1)) ?></span>
                                                         <div>
-                                                            <strong>MESSAGE - </strong>
-                                                            <span class="text-warning">
-                                                                <?= htmlspecialchars(!empty($row['message']) ? $row['message'] : ($row['download_type'] ?? 'N/A'), ENT_QUOTES, 'UTF-8') ?>
-                                                            </span>
+                                                            <strong><?= leads_e($display_name) ?></strong>
+                                                            <span class="dre-pill<?= $is_ai ? ' dre-pill-ai' : '' ?>"><i class="bi <?= $is_ai ? 'bi-stars' : $lead_sources[$lead['source']]['icon'] ?>"></i> <?= $is_ai ? 'AI chat' : leads_e($lead_sources[$lead['source']]['label']) ?></span>
                                                         </div>
-
-                                                        <?php if ($row['source'] === "Offplan" || $row['source'] === "PDF Download"): ?>
-                                                            <ul class="mt-2" style="padding-left: 10px;">
-                                                                <li><b>Property Name:</b>
-                                                                    <?= htmlspecialchars($row['prop_name']) ?></li>
-                                                                <li><b>Location:</b>
-                                                                    <?= htmlspecialchars($row['prop_location']) ?></li>
-                                                                <li><b>Bedroom:</b>
-                                                                    <?= htmlspecialchars($row['prop_bedroom']) ?></li>
-                                                                <li><b>Developer:</b> <?= htmlspecialchars($row['developer']) ?>
-                                                                </li>
-                                                                <li><b>Channel:</b> <?= htmlspecialchars($row['channel']) ?>
-                                                                </li>
-                                                                <li><b>Leads Type:</b>
-                                                                    <?= htmlspecialchars($row['leads_nature']) ?></li>
-                                                            </ul>
-                                                        <?php elseif ($row['source'] === "Book Valuation"): ?>
-                                                            <ul class="mt-2" style="padding-left: 10px;">
-
-                                                                <?php if (!empty($row['prop_name'])): ?>
-                                                                    <li><b>Location :</b>
-                                                                        <?= htmlspecialchars($row['prop_name'], ENT_QUOTES, 'UTF-8') ?>
-                                                                    </li>
-                                                                <?php endif; ?>
-
-                                                                <?php if (!empty($row['prop_location'])): ?>
-                                                                    <li><b>App Date :</b>
-                                                                        <?= htmlspecialchars($row['prop_location'], ENT_QUOTES, 'UTF-8') ?>
-                                                                    </li>
-                                                                <?php endif; ?>
-
-                                                                <?php if (!empty($row['prop_bedroom'])): ?>
-                                                                    <li><b>App Time :</b>
-                                                                        <?= htmlspecialchars($row['prop_bedroom'], ENT_QUOTES, 'UTF-8') ?>
-                                                                    </li>
-                                                                <?php endif; ?>
-
-                                                                <?php if (!empty($row['developer'])): ?>
-                                                                    <li><b>Enq Type :</b>
-                                                                        <?= htmlspecialchars($row['developer'], ENT_QUOTES, 'UTF-8') ?>
-                                                                    </li>
-                                                                <?php endif; ?>
-
-                                                                <?php if (!empty($row['channel'])): ?>
-                                                                    <li><b>Bedroom :</b>
-                                                                        <?= htmlspecialchars($row['channel'], ENT_QUOTES, 'UTF-8') ?>
-                                                                    </li>
-                                                                <?php endif; ?>
-
-                                                                <?php if (!empty($row['leads_nature'])): ?>
-                                                                    <li><b>Area :</b>
-                                                                        <?= htmlspecialchars($row['leads_nature'], ENT_QUOTES, 'UTF-8') ?>
-                                                                    </li>
-                                                                <?php endif; ?>
-
-                                                            </ul>
+                                                    </div>
+                                                    <div class="dre-leads-contact" role="cell">
+                                                        <?php if ($phone !== ''): ?>
+                                                            <a href="tel:+<?= leads_e($digits) ?>" class="dre-leads-line"><i class="bi bi-telephone"></i> <?= leads_e($phone) ?></a>
                                                         <?php endif; ?>
-                                                    </td>
-                                                    <td><span class="badge badge-info"><?= $row['source'] ?></span></td>
-                                                    <td><?= date("M d, Y", strtotime($row['date'])) ?></td>
-                                                    <td>
-                                                        <button type="button" class="btn btn-sm btn-success pushToCRM"
-                                                            data-id="<?= $row['id']; ?>"
-                                                            data-source="<?= htmlspecialchars($row['source']); ?>"
-                                                            data-firstName="<?= $row['name'] ?>"
-                                                            data-email="<?= $row['email'] ?>"
-                                                            data-phoneNo="<?= $row['phone'] ?>"
-                                                            data-leadSource="Organic"
-                                                            data-developer="<?= htmlspecialchars($row['developer']) ?>"
-                                                            data-unitType="<?= htmlspecialchars($row['prop_bedroom']) ?>"
-                                                            data-campaignName="<?= htmlspecialchars($row['prop_name']) ?>"
-                                                            data-ipAddress="<?= htmlspecialchars($row['ip_address'] ?? '') ?>"
-                                                            data-subLocation="<?= htmlspecialchars($row['prop_location']) ?>"
-                                                            >
-                                                            Push CRM
-                                                        </button>
-                                                        <a href="<?= BASE_URL . "manage-leads.php?source=" . $selected_source . "&del=" . $row['id'] . "&source=" . urlencode($row['source']) ?>"
-                                                            class="btn btn-sm btn-danger"
-                                                            onclick="return confirm('Are you sure to delete this record?')">
-                                                            <i class="bi bi-trash3"></i>
-                                                        </a>
-                                                    </td>
-                                                </tr>
-                                            <?php } ?>
-                                        </tbody>
-                                        <tfoot>
-                                            <tr>
-                                                <th>ID</th>
-                                                <th>Name</th>
-                                                <th>Email</th>
-                                                <th>Phone</th>
-                                                <th>Message</th>
-                                                <th>Source</th>
-                                                <th>Date</th>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
+                                                        <?php if ($email !== ''): ?>
+                                                            <a href="mailto:<?= leads_e($email) ?>" class="dre-leads-line"><i class="bi bi-envelope"></i> <?= leads_e($email) ?></a>
+                                                        <?php endif; ?>
+                                                        <?php if ($phone === '' && $email === ''): ?>
+                                                            <span class="dre-leads-muted">No contact details</span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <div class="dre-leads-interest" role="cell">
+                                                        <?php if ($headline !== ''): ?>
+                                                            <strong><?= leads_e($headline) ?></strong>
+                                                        <?php endif; ?>
+                                                        <?php if ($extra): ?>
+                                                            <div class="dre-leads-tags">
+                                                                <?php foreach ($extra as $label => $value): ?>
+                                                                    <span title="<?= leads_e($label) ?>"><?= leads_e($label) ?>: <?= leads_e($value) ?></span>
+                                                                <?php endforeach; ?>
+                                                            </div>
+                                                        <?php endif; ?>
+                                                        <?php if ($message !== ''): ?>
+                                                            <?php if (mb_strlen($message) > 110): ?>
+                                                                <details class="dre-leads-message">
+                                                                    <summary><?= leads_e(mb_substr($message, 0, 110)) ?>&hellip; <em>more</em></summary>
+                                                                    <p><?= nl2br(leads_e($message)) ?></p>
+                                                                </details>
+                                                            <?php else: ?>
+                                                                <p class="dre-leads-message"><?= nl2br(leads_e($message)) ?></p>
+                                                            <?php endif; ?>
+                                                        <?php endif; ?>
+                                                        <?php if ($headline === '' && !$extra && $message === ''): ?>
+                                                            <span class="dre-leads-muted">&mdash;</span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <div class="dre-leads-date" role="cell">
+                                                        <strong><?= leads_e($day) ?></strong>
+                                                        <span><?= leads_e($clock) ?></span>
+                                                    </div>
+                                                    <div class="dre-leads-actions" role="cell">
+                                                        <?php if ($digits !== ''): ?>
+                                                            <a class="dre-icon-btn" href="tel:+<?= leads_e($digits) ?>" title="Call" aria-label="Call <?= leads_e($display_name) ?>"><i class="bi bi-telephone-fill"></i></a>
+                                                            <a class="dre-icon-btn dre-icon-wa" href="https://wa.me/<?= leads_e($digits) ?>" target="_blank" rel="noopener" title="WhatsApp" aria-label="WhatsApp <?= leads_e($display_name) ?>"><i class="bi bi-whatsapp"></i></a>
+                                                        <?php endif; ?>
+                                                        <?php if ($email !== ''): ?>
+                                                            <a class="dre-icon-btn" href="mailto:<?= leads_e($email) ?>" title="Email" aria-label="Email <?= leads_e($display_name) ?>"><i class="bi bi-envelope-fill"></i></a>
+                                                        <?php endif; ?>
+                                                        <form method="post" action="<?= leads_e(leads_url()) ?>" onsubmit="return confirm('Delete this lead? A copy is kept in the delete log.');">
+                                                            <input type="hidden" name="csrf" value="<?= leads_e($_SESSION['leads_csrf']) ?>">
+                                                            <input type="hidden" name="delete_id" value="<?= (int) $lead['id'] ?>">
+                                                            <input type="hidden" name="delete_source" value="<?= leads_e($lead['source']) ?>">
+                                                            <button type="submit" class="dre-icon-btn dre-icon-del" title="Delete" aria-label="Delete the lead from <?= leads_e($display_name) ?>"><i class="bi bi-trash3"></i></button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+
+                                        <?php if ($pages > 1): ?>
+                                            <nav class="dre-leads-pages" aria-label="Pages">
+                                                <?php if ($f_page > 1): ?>
+                                                    <a href="<?= leads_e(leads_url(['page' => $f_page - 1])) ?>" aria-label="Previous page"><i class="bi bi-chevron-left"></i></a>
+                                                <?php endif; ?>
+                                                <?php
+                                                $shown = [];
+                                                foreach ([1, 2, $f_page - 1, $f_page, $f_page + 1, $pages - 1, $pages] as $number) {
+                                                    if ($number >= 1 && $number <= $pages) {
+                                                        $shown[$number] = true;
+                                                    }
+                                                }
+                                                ksort($shown);
+                                                $previous = 0;
+                                                foreach (array_keys($shown) as $number):
+                                                    if ($number > $previous + 1): ?><span>&hellip;</span><?php endif; ?>
+                                                    <a href="<?= leads_e(leads_url(['page' => $number])) ?>" class="<?= $number === $f_page ? 'is-on' : '' ?>" <?= $number === $f_page ? 'aria-current="page"' : '' ?>><?= $number ?></a>
+                                                <?php $previous = $number;
+                                                endforeach; ?>
+                                                <?php if ($f_page < $pages): ?>
+                                                    <a href="<?= leads_e(leads_url(['page' => $f_page + 1])) ?>" aria-label="Next page"><i class="bi bi-chevron-right"></i></a>
+                                                <?php endif; ?>
+                                            </nav>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
                                 </div>
                             </div>
-                            <!--end::Card-->
+                            <!--end::Leads-->
 
                         </div>
                         <!--end::Container-->

@@ -277,6 +277,7 @@ $comm_detail=select_row('tbl_community',"comm_slug='$detail' and is_active='1'")
                                                         </div>
 
                                                         <div class="geodir-category-footer list-footer">
+                                                            <div class="d-flex">
                                                             <?php
                                                             $bedroom1 = '';
 
@@ -310,12 +311,12 @@ $comm_detail=select_row('tbl_community',"comm_slug='$detail' and is_active='1'")
                                                                 </div>';
                                                             }
                                                             ?>
-                                                            <div class="off-p-f2">
+                                                            <div class="off-p-f2 ms-2">
                                                                 <?php if (is_numeric($row["proj_price"]) && $row["proj_price"] != 0): ?>
                                                                     <div class="price-row" style="display: flex; align-items: flex-start; flex-direction: column; gap: 0; font-size:1em;">
                                                                         <div class="text-muted off-f-h">Starting Price: </div>
                                                                         <!-- Price Output -->
-                                                                        <div class="geodir-category-content_price text-muted      currency-price off-f-b ms-1" "
+                                                                        <div class="geodir-category-content_price text-muted      currency-price off-f-b " "
                                                             data-price=" <?= $row["proj_price"] ?>"
                                                                             data-original-currency="AED"
                                                                             data-original-price="<?= $row["proj_price"] ?>">
@@ -327,9 +328,10 @@ $comm_detail=select_row('tbl_community',"comm_slug='$detail' and is_active='1'")
                                                                 <?php else: ?>
                                                                     <div class="geodir-category-content_price text-muted " style="font-size:1em; flex-direction: column; align-items: flex-start;">
                                                                         <div class="text-muted off-f-h">Starting Price:</div>
-                                                                        <div class="off-f-b ms-1" ">Call Us</div>
+                                                                        <div class="off-f-b " ">Call Us</div>
                                                     </div>
                                                 <?php endif; ?>
+                                            </div>
                                             </div>
                                             <div class=" clearfix"></div>
                                                                         <?php
@@ -350,7 +352,7 @@ $comm_detail=select_row('tbl_community',"comm_slug='$detail' and is_active='1'")
 
                                                                                 <img src="<?= BASE_URL ?>images/wa-chat-logo-w.png"
                                                                                     alt="Whatsapp Icon" width="100%" title="Whatsapp">
-                                                                                WHATSAPP
+                                                                                <span class="d-none d-md-inline">WHATSAPP</span>
                                                                             </a>
                                                                         </div>
                                                                     </div>

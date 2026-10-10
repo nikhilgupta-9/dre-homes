@@ -1,0 +1,310 @@
+/* SEO check on the project forms (works like Yoast SEO), and its coloured dots elsewhere. */
+
+/* ---- The three colours ---- */
+.dre-seo,
+.dre-seo-lights,
+.dre-seo-pill {
+    --seo-good: #5bb030;
+    --seo-ok: #ee7c1b;
+    --seo-bad: #dc3232;
+    --seo-none: #a9a39b;
+}
+
+/* ---- The panel ---- */
+.dre-seo {
+    margin-top: 22px;
+    padding: 20px;
+    border: 1px solid rgba(95, 87, 76, 0.16);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.55);
+}
+.dre-seo-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+.dre-seo-head h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 4px;
+    color: var(--dd-ink);
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+.dre-seo-head p {
+    margin: 0;
+    max-width: 520px;
+    color: var(--dd-muted);
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+.dre-seo-scores {
+    display: flex;
+    gap: 8px;
+}
+.dre-seo-score {
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    column-gap: 9px;
+    padding: 8px 14px;
+    border-radius: 12px;
+    background: rgba(95, 87, 76, 0.07);
+}
+.dre-seo-score i {
+    grid-row: span 2;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--seo-none);
+    box-shadow: 0 0 0 4px rgba(169, 163, 155, 0.2);
+}
+.dre-seo-score b {
+    color: var(--dd-muted);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.dre-seo-score em {
+    color: var(--dd-ink);
+    font-size: 0.86rem;
+    font-style: normal;
+    font-weight: 700;
+}
+.dre-seo-score.is-good i { background: var(--seo-good); box-shadow: 0 0 0 4px rgba(91, 176, 48, 0.2); }
+.dre-seo-score.is-ok i { background: var(--seo-ok); box-shadow: 0 0 0 4px rgba(238, 124, 27, 0.2); }
+.dre-seo-score.is-bad i { background: var(--seo-bad); box-shadow: 0 0 0 4px rgba(220, 50, 50, 0.18); }
+.dre-seo .dre-seo-focus input {
+    font-weight: 600;
+}
+
+/* ---- Google preview ---- */
+.dre-seo-preview {
+    margin: 4px 0 18px;
+}
+.dre-seo-preview-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+    color: var(--dd-ink);
+    font-size: 0.84rem;
+}
+.dre-seo-preview-bar span {
+    display: inline-flex;
+    padding: 3px;
+    border-radius: 10px;
+    background: rgba(95, 87, 76, 0.1);
+}
+.dre-seo-preview-bar button {
+    padding: 4px 11px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--dd-muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.dre-seo-preview-bar button.is-on {
+    background: #fff;
+    color: var(--dd-ink);
+    box-shadow: 0 2px 6px rgba(60, 50, 40, 0.12);
+}
+.dre-seo-snippet {
+    padding: 16px 18px;
+    border: 1px solid #dadce0;
+    border-radius: 12px;
+    background: #fff;
+    font-family: Arial, sans-serif;
+    max-width: 640px;
+}
+.dre-seo-snippet.is-mobile {
+    max-width: 400px;
+}
+.dre-seo-snippet-site {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+.dre-seo-favicon {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #f1f3f4;
+    color: #5f574c;
+    font-size: 0.85rem;
+}
+.dre-seo-snippet-site b {
+    display: block;
+    color: #202124;
+    font-size: 0.86rem;
+    font-weight: 400;
+}
+.dre-seo-snippet-site small {
+    display: block;
+    color: #4d5156;
+    font-size: 0.74rem;
+    word-break: break-all;
+}
+.dre-seo-snippet-title {
+    color: #1a0dab;
+    font-size: 1.22rem;
+    line-height: 1.3;
+    margin-bottom: 4px;
+}
+.dre-seo-snippet-text {
+    color: #4d5156;
+    font-size: 0.86rem;
+    line-height: 1.55;
+}
+.dre-seo-snippet-text.is-empty {
+    color: #9aa0a6;
+    font-style: italic;
+}
+.dre-seo-snippet-text b {
+    color: #3c4043;
+}
+
+/* ---- The two lists ---- */
+.dre-seo-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid rgba(95, 87, 76, 0.16);
+}
+.dre-seo-tabs button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    background: transparent;
+    color: var(--dd-muted);
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+.dre-seo-tabs button.is-on {
+    border-bottom-color: var(--dd-accent);
+    color: var(--dd-ink);
+}
+.dre-seo-tabs i,
+.dre-seo-results li > i {
+    flex: none;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--seo-none);
+}
+.dre-seo i.is-good,
+.dre-seo-results li.is-good > i { background: var(--seo-good); }
+.dre-seo i.is-ok,
+.dre-seo-results li.is-ok > i { background: var(--seo-ok); }
+.dre-seo i.is-bad,
+.dre-seo-results li.is-bad > i { background: var(--seo-bad); }
+.dre-seo-results h4 {
+    margin: 16px 0 8px;
+    color: var(--dd-ink);
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.dre-seo-results ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 7px;
+}
+.dre-seo-results li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: var(--dd-ink);
+    font-size: 0.86rem;
+    line-height: 1.5;
+}
+.dre-seo-results li > i {
+    margin-top: 5px;
+}
+
+/* ---- The two lights in the save bar of the form ---- */
+.dre-seo-lights {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    margin-right: 12px;
+}
+.dre-seo-lights a {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 11px;
+    border-radius: 99px;
+    background: rgba(95, 87, 76, 0.08);
+    color: var(--dd-ink);
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+.dre-seo-lights a i {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--seo-none);
+}
+.dre-seo-lights a em {
+    color: var(--dd-muted);
+    font-style: normal;
+    font-weight: 500;
+}
+.dre-seo-lights a.is-good i { background: var(--seo-good); }
+.dre-seo-lights a.is-ok i { background: var(--seo-ok); }
+.dre-seo-lights a.is-bad i { background: var(--seo-bad); }
+
+/* ---- The dot in the project list ---- */
+.dre-seo-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 9px;
+    border-radius: 99px;
+    background: rgba(95, 87, 76, 0.08);
+    color: var(--dd-ink);
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.dre-seo-pill i {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--seo-none);
+}
+.dre-seo-pill.is-good i { background: var(--seo-good); }
+.dre-seo-pill.is-ok i { background: var(--seo-ok); }
+.dre-seo-pill.is-bad i { background: var(--seo-bad); }
+.dre-seo-pill.is-none {
+    color: var(--dd-muted);
+}
+@media (max-width: 900px) {
+    .dre-seo-lights a em {
+        display: none;
+    }
+}
+
+.dre-seo {
+    scroll-margin-top: 90px;
+}

@@ -88,7 +88,7 @@ $readytomoveinprop_content = select_row("tbl_readytomovein_content", "is_active=
 <!--warpper-->
 <div class="wrapper">
     <!--content-->
-    <div class="content">
+    <div class="content search-pgs">
         <!--section-->
         <div class="section hero-section hero-section_sin">
             <div class="hero-section-wrap">
@@ -354,12 +354,12 @@ $selectedMax = isset($_GET["price_max"]) ? $_GET["price_max"] : "";
             <!--</div>-->
 
             <?php
-            $prop_query = select_query("tbl_proj", "prj_type_id=2 and proj_markfeat=1 and is_active=1 order by prj_id desc");
-            $proj_count = mysqli_num_rows($prop_query);
+$prop_query = select_query("tbl_proj", "prj_type_id=2 and proj_markfeat=1 and is_active=1 order by prj_id desc");
+$proj_count = mysqli_num_rows($prop_query);
 
-            if ($proj_count > 0): ?>
+if ($proj_count > 0): ?>
 
-            <?php endif; ?>
+<?php endif; ?>
 
             <!--main-content-->
             <div class="main-content">
@@ -372,8 +372,8 @@ $selectedMax = isset($_GET["price_max"]) ? $_GET["price_max"] : "";
                             <div class="list-main-wrap-header box-list-header" style="margin-top: 0">
                                 <!-- list-main-wrap-title-->
                                 <div class="list-main-wrap-title">
-                                    <h2>Results For : <span><?= $searchRaw ?></span><strong><?= $count ?></strong></h2>
-                                </div>
+    <h2>Results : <span><?= $searchRaw ?></span><strong><?= $count ?></strong></h2>
+</div>
                                 <!-- list-main-wrap-title end-->
                             </div>
                             <!-- list-main-wrap-header end-->

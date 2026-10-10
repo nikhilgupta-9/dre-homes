@@ -4,529 +4,539 @@ include('includes/header.php');
 include('lock2.php');
 include('includes/Logger.php');
 
-$logger = new Logger($conn);
-
-$err[] = '';
-$id = base64_decode($_GET['edit']);
-if (isset($_POST['update_header_info'])) {
-
-	$header_logo = 'header_logo_' . rand(0, 10000) . '_' . $_FILES['header_logo']['name'];
-	$favicon_logo = 'favicon_logo_' . rand(0, 10000) . '_' . $_FILES['favicon_logo']['name'];
-	$greate_place_logo = 'greate_place_logo_' . rand(0, 10000) . '_' . $_FILES['greate_place_logo']['name'];
-	$header_logo_alt = prepStr($_POST['header_logo_alt']);
-	$header_contact_number = prepStr($_POST['header_contact_number']);
-	$header_email_id = prepStr($_POST['header_email_id']);
-	$header_fb_link = prepStr($_POST['header_fb_link']);
-	$header_twitter_link = prepStr($_POST['header_twitter_link']);
-	$header_linkedin_link = prepStr($_POST['header_linkedin_link']);
-	$header_youtube_link = prepStr($_POST['header_youtube_link']);
-	$header_spotify_link = prepStr($_POST['header_spotify_link']);
-	$header_instagram_link = prepStr($_POST['header_instagram_link']);
-	$is_active = (prepStr($_POST['is_active'] != '' ? 1 : 2));
-
-
-
-	$allowed_image_extension = array(
-		"png",
-		"jpg",
-		"jpeg",
-		"ico"
-	);
-
-	$comm_file_extension = pathinfo($_FILES["header_logo"]["name"], PATHINFO_EXTENSION);
-	$comm_file_extension2 = pathinfo($_FILES["favicon_logo"]["name"], PATHINFO_EXTENSION);
-	$comm_file_extension3 = pathinfo($_FILES["greate_place_logo"]["name"], PATHINFO_EXTENSION);
-
-
-	if (!in_array($comm_file_extension, $allowed_image_extension) && !empty($_FILES['header_logo']['name'])) {
-		$err[] = 'Invalid Logo Image. Only PNG,JPG and JPEG are allowed.';
-	}
-
-	if (!in_array($comm_file_extension2, $allowed_image_extension) && !empty($_FILES['favicon_logo']['name'])) {
-		$err[] = 'Invalid FavIcon Image. Only PNG,JPG,JPEG and ICO are allowed.';
-	}
-
-	if (!in_array($comm_file_extension3, $allowed_image_extension) && !empty($_FILES['greate_place_logo']['name'])) {
-		$err[] = 'Invalid Greate Place Work Image. Only PNG,JPG,JPEG and ICO are allowed.';
-	}
-
-
-
-	if (!empty($_FILES['header_logo']['name'])) {
-		$header_logo = 'header_logo_' . rand(0, 10000) . '_' . $_FILES['header_logo']['name'];
-	} else {
-		$header_logo = $_POST['header_logo_hidden'];
-	}
-
-	if (!empty($_FILES['favicon_logo']['name'])) {
-		$favicon_logo = 'favicon_logo_' . rand(0, 10000) . '_' . $_FILES['favicon_logo']['name'];
-	} else {
-		$favicon_logo = $_POST['favicon_logo_hidden'];
-	}
-
-	if (!empty($_FILES['greate_place_logo']['name'])) {
-		$greate_place_logo = 'greate_place_logo_' . rand(0, 10000) . '_' . $_FILES['greate_place_logo']['name'];
-	} else {
-		$greate_place_logo = $_POST['greate_place_logo_hidden'];
-	}
-
-	if (count($err) == 1) {
-
-		if (!empty($_FILES['header_logo']['name'])) {
-			move_uploaded_file($_FILES['header_logo']['tmp_name'], "assets/media/header/$header_logo");
-			unlink('assets/media/header/' . $_POST['header_logo_hidden']);
-		}
-
-
-		if (!empty($_FILES['favicon_logo']['name'])) {
-			move_uploaded_file($_FILES['favicon_logo']['tmp_name'], "assets/media/header/$favicon_logo");
-			unlink('assets/media/header/' . $_POST['favicon_logo_hidden']);
-		}
-
-		if (!empty($_FILES['greate_place_logo']['name'])) {
-			move_uploaded_file($_FILES['greate_place_logo']['tmp_name'], "assets/media/header/$greate_place_logo");
-			unlink('assets/media/header/' . $_POST['fgreate_place_logo_hidden']);
-		}
-
-		$old_data = $logger->getOldRecordData('tbl_header_info', $id);
-
-		$query = mysqli_query($conn, "update tbl_header_info
-	                    SET header_logo='$header_logo',
-	                        header_logo_alt='$header_logo_alt',
-	                        favicon_logo='$favicon_logo',
-	                        greate_place_logo='$greate_place_logo',
-							header_contact_number='$header_contact_number',
-							header_email_id='$header_email_id',
-							header_fb_link='$header_fb_link',
-							header_twitter_link='$header_twitter_link',
-							header_linkedin_link='$header_linkedin_link',
-							header_youtube_link='$header_youtube_link',
-							header_spotify_link='$header_spotify_link',
-							header_instagram_link='$header_instagram_link',
-	                        is_active='$is_active',
-	                        tstp='" . $date . "' where header_info_id=$id");
-		if ($query) {
-			// header('Location:' . BASE_URL . 'edit-header-info.php?edit=' . $_GET['edit'] . '');
-
-			$new_data = $logger->getOldRecordData('tbl_header_info', $id);
-
-			$logger->log(
-				'UPDATE',
-				'tbl_header_info',
-				$id,
-				$old_data,
-				$new_data,
-				'Header info updated!'
-			);
-
-			$_SESSION['header_info_success_msg'] = "Header Info updated successfully!";
-			header('Location: edit-header-info.php?edit=' . base64_encode($id));
-			exit;
-		} else {
-			// Pro Tip: Live platform par direct mysqli_error() user ko mat dikhao (Security Risk)
-			$_SESSION['header_info_error_msg'] = "<strong>Error!</strong> Something went wrong while updating the Header Info.<br><b>" . mysqli_error($conn) . "</b>";
-			header('Location: edit-header-info.php?edit=' . base64_encode($id));
-			exit;
-		}
-		if (!$query) {
-			die("MySQL Error: " . mysqli_error($conn));
-		}
-
-	}
-
+// Nothing below runs unless someone is signed in.
+if (empty($_SESSION['email_id'])) {
+  exit;
 }
 
-$details = mysqli_fetch_array(mysqli_query($conn, "select * from tbl_header_info where header_info_id=$id"));
+$logger = new Logger($conn);
+
+if (empty($_SESSION['admin_csrf'])) {
+  $_SESSION['admin_csrf'] = bin2hex(random_bytes(16));
+}
+
+function set_e($text)
+{
+  return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
+}
+
+// Runs a prepared query and returns its rows (or true for a write).
+function set_query($conn, $sql, array $params = [])
+{
+  try {
+    $stmt = mysqli_prepare($conn, $sql);
+    if (!$stmt) {
+      error_log('Settings query failed: ' . mysqli_error($conn));
+      return false;
+    }
+    if ($params) {
+      $types = '';
+      foreach ($params as $param) {
+        $types .= is_int($param) ? 'i' : 's';
+      }
+      mysqli_stmt_bind_param($stmt, $types, ...$params);
+    }
+    if (!mysqli_stmt_execute($stmt)) {
+      error_log('Settings query failed: ' . mysqli_stmt_error($stmt));
+      mysqli_stmt_close($stmt);
+      return false;
+    }
+    $result = mysqli_stmt_get_result($stmt);
+    mysqli_stmt_close($stmt);
+  } catch (mysqli_sql_exception $error) {
+    // This server reports database errors as exceptions.
+    error_log('Settings query failed: ' . $error->getMessage());
+    return false;
+  }
+  if ($result === false) {
+    return true;
+  }
+  $rows = [];
+  while ($row = mysqli_fetch_assoc($result)) {
+    $rows[] = $row;
+  }
+  return $rows;
+}
+
+// Picture types by what the file really contains: real type => extension it is stored with.
+const SET_IMAGE_TYPES = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
+const SET_ICON_TYPES = ['image/vnd.microsoft.icon' => 'ico', 'image/x-icon' => 'ico'];
+const SET_IMAGE_MAX = 5 * 1024 * 1024;
+
+// Checks one uploaded picture by extension and by its real content.
+// Returns [extension to store it with, error]; the extension is '' when no file was chosen.
+function set_check_upload($file, $label, $allow_icon = false)
+{
+  if (!is_array($file) || is_array($file['name']) || $file['error'] === UPLOAD_ERR_NO_FILE || (string) $file['name'] === '') {
+    return ['', ''];
+  }
+  if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE || $file['size'] > SET_IMAGE_MAX) {
+    return ['', "$label is too large (maximum 5 MB)."];
+  }
+  if ($file['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
+    return ['', "$label could not be uploaded. Please try again."];
+  }
+  $types = SET_IMAGE_TYPES + ($allow_icon ? SET_ICON_TYPES : []);
+  $extension = strtolower(pathinfo((string) $file['name'], PATHINFO_EXTENSION));
+  $finfo = new finfo(FILEINFO_MIME_TYPE);
+  $real = $finfo->file($file['tmp_name']);
+  if (!in_array($extension === 'jpeg' ? 'jpg' : $extension, $types, true) || !isset($types[$real])) {
+    return ['', "$label must be one of: " . strtoupper(implode(', ', array_unique(array_values($types)))) . '.'];
+  }
+  return [$types[$real], ''];
+}
+
+// The header and footer settings share one form layout. This copy edits one of them.
+// Fields: [form name, column, label, kind (text, email, tel, url, textarea), longest length, help, icon for links]
+// Pictures: [form name, column, label, .ico allowed, can be removed, help]
+$form = [
+  'title' => 'Header', 'blurb' => 'The logo, contact details and social links used across the website.',
+  'table' => 'tbl_header_info', 'id_column' => 'header_info_id', 'folder' => 'assets/media/header/',
+  'file' => 'edit-header-info.php', 'log' => 'Header information updated',
+  'off_note' => 'Off = the website loses its logo, contact details and social links. Keep it on.',
+  'sections' => [
+    ['Logos', 'bi-image', 'pictures' => [
+      ['header_logo', 'header_logo', 'Website logo', false, false, 'Shown at the top of every page.'],
+      ['favicon_logo', 'favicon_logo', 'Favicon', true, false, 'The small icon in the browser tab. A square PNG or ICO.'],
+      ['greate_place_logo', 'greate_place_logo', '"Great Place to Work" badge', false, true, 'Shown beside the logo. Remove it to hide the badge.'],
+    ], 'fields' => [
+      ['header_logo_alt', 'header_logo_alt', 'Logo description (alt text)', 'text', 255, 'Read out by screen readers.', ''],
+    ]],
+    ['Contact', 'bi-telephone', 'fields' => [
+      ['header_contact_number', 'header_contact_number', 'Phone number', 'tel', 255, 'With the country code, for example +971527543243.', ''],
+      ['header_email_id', 'header_email_id', 'Email', 'email', 255, '', ''],
+    ]],
+    ['Social links', 'bi-share', 'links' => true, 'fields' => [
+      ['header_fb_link', 'header_fb_link', 'Facebook', 'url', 255, '', 'fa-brands fa-facebook-f'],
+      ['header_instagram_link', 'header_instagram_link', 'Instagram', 'url', 255, '', 'fa-brands fa-instagram'],
+      ['header_linkedin_link', 'header_linkedin_link', 'LinkedIn', 'url', 255, '', 'fa-brands fa-linkedin-in'],
+      ['header_youtube_link', 'header_youtube_link', 'YouTube', 'url', 255, '', 'fa-brands fa-youtube'],
+      ['header_spotify_link', 'header_spotify_link', 'TikTok', 'url', 255, 'The website shows this link with the TikTok icon.', 'fa-brands fa-tiktok'],
+      ['header_twitter_link', 'header_twitter_link', 'X (Twitter)', 'url', 255, '', 'fa-brands fa-x-twitter'],
+    ]],
+  ],
+];
+
+$id = (int) base64_decode(is_string($_GET['edit'] ?? null) ? $_GET['edit'] : '', true);
+$details = $id > 0 ? (set_query($conn, "SELECT * FROM {$form['table']} WHERE {$form['id_column']} = ?", [$id]) ?: []) : [];
+$details = $details ? $details[0] : null;
+
+// Every field and picture of the form, in one list each.
+$fields = [];
+$pictures = [];
+foreach ($form['sections'] as $section) {
+  foreach ($section['fields'] ?? [] as $field) {
+    $fields[$field[0]] = $field;
+  }
+  foreach ($section['pictures'] ?? [] as $picture) {
+    $pictures[$picture[0]] = $picture;
+  }
+}
+
+$errors = [];
+$old = ['is_active' => $details && $details['is_active'] === '1' ? '1' : ''];
+foreach ($fields as $name => $field) {
+  $old[$name] = $details ? (string) $details[$field[1]] : '';
+}
+
+if ($details && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['save_info'])) {
+  foreach ($fields as $name => $field) {
+    $value = isset($_POST[$name]) && is_string($_POST[$name]) ? trim($_POST[$name]) : '';
+    $old[$name] = $field[4] > 0 ? mb_substr($value, 0, $field[4]) : $value;
+  }
+  $old['is_active'] = isset($_POST['is_active']) ? '1' : '';
+
+  if (!is_string($_POST['csrf'] ?? null) || !hash_equals($_SESSION['admin_csrf'], $_POST['csrf'])) {
+    $errors[] = 'The form expired. Please check your entries and save again.';
+  }
+  foreach ($fields as $name => $field) {
+    if ($old[$name] === '') {
+      continue;
+    }
+    if ($field[3] === 'email' && !filter_var($old[$name], FILTER_VALIDATE_EMAIL)) {
+      $errors[] = $field[2] . ': this does not look like an email address.';
+    } elseif ($field[3] === 'url' && (!filter_var($old[$name], FILTER_VALIDATE_URL) || !preg_match('~^https?://~i', $old[$name]))) {
+      $errors[] = $field[2] . ': a link has to start with https://';
+    } elseif ($field[3] === 'tel' && !preg_match('/^[0-9+() .\-]{3,}$/', $old[$name])) {
+      $errors[] = $field[2] . ': use digits, spaces and + only.';
+    }
+  }
+
+  // A picture keeps its saved file unless a new one is chosen or it is removed.
+  $to_move = [];      // [temporary file, final path]
+  $replaced = [];     // saved files that are replaced or removed
+  $stored = [];       // column => file name
+  foreach ($pictures as $name => $picture) {
+    $saved = (string) $details[$picture[1]];
+    $stored[$picture[1]] = $saved;
+    list($extension, $error) = set_check_upload($_FILES[$name] ?? null, $picture[2], $picture[3]);
+    if ($error !== '') {
+      $errors[] = $error;
+    } elseif ($extension !== '') {
+      if (trim($saved) !== '') {
+        $replaced[] = $form['folder'] . basename($saved);
+      }
+      $stored[$picture[1]] = $picture[1] . '_' . bin2hex(random_bytes(6)) . '.' . $extension;
+      $to_move[] = [$_FILES[$name]['tmp_name'], $form['folder'] . $stored[$picture[1]]];
+    } elseif ($picture[4] && isset($_POST['remove_' . $name]) && trim($saved) !== '') {
+      $replaced[] = $form['folder'] . basename($saved);
+      $stored[$picture[1]] = '';
+    }
+  }
+
+  if (!$errors) {
+    foreach ($to_move as $move) {
+      if (!is_dir(dirname($move[1]))) {
+        mkdir(dirname($move[1]), 0755, true);
+      }
+      if (!move_uploaded_file($move[0], $move[1])) {
+        $errors[] = 'A picture could not be stored on the server. Nothing was saved.';
+        break;
+      }
+    }
+  }
+
+  if (!$errors) {
+    $data = $stored;
+    foreach ($fields as $name => $field) {
+      $data[$field[1]] = $old[$name];
+    }
+    $data['is_active'] = $old['is_active'] === '1' ? '1' : '2';
+    $assignments = [];
+    foreach (array_keys($data) as $column) {
+      $assignments[] = "$column = ?";
+    }
+    $old_data = $logger->getOldRecordData($form['table'], $id);
+    $saved = set_query($conn, "UPDATE {$form['table']} SET " . implode(', ', $assignments) . ", tstp = NOW() WHERE {$form['id_column']} = ?", array_merge(array_values($data), [$id]));
+    if (!$saved) {
+      foreach ($to_move as $move) {
+        if (is_file($move[1])) {
+          @unlink($move[1]);
+        }
+      }
+      $errors[] = 'The changes could not be saved. Please try again.';
+    } else {
+      foreach ($replaced as $path) {
+        if (is_file($path)) {
+          @unlink($path);
+        }
+      }
+      $logger->log('UPDATE', $form['table'], $id, $old_data, $logger->getOldRecordData($form['table'], $id), $form['log']);
+      header('Location: ' . BASE_URL . $form['file'] . '?edit=' . base64_encode($id) . '&saved=1');
+      exit;
+    }
+  }
+}
+
+$just_saved = $details && isset($_GET['saved']) && !$errors;
 ?>
 <!--begin::Body-->
 
 <body id="kt_body"
-	class="header-fixed header-mobile-fixed subheader-enabled subheader-fixed aside-enabled aside-fixed aside-minimize-hoverable page-loading">
-	<!--begin::Main-->
-	<!--begin::Header Mobile-->
-	<?php include('includes/topbar-mobile.php'); ?>
-	<!--end::Header Mobile-->
+  class="header-fixed header-mobile-fixed subheader-enabled subheader-fixed aside-enabled aside-fixed aside-minimize-hoverable page-loading">
+  <!--begin::Main-->
+  <!--begin::Header Mobile-->
+  <div id="kt_header_mobile" class="header-mobile align-items-center header-mobile-fixed">
+    <!--begin::Logo-->
+    <a href="index.html">
+      <img alt="Logo" src="<?= BASE_URL ?>assets/media/logos/logo-light.png" />
+    </a>
+    <!--end::Logo-->
+    <!--begin::Toolbar-->
+    <div class="d-flex align-items-center">
+      <!--begin::Aside Mobile Toggle-->
+      <button class="btn p-0 burger-icon burger-icon-left" id="kt_aside_mobile_toggle">
+        <span></span>
+      </button>
+      <!--end::Aside Mobile Toggle-->
+      <!--begin::Header Menu Mobile Toggle-->
+      <button class="btn p-0 burger-icon ml-4" id="kt_header_mobile_toggle">
+        <span></span>
+      </button>
+      <!--end::Header Menu Mobile Toggle-->
+      <!--begin::Topbar Mobile Toggle-->
+      <button class="btn btn-hover-text-primary p-0 ml-2" id="kt_header_mobile_topbar_toggle">
+        <span class="svg-icon svg-icon-xl">
+          <!--begin::Svg Icon | path:<?= BASE_URL ?>assets/media/svg/icons/General/User.svg-->
+          <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px"
+            viewBox="0 0 24 24" version="1.1">
+            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+              <polygon points="0 0 24 0 24 24 0 24" />
+              <path
+                d="M12,11 C9.790861,11 8,9.209139 8,7 C8,4.790861 9.790861,3 12,3 C14.209139,3 16,4.790861 16,7 C16,9.209139 14.209139,11 12,11 Z"
+                fill="#000000" fill-rule="nonzero" opacity="0.3" />
+              <path
+                d="M3.00065168,20.1992055 C3.38825852,15.4265159 7.26191235,13 11.9833413,13 C16.7712164,13 20.7048837,15.2931929 20.9979143,20.2 C21.0095879,20.3954741 20.9979143,21 20.2466999,21 C16.541124,21 11.0347247,21 3.72750223,21 C3.47671215,21 2.97953825,20.45918 3.00065168,20.1992055 Z"
+                fill="#000000" fill-rule="nonzero" />
+            </g>
+          </svg>
+          <!--end::Svg Icon-->
+        </span>
+      </button>
+      <!--end::Topbar Mobile Toggle-->
+    </div>
+    <!--end::Toolbar-->
+  </div>
+  <!--end::Header Mobile-->
+  <div class="d-flex flex-column flex-root">
+    <!--begin::Page-->
+    <div class="d-flex flex-row flex-column-fluid page">
+      <!--begin::Aside-->
+      <?php include('includes/sidebar.php'); ?>
+      <!--end::Aside-->
+      <!--begin::Wrapper-->
+      <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+        <!--begin::Header-->
+        <div id="kt_header" class="header header-fixed">
+          <!--begin::Container-->
+          <div class="container-fluid d-flex align-items-stretch justify-content-between">
+            <!--begin::Header Menu Wrapper-->
+            <div class="header-menu-wrapper header-menu-wrapper-left" id="kt_header_menu_wrapper">
+              <!--begin::Header Menu-->
+              <div id="kt_header_menu" class="header-menu header-menu-mobile header-menu-layout-default">
 
+              </div>
+              <!--end::Header Menu-->
+            </div>
+            <!--end::Header Menu Wrapper-->
+            <!--begin::Topbar-->
+            <div class="topbar">
 
-	<div class="d-flex flex-column flex-root">
-		<!--begin::Page-->
-		<div class="d-flex flex-row flex-column-fluid page">
-			<!--begin::Aside-->
-			<?php include('includes/sidebar.php'); ?>
-			<!--end::Aside-->
-			<!--begin::Wrapper-->
-			<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
-				<!--begin::Header-->
-				<?php include('includes/topbar-desktop.php'); ?>
-				<!--end::Header-->
+              <!--begin::User-->
+              <div class="topbar-item">
+                <div class="btn btn-icon btn-icon-mobile w-auto btn-clean d-flex align-items-center btn-lg px-2"
+                  id="kt_quick_user_toggle">
+                  <span class="text-muted font-weight-bold font-size-base d-none d-md-inline mr-1">Hi,</span>
+                  <span
+                    class="text-dark-50 font-weight-bolder font-size-base d-none d-md-inline mr-3"><?= $_SESSION['username'] ?></span>
+                  <span class="symbol symbol-lg-35 symbol-25 symbol-light-success">
+                    <span
+                      class="symbol-label font-size-h5 font-weight-bold"><?= substr($_SESSION['username'], 0, 1) ?></span>
+                  </span>
+                </div>
+              </div>
+              <!--end::User-->
+            </div>
+            <!--end::Topbar-->
+          </div>
+          <!--end::Container-->
+        </div>
+        <!--end::Header-->
+        <!--begin::Content-->
+        <div class="content d-flex flex-column flex-column-fluid dre-dash-content" id="kt_content">
 
-				<div class="container-fluid mt-4">
+          <!--begin::Entry-->
+          <div class="d-flex flex-column-fluid">
+            <!--begin::Container-->
+            <div class="container">
+              <!--begin::Settings form-->
+              <link href="<?= BASE_URL ?>assets/css/dre-dashboard.css?v=1" rel="stylesheet" type="text/css" />
+              <link href="<?= BASE_URL ?>assets/css/dre-form.css?v=1" rel="stylesheet" type="text/css" />
+              <link href="<?= BASE_URL ?>assets/css/dre-settings.css?v=1" rel="stylesheet" type="text/css" />
 
-					<?php if (isset($_SESSION['header_info_success_msg'])): ?>
-						<div class="alert alert-success alert-dismissible fade show shadow-sm border-0 mb-4" role="alert"
-							style="border-left: 4px solid #28a745 !important;">
-							<div class="d-flex align-items-center">
-								<span class="alert-icon mr-3" style="font-size: 1.2 rem;"> <b>Header Info ✔</b> </span>
-								<div>
-									<?php
-									echo $_SESSION['header_info_success_msg'];
-									unset($_SESSION['header_info_success_msg']);
-									?>
-								</div>
-							</div>
-							<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-								<span aria-hidden="true">&times;</span>
-							</button>
-						</div>
-					<?php endif; ?>
+              <div class="dre-dash dre-form-page dre-settings-form">
 
-					<?php if (isset($_SESSION['header_info_error_msg'])): ?>
-						<div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 mb-4" role="alert"
-							style="border-left: 4px solid #dc3545 !important;">
-							<div class="d-flex align-items-center">
-								<span class="alert-icon mr-3" style="font-size: 1.5rem;"> ⚠ </span>
-								<div>
-									<?php
-									echo $_SESSION['header_info_error_msg'];
-									unset($_SESSION['header_info_error_msg']);
-									?>
-								</div>
-							</div>
-							<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-								<span aria-hidden="true">&times;</span>
-							</button>
-						</div>
-					<?php endif; ?>
-				</div>
+                <div class="dre-glass dre-glass-dark dre-hero">
+                  <div>
+                    <h1><?= set_e($form['title']) ?> information</h1>
+                    <p><?= set_e($form['blurb']) ?></p>
+                  </div>
+                  <div class="dre-actions">
+                    <a href="<?= set_e(BASE_URL_HOME) ?>" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> View the website</a>
+                  </div>
+                </div>
 
-				<!--begin::Content-->
-				<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+                <?php if (!$details): ?>
+                  <div class="dre-form-alert dre-form-bad" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <div><strong>These settings could not be found.</strong> Open them from the menu: Settings, then Header &amp; Footer.</div>
+                  </div>
+                <?php elseif ($just_saved): ?>
+                  <div class="dre-form-alert dre-form-ok" role="status" id="setSaved">
+                    <i class="bi bi-check-circle"></i>
+                    <div><strong>The changes were saved.</strong> They show on every page of the website straight away.</div>
+                  </div>
+                <?php endif; ?>
 
-					<!--begin::Entry-->
-					<div class="d-flex flex-column-fluid">
-						<!--begin::Container-->
-						<div class="container">
+                <?php if ($errors): ?>
+                  <div class="dre-form-alert dre-form-bad" role="alert" id="setErrors" tabindex="-1">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <div>
+                      <strong>Not saved. Please fix <?= count($errors) === 1 ? 'this' : 'these ' . count($errors) . ' things' ?>:</strong>
+                      <ul>
+                        <?php foreach ($errors as $error): ?>
+                          <li><?= set_e($error) ?></li>
+                        <?php endforeach; ?>
+                      </ul>
+                      <em>Pictures have to be chosen again: a browser does not keep them after an error.</em>
+                    </div>
+                  </div>
+                <?php endif; ?>
 
-							<!--begin::Card-->
-							<div class="card card-custom gutter-b shadow-sm">
-								<div class="card-header flex-wrap py-3 bg-light">
-									<div class="card-title">
-										<h3 class="card-label font-weight-bold text-dark">
-											<i class="fas fa-header mr-2 text-primary"></i>Header Information
-										</h3>
-									</div>
-									<div class="card-toolbar">
-										<span class="badge badge-pill badge-primary py-2 px-3">required *</span>
-									</div>
-								</div>
+                <?php if ($details): ?>
+                <form action="<?= BASE_URL . $form['file'] ?>?edit=<?= base64_encode($id) ?>" enctype="multipart/form-data" method="post" id="settings-form" class="dre-form">
+                  <input type="hidden" name="csrf" value="<?= set_e($_SESSION['admin_csrf']) ?>">
+                  <input type="hidden" name="save_info" value="1">
 
-								<div class="card-body">
+                  <?php foreach ($form['sections'] as $section): ?>
+                    <section class="dre-glass dre-form-section">
+                      <h2><i class="bi <?= set_e($section[1]) ?>"></i> <?= set_e($section[0]) ?></h2>
 
-									<!-- Error display (if any) -->
-									<?php if (isset($err) && count($err) > 1) { ?>
-										<div class="alert alert-danger alert-dismissible fade show" role="alert">
-											<strong><i class="fas fa-exclamation-circle mr-2"></i>Please fix the following
-												errors:</strong>
-											<ul class="mb-0 mt-2 pl-3">
-												<?php foreach ($err as $list_err) { ?>
-													<li><?= $list_err ?></li>
-												<?php } ?>
-											</ul>
-											<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-												<span aria-hidden="true">&times;</span>
-											</button>
-										</div>
-									<?php } ?>
+                      <?php if (!empty($section['pictures'])): ?>
+                        <div class="dre-form-grid dre-cols-<?= count($section['pictures']) >= 3 ? 3 : 2 ?>">
+                          <?php foreach ($section['pictures'] as $picture):
+                            $saved_name = trim((string) $details[$picture[1]]);
+                            $accept = 'image/jpeg,image/png,image/webp,image/gif' . ($picture[3] ? ',image/x-icon,image/vnd.microsoft.icon,.ico' : '');
+                          ?>
+                            <div class="dre-field">
+                              <label for="set_<?= set_e($picture[0]) ?>"><span><?= set_e($picture[2]) ?></span></label>
+                              <input type="file" name="<?= set_e($picture[0]) ?>" id="set_<?= set_e($picture[0]) ?>" accept="<?= $accept ?>" class="dre-set-picture" data-icon="<?= $picture[3] ? '1' : '' ?>">
+                              <small><?= set_e($picture[5]) ?> <?= $picture[3] ? 'PNG, JPG, WEBP, GIF or ICO' : 'PNG, JPG, WEBP or GIF' ?>, up to 5 MB.</small>
+                              <div class="dre-current"<?= $saved_name === '' ? ' hidden' : '' ?>>
+                                <img src="<?= $saved_name !== '' ? BASE_URL . $form['folder'] . set_e(rawurlencode($saved_name)) : '' ?>" alt="" data-saved="<?= $saved_name !== '' ? BASE_URL . $form['folder'] . set_e(rawurlencode($saved_name)) : '' ?>">
+                                <span><?= $saved_name !== '' ? 'Current picture.' : '' ?></span>
+                                <?php if ($picture[4] && $saved_name !== ''): ?>
+                                  <label><input type="checkbox" name="remove_<?= set_e($picture[0]) ?>" value="1"> Remove it</label>
+                                <?php endif; ?>
+                              </div>
+                            </div>
+                          <?php endforeach; ?>
+                        </div>
+                      <?php endif; ?>
 
-									<!--begin::Form-->
-									<form action="" enctype="multipart/form-data" method="post"
-										id="edit-community-content">
+                      <?php if (!empty($section['links'])): ?>
+                        <p class="dre-form-note">Paste the full address of each profile. Leave a field empty when there is no profile.</p>
+                      <?php endif; ?>
+                      <?php
+                      $short = array_values(array_filter($section['fields'] ?? [], function ($field) { return $field[3] !== 'textarea'; }));
+                      $long = array_values(array_filter($section['fields'] ?? [], function ($field) { return $field[3] === 'textarea'; }));
+                      ?>
+                      <?php if ($short): ?>
+                        <div class="dre-form-grid dre-cols-<?= count($short) === 1 ? 1 : 2 ?>">
+                          <?php foreach ($short as $field): ?>
+                            <label class="dre-field">
+                              <span><?= set_e($field[2]) ?></span>
+                              <?php if ($field[6] !== ''): ?><span class="dre-link-row"><i class="<?= set_e($field[6]) ?>" aria-hidden="true"></i><?php endif; ?>
+                              <input type="<?= $field[3] === 'email' ? 'email' : 'text' ?>" name="<?= set_e($field[0]) ?>" value="<?= set_e($old[$field[0]]) ?>" maxlength="<?= (int) $field[4] ?>" autocomplete="off"<?= $field[3] === 'url' ? ' inputmode="url" placeholder="https://" class="dre-set-url"' : ($field[3] === 'tel' ? ' inputmode="tel"' : '') ?>>
+                              <?php if ($field[6] !== ''): ?></span><?php endif; ?>
+                              <?php if ($field[5] !== ''): ?><small><?= set_e($field[5]) ?></small><?php endif; ?>
+                            </label>
+                          <?php endforeach; ?>
+                        </div>
+                      <?php endif; ?>
+                      <?php foreach ($long as $field): ?>
+                        <label class="dre-field">
+                          <span><?= set_e($field[2]) ?></span>
+                          <textarea name="<?= set_e($field[0]) ?>" rows="4"><?= set_e($old[$field[0]]) ?></textarea>
+                          <?php if ($field[5] !== ''): ?><small><?= set_e($field[5]) ?></small><?php endif; ?>
+                        </label>
+                      <?php endforeach; ?>
+                    </section>
+                  <?php endforeach; ?>
 
-										<!-- ===== SECTION: LOGO & FAVICON ===== -->
-										<div class="bg-light p-4 rounded mb-4">
-											<h6 class="font-weight-bold text-primary mb-3"><i
-													class="fas fa-image mr-2"></i>Logo & Favicon</h6>
-											<div class="form-row">
-												<div class="form-group col-md-4">
-													<label for="header_logo" class="font-weight-bold">Logo <span
-															class="text-danger">*</span></label>
-													<div class="custom-file">
-														<input type="file" class="custom-file-input" id="header_logo"
-															name="header_logo">
-														<label class="custom-file-label" for="header_logo">Choose
-															file</label>
-													</div>
-													<?php if (!empty($details['header_logo'])) { ?>
-														<div class=" mt-3 d-flex align-items-center">
-															<img src="<?= BASE_URL ?>assets/media/header/<?= $details['header_logo'] ?>"
-																width="100" class="img-thumbnail border"
-																style="background:#D6BDAB;" alt="Logo">
-															<span class="ml-2 text-muted small">current</span>
-														</div>
-													<?php } ?>
-													<input type="hidden" name="header_logo_hidden"
-														value="<?= $details['header_logo'] ?>">
-												</div>
+                  <section class="dre-glass dre-form-section">
+                    <h2><i class="bi bi-send"></i> Publishing</h2>
+                    <label class="dre-toggle">
+                      <input type="checkbox" name="is_active" value="1" id="setActive" <?= $old['is_active'] === '1' ? 'checked' : '' ?>>
+                      <i></i>
+                      <span><strong>Use these settings on the website</strong><small><?= set_e($form['off_note']) ?></small></span>
+                    </label>
+                  </section>
 
-												<div class="form-group col-md-4">
-													<label for="favicon_logo" class="font-weight-bold">Favicon <span
-															class="text-danger">*</span></label>
-													<div class="custom-file">
-														<input type="file" class="custom-file-input" id="favicon_logo"
-															name="favicon_logo">
-														<label class="custom-file-label" for="favicon_logo">Choose
-															file</label>
-													</div>
-													<?php if (!empty($details['favicon_logo'])) { ?>
-														<div class="mt-3 d-flex align-items-center">
-															<img src="<?= BASE_URL ?>assets/media/header/<?= $details['favicon_logo'] ?>"
-																width="70" class="img-thumbnail border p-1" alt="Favicon">
-															<span class="ml-2 text-muted small">current</span>
-														</div>
-													<?php } ?>
-													<input type="hidden" name="favicon_logo_hidden"
-														value="<?= $details['favicon_logo'] ?>">
-												</div>
+                  <div class="dre-form-bar">
+                    <div class="dre-form-progress"><div id="setState">No unsaved changes</div></div>
+                    <div class="dre-form-bar-buttons">
+                      <button type="submit" class="dre-btn dre-btn-main"><i class="bi bi-check2"></i> Save changes</button>
+                    </div>
+                  </div>
+                </form>
+                <?php endif; ?>
+              </div>
+              <!--end::Settings form-->
 
-												<div class="form-group col-md-4">
-													<label for="greate_place_logo" class="font-weight-bold">Great Place
-														For Work Logo</label>
-													<div class="custom-file">
-														<input type="file" class="custom-file-input"
-															id="greate_place_logo" name="greate_place_logo">
-														<label class="custom-file-label" for="greate_place_logo">Choose
-															file</label>
-													</div>
+            </div>
+            <!--end::Container-->
+          </div>
+          <!--end::Entry-->
+        </div>
+        <!--end::Content-->
 
-													<?php if (!empty($details['greate_place_logo'])) { ?>
-														<div class="mt-3 d-flex align-items-center justify-content-between"
-															id="greate_place_logo_container">
-															<div class="d-flex align-items-center">
-																<img src="<?= BASE_URL ?>assets/media/header/<?= $details['greate_place_logo'] ?>"
-																	width="70" class="img-thumbnail border p-1"
-																	alt="Great Place Work Logo">
-																<span class="ml-2 text-muted small">current</span>
-															</div>
-															<button type="button" class="btn btn-danger btn-sm ml-2"
-																onclick="removeImageAjax('greate_place_logo', <?= $details['header_info_id'] ?>, <?= $id ?>)">
-																<i class="fas fa-trash-alt"></i> Remove
-															</button>
-														</div>
-													<?php } ?>
+        <?php
+        include('includes/footer-inner.php');
+        ?>
 
-													<input type="hidden" name="greate_place_logo_hidden"
-														value="<?= $details['greate_place_logo'] ?>">
-													<input type="hidden" name="remove_greate_place_logo"
-														id="remove_greate_place_logo" value="0">
+        <script>
+          // Settings form: previews of picked pictures, quick checks of links, and a warning before leaving unsaved changes.
+          (function () {
+            var form = document.getElementById('settings-form');
+            if (!form) {
+              return;
+            }
+            var dirty = false;
+            var state = document.getElementById('setState');
+            function changed() {
+              dirty = true;
+              state.textContent = 'Unsaved changes';
+              state.classList.add('dre-warn-text');
+            }
+            form.addEventListener('input', function (event) {
+              var input = event.target;
+              if (input.classList.contains('dre-set-url')) {
+                // A link that does not start with http is marked straight away.
+                input.classList.toggle('dre-invalid', input.value.trim() !== '' && !/^https?:\/\/\S+$/i.test(input.value.trim()));
+              } else {
+                input.classList.remove('dre-invalid');
+              }
+              changed();
+            });
+            form.addEventListener('change', changed);
 
-													
-												</div>
-											</div>
-										</div>
+            form.querySelectorAll('.dre-set-picture').forEach(function (input) {
+              var box = input.parentNode.querySelector('.dre-current');
+              var img = box.querySelector('img');
+              var note = box.querySelector('span');
+              var savedNote = note.textContent;
+              input.addEventListener('change', function () {
+                var file = input.files[0];
+                var types = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].concat(input.getAttribute('data-icon') ? ['image/x-icon', 'image/vnd.microsoft.icon'] : []);
+                var bad = '';
+                if (file && types.indexOf(file.type) === -1) {
+                  bad = '"' + file.name + '" is not a picture this field accepts.';
+                } else if (file && file.size > 5 * 1024 * 1024) {
+                  bad = '"' + file.name + '" is larger than 5 MB.';
+                }
+                input.setCustomValidity(bad);
+                input.classList.toggle('dre-invalid', bad !== '');
+                if (bad !== '') { input.reportValidity(); }
+                if (file && bad === '') {
+                  img.src = URL.createObjectURL(file);
+                  note.textContent = 'New picture, not saved yet.';
+                  box.hidden = false;
+                } else {
+                  img.src = img.getAttribute('data-saved');
+                  note.textContent = savedNote;
+                  box.hidden = img.getAttribute('data-saved') === '';
+                }
+              });
+            });
 
-										<!-- ===== SECTION: ALT TAG & CONTACT ===== -->
-										<div class="p-4 rounded mb-4">
-											<h6 class="font-weight-bold text-primary mb-3"><i
-													class="fas fa-address-card mr-2"></i>Brand & Contact</h6>
-											<div class="form-row">
-												<div class="form-group col-md-6">
-													<label for="header_logo_alt" class="font-weight-bold">Logo Alt
-														Tag</label>
-													<input type="text" id="header_logo_alt" name="header_logo_alt"
-														value="<?= $details['header_logo_alt'] ?>" class="form-control"
-														placeholder="e.g. Company Brand Name">
-												</div>
-
-												<div class="form-group col-md-6">
-													<label for="header_contact_number" class="font-weight-bold">Contact
-														Number</label>
-													<div class="input-group">
-														<div class="input-group-prepend">
-															<span class="input-group-text"><i
-																	class="fas fa-phone-alt"></i></span>
-														</div>
-														<input type="text" id="header_contact_number"
-															name="header_contact_number"
-															value="<?= $details['header_contact_number'] ?>"
-															class="form-control" placeholder="+1 234 567 890">
-													</div>
-												</div>
-											</div>
-
-											<div class="form-row">
-												<div class="form-group col-md-6">
-													<label for="header_email_id" class="font-weight-bold">Email
-														ID</label>
-													<div class="input-group">
-														<div class="input-group-prepend">
-															<span class="input-group-text"><i
-																	class="fas fa-envelope"></i></span>
-														</div>
-														<input type="text" id="header_email_id" name="header_email_id"
-															value="<?= $details['header_email_id'] ?>"
-															class="form-control" placeholder="info@domain.com">
-													</div>
-												</div>
-
-												<div class="form-group col-md-6">
-													<label for="header_fb_link" class="font-weight-bold">Facebook
-														Link</label>
-													<div class="input-group">
-														<div class="input-group-prepend">
-															<span class="input-group-text text-primary"><i
-																	class="fab fa-facebook-f"></i></span>
-														</div>
-														<input type="text" id="header_fb_link" name="header_fb_link"
-															value="<?= $details['header_fb_link'] ?>"
-															class="form-control" placeholder="https://facebook.com/...">
-													</div>
-												</div>
-											</div>
-										</div>
-
-										<!-- ===== SECTION: SOCIAL MEDIA ===== -->
-										<div class="p-4 rounded mb-4">
-											<h6 class="font-weight-bold text-primary mb-3"><i
-													class="fas fa-share-alt mr-2"></i>Social Media Links</h6>
-											<div class="form-row">
-												<div class="form-group col-md-6">
-													<label for="header_twitter_link" class="font-weight-bold">Twitter
-														Link</label>
-													<div class="input-group">
-														<div class="input-group-prepend">
-															<span class="input-group-text text-info"><i
-																	class="fab fa-twitter"></i></span>
-														</div>
-														<input type="text" id="header_twitter_link"
-															name="header_twitter_link"
-															value="<?= $details['header_twitter_link'] ?>"
-															class="form-control" placeholder="https://twitter.com/...">
-													</div>
-												</div>
-
-												<div class="form-group col-md-6">
-													<label for="header_linkedin_link" class="font-weight-bold">LinkedIn
-														Link</label>
-													<div class="input-group">
-														<div class="input-group-prepend">
-															<span class="input-group-text text-primary"><i
-																	class="fab fa-linkedin-in"></i></span>
-														</div>
-														<input type="text" id="header_linkedin_link"
-															name="header_linkedin_link"
-															value="<?= $details['header_linkedin_link'] ?>"
-															class="form-control" placeholder="https://linkedin.com/...">
-													</div>
-												</div>
-											</div>
-
-											<div class="form-row">
-												<div class="form-group col-md-6">
-													<label for="header_youtube_link" class="font-weight-bold">YouTube
-														Link</label>
-													<div class="input-group">
-														<div class="input-group-prepend">
-															<span class="input-group-text text-danger"><i
-																	class="fab fa-youtube"></i></span>
-														</div>
-														<input type="text" id="header_youtube_link"
-															name="header_youtube_link"
-															value="<?= $details['header_youtube_link'] ?>"
-															class="form-control" placeholder="https://youtube.com/...">
-													</div>
-												</div>
-
-												<div class="form-group col-md-6">
-													<label for="header_spotify_link" class="font-weight-bold">Spotify
-														Link</label>
-													<div class="input-group">
-														<div class="input-group-prepend">
-															<span class="input-group-text text-success"><i
-																	class="fab fa-spotify"></i></span>
-														</div>
-														<input type="text" id="header_spotify_link"
-															name="header_spotify_link"
-															value="<?= $details['header_spotify_link'] ?>"
-															class="form-control" placeholder="https://spotify.com/...">
-													</div>
-												</div>
-											</div>
-
-											<div class="form-row">
-												<div class="form-group col-md-6">
-													<label for="header_instagram_link"
-														class="font-weight-bold">Instagram Link</label>
-													<div class="input-group">
-														<div class="input-group-prepend">
-															<span class="input-group-text text-danger"><i
-																	class="fab fa-instagram"></i></span>
-														</div>
-														<input type="text" id="header_instagram_link"
-															name="header_instagram_link"
-															value="<?= $details['header_instagram_link'] ?>"
-															class="form-control"
-															placeholder="https://instagram.com/...">
-													</div>
-												</div>
-
-												<!-- ===== STATUS ===== -->
-												<div class="form-group col-md-6">
-													<label class="font-weight-bold d-block">Status</label>
-													<div class="d-flex align-items-center mt-2">
-														<span class="switch switch-md switch-icon mr-3">
-															<label>
-																<input type="checkbox" name="is_active" value="1"
-																	<?= ($details['is_active'] == 1 ? 'checked' : '') ?>>
-																<span></span>
-															</label>
-														</span>
-														<span class="text-muted small">Active / Inactive</span>
-													</div>
-												</div>
-											</div>
-										</div>
-
-										<!-- ===== FORM ACTIONS ===== -->
-										<div
-											class="card-footer  border-top px-0 d-flex justify-content-between align-items-center flex-wrap">
-											<button type="submit" name="update_header_info"
-												class="btn btn-primary px-5">
-												<i class="fas fa-save mr-2"></i>Update
-											</button>
-											<button type="reset" class="btn btn-outline-secondary px-4">
-												<i class="fas fa-undo-alt mr-2"></i>Reset
-											</button>
-										</div>
-
-									</form>
-									<!--end::Form-->
-
-								</div>
-								<!--end::Card-body-->
-							</div>
-							<!--end::Card-->
-
-						</div>
-						<!--end::Container-->
-
-
-						<!-- Bootstrap 4 custom-file JS for better file input display -->
-						<script>
-							// Auto-update file input label with selected filename
-							document.querySelectorAll('.custom-file-input').forEach(function (input) {
-								input.addEventListener('change', function (e) {
-									var fileName = e.target.files[0]?.name || 'Choose file';
-									var label = e.target.nextElementSibling;
-									if (label && label.classList.contains('custom-file-label')) {
-										label.innerText = fileName;
-									}
-								});
-							});
-						</script>
-					</div>
-					<!--end::Entry-->
-				</div>
-				<!--end::Content-->
-				<?php
-				include('includes/footer-inner.php');
-				?>
+            var active = document.getElementById('setActive');
+            form.addEventListener('invalid', function (event) { event.target.classList.add('dre-invalid'); }, true);
+            form.addEventListener('submit', function (event) {
+              if (!active.checked && active.defaultChecked && !window.confirm('These settings are switched off. The website will lose them on every page. Save anyway?')) {
+                event.preventDefault();
+                return;
+              }
+              dirty = false;
+            });
+            window.addEventListener('beforeunload', function (event) {
+              if (dirty) { event.preventDefault(); event.returnValue = ''; }
+            });
+            if (document.getElementById('setSaved') && window.history.replaceState) {
+              // Reloading the page should not show "saved" again.
+              window.history.replaceState(null, '', window.location.href.replace(/&saved=1/, ''));
+            }
+            var errorBox = document.getElementById('setErrors');
+            if (errorBox) { errorBox.focus(); errorBox.scrollIntoView({ block: 'start' }); }
+          })();
+        </script>

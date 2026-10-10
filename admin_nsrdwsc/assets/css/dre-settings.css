@@ -1,0 +1,164 @@
+/* Settings pages: SEO tags, header and footer, users. Builds on dre-projects.css, dre-articles.css and dre-form.css. */
+.dre-settings .dre-proj-row {
+    grid-template-columns: minmax(200px, 1.3fr) minmax(260px, 2.4fr) minmax(170px, 1.2fr) 140px 96px;
+    align-items: start;
+}
+.dre-settings .dre-proj-head {
+    align-items: center;
+}
+.dre-tag-result strong {
+    display: block;
+    color: #1a0dab;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+.dre-tag-result span {
+    display: block;
+    margin-top: 2px;
+    color: var(--dd-muted);
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+}
+.dre-tag-result em {
+    color: var(--dd-bad);
+}
+.dre-tag-checks span {
+    display: block;
+    font-size: 0.84rem;
+}
+.dre-tag-checks .dre-proj-missing {
+    color: var(--dd-warn);
+}
+.dre-tag-checks .dre-proj-missing + .dre-proj-missing {
+    margin-top: 3px;
+}
+.dre-tag-ok {
+    color: var(--dd-good);
+    font-weight: 600;
+}
+@media (max-width: 1399px) {
+    .dre-settings .dre-proj-head > div:last-child {
+        display: block;
+    }
+    .dre-settings .dre-proj-actions {
+        grid-column: auto;
+        justify-content: flex-end;
+    }
+}
+@media (max-width: 1199px) {
+    .dre-settings .dre-proj-row {
+        grid-template-columns: minmax(180px, 1.2fr) minmax(220px, 2fr) 140px 96px;
+    }
+    .dre-settings .dre-tag-checks {
+        grid-column: 2;
+    }
+    .dre-settings .dre-proj-head > div:nth-child(3) {
+        display: none;
+    }
+}
+@media (max-width: 991px) {
+    .dre-settings .dre-proj-row {
+        grid-template-columns: 1fr;
+    }
+    .dre-settings .dre-proj-row > div {
+        grid-column: auto;
+    }
+    .dre-settings .dre-proj-actions {
+        justify-content: flex-start;
+    }
+}
+
+/* How a link to the page looks when it is shared */
+.dre-share-preview {
+    max-width: 440px;
+    margin-top: 6px;
+    border: 1px solid rgba(95, 87, 76, 0.16);
+    border-radius: 14px;
+    background: #fff;
+    overflow: hidden;
+}
+.dre-share-preview > div:first-child {
+    aspect-ratio: 1200 / 630;
+    background: rgba(95, 87, 76, 0.1) center / cover no-repeat;
+}
+.dre-share-preview > div:last-child {
+    padding: 10px 12px;
+}
+.dre-share-preview span {
+    display: block;
+    color: var(--dd-muted);
+    font-size: 0.74rem;
+    text-transform: uppercase;
+}
+.dre-share-preview strong {
+    display: block;
+    color: var(--dd-ink);
+    overflow-wrap: anywhere;
+}
+.dre-share-preview p {
+    margin: 2px 0 0;
+    color: var(--dd-muted);
+    font-size: 0.84rem;
+    overflow-wrap: anywhere;
+}
+
+/* A logo that is already saved, shown under its file field. */
+.dre-settings-form .dre-current {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: rgba(95, 87, 76, 0.07);
+    color: var(--dd-muted);
+    font-size: 0.84rem;
+}
+.dre-settings-form .dre-current img {
+    max-width: 150px;
+    max-height: 48px;
+    padding: 4px;
+    border-radius: 8px;
+    background: repeating-conic-gradient(#e9e4de 0 25%, #fff 0 50%) 0 0 / 12px 12px;
+    object-fit: contain;
+}
+.dre-settings-form .dre-current label {
+    margin: 0;
+    color: var(--dd-bad);
+}
+.dre-link-row {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+}
+.dre-link-row > i {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgba(171, 152, 137, 0.2);
+    color: var(--dd-main);
+    line-height: 34px;
+    text-align: center;
+}
+.dre-form .dre-field > span.dre-link-row {
+    display: grid;
+    margin: 0;
+    font-size: inherit;
+}
+.dre-users .dre-proj-row {
+    grid-template-columns: minmax(230px, 1.8fr) minmax(180px, 1.2fr) minmax(170px, 1.2fr) 150px 60px;
+    align-items: center;
+}
+.dre-users .dre-tag-result .dre-pill {
+    display: inline-block;
+    margin-bottom: 3px;
+}
+.dre-users .dre-switch[disabled] {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.dre-user-form .dre-form-bar-buttons {
+    margin-top: 12px;
+}

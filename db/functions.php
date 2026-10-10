@@ -1,412 +1,413 @@
 <?php
 
-function generateProjectDetailSchema($home_meta, $header_details, $footer_info, $breadcrumbs, $proj_detail, $images, $category_slug, $slug, $meta_tags)
+function generateProjectDetailSchema($home_meta, $header_details, $footer_info, $breadcrumbs, $proj_detail, $images, $category_slug, $slug, $meta_tags) {
+    // Case 1: If slug is empty, return dynamic Organization schema
+    if (empty($slug)) {
+        ob_start();
+        ?>
+<script type="application/ld+json">
 {
-  // Case 1: If slug is empty, return dynamic Organization schema
-  if (empty($slug)) {
-    ob_start();
-    ?>
-    <script type="application/ld+json">
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "name": "<?= $home_meta['meta_title'] ?>",
+      "url": "<?= BASE_URL ?>",
+      "logo": "<?= BASE_URL ?>images/dre-logo.png",
+      "description": "<?= $home_meta['meta_description'] ?>",
+      "sameAs": [
+        "<?= $header_details['header_instagram_link'] ?>",
+        "<?= $header_details['header_fb_link'] ?>",
+        "<?= $header_details['header_youtube_link'] ?>",
+        "https://www.linkedin.com/company/drehomes-real-estate-brokers/"
+      ],
+      "address": [
+        "<?= $footer_info['footer_address'] ?>",
+        "<?= $footer_info['footer_address2'] ?>"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer service",
+        "telephone": "<?= $footer_info['footer_contact_number2'] ?>",
+        "email": "<?= $footer_info['footer_email_id'] ?>",
+        "areaServed": "AE",
+        "availableLanguage": ["English", "Arabic"]
+      },
+      "foundingDate": "2007-01-01",
+      "foundingLocation": {
+        "@type": "Place",
+        "name": "Dubai, United Arab Emirates"
+      },
+      "founder": [
+        { "@type": "Person", "name": "Qurat Ul Ain" },
+        { "@type": "Person", "name": "Mudasir Wani" }
+      ],
+      "employee": [
         {
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": "Organization",
-              "name": "<?= $home_meta['meta_title'] ?>",
-              "url": "<?= BASE_URL ?>",
-              "logo": "<?= BASE_URL ?>images/dre-logo.png",
-              "description": "<?= $home_meta['meta_description'] ?>",
-              "sameAs": [
-                "<?= $header_details['header_instagram_link'] ?>",
-                "<?= $header_details['header_fb_link'] ?>",
-                "<?= $header_details['header_youtube_link'] ?>",
-                "https://www.linkedin.com/company/drehomes-real-estate-brokers/"
-              ],
-              "address": [
-                "<?= $footer_info['footer_address'] ?>",
-                "<?= $footer_info['footer_address2'] ?>"
-              ],
-              "contactPoint": {
-                "@type": "ContactPoint",
-                "contactType": "customer service",
-                "telephone": "<?= $footer_info['footer_contact_number2'] ?>",
-                "email": "<?= $footer_info['footer_email_id'] ?>",
-                "areaServed": "AE",
-                "availableLanguage": ["English", "Arabic"]
-              },
-              "foundingDate": "2007-01-01",
-              "foundingLocation": {
-                "@type": "Place",
-                "name": "Dubai, United Arab Emirates"
-              },
-              "founder": [
-                { "@type": "Person", "name": "Qurat Ul Ain" },
-                { "@type": "Person", "name": "Mudasir Wani" }
-              ],
-              "employee": [
-                {
-                  "@type": "Person",
-                  "name": "Mudasir Wani",
-                  "jobTitle": "Chief Executive Officer"
-                },
-                {
-                  "@type": "Person",
-                  "name": "Qurat Ul Ain",
-                  "jobTitle": "Chief Learning Officer"
-                }
-              ]
-            },
-            {
-              "@type": "BreadcrumbList",
-              "itemListElement": [
-                <?php foreach ($breadcrumbs as $index => $breadcrumb): ?>
-                    {
-                      "@type": "ListItem",
-                      "position": <?= $index + 1 ?>,
-                      "name": "<?= htmlspecialchars($breadcrumb['name'], ENT_QUOTES) ?>",
-                      "item": "<?= $breadcrumb['url'] ?>"
-                    }<?= $index < count($breadcrumbs) - 1 ? ',' : '' ?>
-                <?php endforeach; ?>
-              ]
-            }
-          ]
-        }
-        </script>
-    <?php
-    return ob_get_clean();
-  }
-
-  // Case 2: Static Pages
-  $static_slugs = [
-    'offplan-properties',
-    'developer',
-    'community',
-    'our-blogs',
-    'buy-property',
-    'rent-property',
-    'international-properties',
-    'ready-to-move-in',
-    'services/property-and-investment-consultancy',
-    'services/mortgage-advisory',
-    'services/relocation-service',
-    'services/bank-account-opening',
-    'services/business-licenses',
-    'services/book-valuation',
-    'mortgage-calculator',
-    'golden-visa',
-    'buyer-guide',
-    'company-news',
-    'seller-guide',
-    'tenant-guide',
-    'landlord-guide',
-    'our-media',
-    'our-agents',
-    'clients-testimonials',
-    'our-awards',
-    'careers',
-    'message-from-co-founder-and-clo',
-    'message-from-co-founder-and-ceo'
-  ];
-
-  if (in_array($slug, $static_slugs)) {
-    ob_start();
-    ?>
-    <script type="application/ld+json">
+          "@type": "Person",
+          "name": "Mudasir Wani",
+          "jobTitle": "Chief Executive Officer"
+        },
         {
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": "WebPage",
-              "url": "<?= BASE_URL . $slug ?>",
-              "name": "<?= htmlspecialchars($meta_tags['meta_title']) ?>",
-              "description": "<?= htmlspecialchars($meta_tags['meta_description']) ?>",
-              "publisher": {
-                "@type": "Organization",
-                "name": "<?= $home_meta['meta_title'] ?>",
-                "url": "<?= BASE_URL ?>",
-                "logo": {
-                  "@type": "ImageObject",
-                  "url": "<?= BASE_URL ?>images/dre-logo.png"
-                },
-                "sameAs": [
-                  "<?= $header_details['header_instagram_link'] ?>",
-                  "<?= $header_details['header_fb_link'] ?>",
-                  "<?= $header_details['header_youtube_link'] ?>",
-                  "https://www.linkedin.com/company/drehomes-real-estate-brokers/"
-                ],
-                "address": {
-                  "@type": "PostalAddress",
-                  "streetAddress": "<?= $footer_info['footer_address'] ?>",
-                  "addressLocality": "Dubai",
-                  "addressRegion": "Dubai",
-                  "postalCode": "00000",
-                  "addressCountry": "AE"
-                },
-                "contactPoint": [
-                  {
-                    "@type": "ContactPoint",
-                    "contactType": "customer service",
-                    "telephone": "<?= $footer_info['footer_contact_number2'] ?>",
-                    "email": "<?= $footer_info['footer_email_id'] ?>",
-                    "areaServed": "AE",
-                    "availableLanguage": ["English", "Arabic"]
-                  }
-                ]
-              },
-              "mainEntityOfPage": {
-                "@type": "WebPage"
-              },
-              "image": "<?= BASE_URL_IMG . 'meta/' . $home_meta['meta_og_img'] ?>"
-            },
-            {
-              "@type": "BreadcrumbList",
-              "itemListElement": [
-                <?php foreach ($breadcrumbs as $index => $breadcrumb): ?>
-                    {
-                      "@type": "ListItem",
-                      "position": <?= $index + 1 ?>,
-                      "name": "<?= htmlspecialchars($breadcrumb['name'], ENT_QUOTES) ?>",
-                      "item": "<?= $breadcrumb['url'] ?>"
-                    }<?= $index < count($breadcrumbs) - 1 ? ',' : '' ?>
-                <?php endforeach; ?>
-              ]
-            }
-          ]
+          "@type": "Person",
+          "name": "Qurat Ul Ain",
+          "jobTitle": "Chief Learning Officer"
         }
-        </script>
-    <?php
-    return ob_get_clean();
-  }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        <?php foreach ($breadcrumbs as $index => $breadcrumb): ?>
+        {
+          "@type": "ListItem",
+          "position": <?= $index + 1 ?>,
+          "name": "<?= htmlspecialchars($breadcrumb['name'], ENT_QUOTES) ?>",
+          "item": "<?= $breadcrumb['url'] ?>"
+        }<?= $index < count($breadcrumbs) - 1 ? ',' : '' ?>
+        <?php endforeach; ?>
+      ]
+    }
+  ]
+}
+</script>
+<?php
+        return ob_get_clean();
+    }
 
-  // ✅ Case: Developer Detail Page (Dynamic)
-  elseif (preg_match('/^developer\/(.+)$/', $slug, $matches)) {
+    // Case 2: Static Pages
+    $static_slugs = [
+        'offplan-properties',
+        'developer',
+        'community',
+        'our-blogs',
+        'buy-property',
+        'rent-property',
+        'international-properties',
+        'ready-to-move-in',
+        'services/property-and-investment-consultancy',
+        'services/mortgage-advisory',
+        'services/relocation-service',
+        'services/bank-account-opening',
+        'services/business-licenses',
+        'services/book-valuation',
+        'mortgage-calculator',
+        'golden-visa',
+        'buyer-guide',
+        'company-news',
+        'seller-guide',
+        'tenant-guide',
+        'landlord-guide',
+        'our-media',
+        'our-agents',
+        'clients-testimonials',
+        'our-awards',
+        'careers',
+        'message-from-co-founder-and-clo',
+        'message-from-co-founder-and-ceo'
+    ];
+
+    if (in_array($slug, $static_slugs)) {
+        ob_start();
+        ?>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "url": "<?= BASE_URL . $slug ?>",
+      "name": "<?= htmlspecialchars($meta_tags['meta_title']) ?>",
+      "description": "<?= htmlspecialchars($meta_tags['meta_description']) ?>",
+      "publisher": {
+        "@type": "Organization",
+        "name": "<?= $home_meta['meta_title'] ?>",
+        "url": "<?= BASE_URL ?>",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "<?= BASE_URL ?>images/dre-logo.png"
+        },
+        "sameAs": [
+          "<?= $header_details['header_instagram_link'] ?>",
+          "<?= $header_details['header_fb_link'] ?>",
+          "<?= $header_details['header_youtube_link'] ?>",
+          "https://www.linkedin.com/company/drehomes-real-estate-brokers/"
+        ],
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "<?= $footer_info['footer_address'] ?>",
+          "addressLocality": "Dubai",
+          "addressRegion": "Dubai",
+          "postalCode": "00000",
+          "addressCountry": "AE"
+        },
+        "contactPoint": [
+          {
+            "@type": "ContactPoint",
+            "contactType": "customer service",
+            "telephone": "<?= $footer_info['footer_contact_number2'] ?>",
+            "email": "<?= $footer_info['footer_email_id'] ?>",
+            "areaServed": "AE",
+            "availableLanguage": ["English", "Arabic"]
+          }
+        ]
+      },
+      "mainEntityOfPage": {
+        "@type": "WebPage"
+      },
+      "image": "<?= BASE_URL_IMG . 'meta/' . $home_meta['meta_og_img'] ?>"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        <?php foreach ($breadcrumbs as $index => $breadcrumb): ?>
+        {
+          "@type": "ListItem",
+          "position": <?= $index + 1 ?>,
+          "name": "<?= htmlspecialchars($breadcrumb['name'], ENT_QUOTES) ?>",
+          "item": "<?= $breadcrumb['url'] ?>"
+        }<?= $index < count($breadcrumbs) - 1 ? ',' : '' ?>
+        <?php endforeach; ?>
+      ]
+    }
+  ]
+}
+</script>
+<?php
+        return ob_get_clean();
+    }
+    
+    // ✅ Case: Developer Detail Page (Dynamic)
+elseif (preg_match('/^developer\/(.+)$/', $slug, $matches)) {
     $developer_slug = $matches[1];
     ob_start();
     ?>
-    <script type="application/ld+json">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "name": "<?= htmlspecialchars($home_meta['meta_title']) ?>",
+      "description": "<?= htmlspecialchars($home_meta['meta_description']) ?>",
+      "logo": "<?= BASE_URL ?>images/dre-logo.png",
+      "image": "<?= BASE_URL_IMG ?>meta/<?= $home_meta['meta_og_img'] ?>",
+      "url": "<?= BASE_URL ?>",
+      "sameAs": [
+        "<?= $header_details['header_instagram_link'] ?>",
+        "<?= $header_details['header_fb_link'] ?>",
+        "<?= $header_details['header_youtube_link'] ?>",
+        "https://www.linkedin.com/company/drehomes-real-estate-brokers/"
+      ],
+      "telephone": "<?= $footer_info['footer_contact_number2'] ?>",
+      "email": "<?= $footer_info['footer_email_id'] ?>",
+      "address": [
+        "<?= $footer_info['footer_address'] ?>",
+        "<?= $footer_info['footer_address2'] ?>"
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        <?php foreach ($breadcrumbs as $index => $breadcrumb): ?>
         {
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": "Organization",
-              "name": "<?= htmlspecialchars($home_meta['meta_title']) ?>",
-              "description": "<?= htmlspecialchars($home_meta['meta_description']) ?>",
-              "logo": "<?= BASE_URL ?>images/dre-logo.png",
-              "image": "<?= BASE_URL_IMG ?>meta/<?= $home_meta['meta_og_img'] ?>",
-              "url": "<?= BASE_URL ?>",
-              "sameAs": [
-                "<?= $header_details['header_instagram_link'] ?>",
-                "<?= $header_details['header_fb_link'] ?>",
-                "<?= $header_details['header_youtube_link'] ?>",
-                "https://www.linkedin.com/company/drehomes-real-estate-brokers/"
-              ],
-              "telephone": "<?= $footer_info['footer_contact_number2'] ?>",
-              "email": "<?= $footer_info['footer_email_id'] ?>",
-              "address": [
-                "<?= $footer_info['footer_address'] ?>",
-                "<?= $footer_info['footer_address2'] ?>"
-              ]
-            },
-            {
-              "@type": "BreadcrumbList",
-              "itemListElement": [
-                <?php foreach ($breadcrumbs as $index => $breadcrumb): ?>
-                    {
-                      "@type": "ListItem",
-                      "position": <?= $index + 1 ?>,
-                      "item": {
-                        "@id": "<?= $breadcrumb['url'] ?>",
-                        "name": "<?= htmlspecialchars($breadcrumb['name'], ENT_QUOTES) ?>"
-                      }
-                    }<?= $index < count($breadcrumbs) - 1 ? ',' : '' ?>
-                <?php endforeach; ?>
-              ]
-            },
-            {
-              "@type": "Organization",
-              "name": "<?= htmlspecialchars($meta_tags['meta_title']) ?>",
-              "description": "<?= htmlspecialchars($meta_tags['meta_description']) ?>",
-              "url": "<?= BASE_URL . $slug ?>",
-              "image": "<?= BASE_URL_IMG . 'meta/' . $home_meta['meta_og_img'] ?>",
-              "mainEntityOfPage": {
-                "@type": "WebPage",
-                "@id": "<?= BASE_URL . $slug ?>"
-              }
-            }
-          ]
-        }
-        </script>
-    <?php
+          "@type": "ListItem",
+          "position": <?= $index + 1 ?>,
+          "item": {
+            "@id": "<?= $breadcrumb['url'] ?>",
+            "name": "<?= htmlspecialchars($breadcrumb['name'], ENT_QUOTES) ?>"
+          }
+        }<?= $index < count($breadcrumbs) - 1 ? ',' : '' ?>
+        <?php endforeach; ?>
+      ]
+    },
+    {
+      "@type": "Organization",
+      "name": "<?= htmlspecialchars($meta_tags['meta_title']) ?>",
+      "description": "<?= htmlspecialchars($meta_tags['meta_description']) ?>",
+      "url": "<?= BASE_URL . $slug ?>",
+      "image": "<?= BASE_URL_IMG . 'meta/' . $home_meta['meta_og_img'] ?>",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "<?= BASE_URL . $slug ?>"
+      }
+    }
+  ]
+}
+</script>
+<?php
     return ob_get_clean();
-  }
+}
 
 
-  // Case 3: Blog Detail Page
-  elseif (preg_match('/^our-blogs\/(.+)$/', $slug, $matches)) {
-    $blog_slug = $matches[1];
-    ob_start();
-    ?>
-    <script type="application/ld+json">
+    // Case 3: Blog Detail Page
+    elseif (preg_match('/^our-blogs\/(.+)$/', $slug, $matches)) {
+        $blog_slug = $matches[1];
+        ob_start();
+        ?>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "name": "<?= $home_meta['meta_title'] ?>",
+      "url": "<?= BASE_URL ?>",
+      "logo": "<?= BASE_URL ?>images/dre-logo.png",
+      "description": "<?= $home_meta['meta_description'] ?>",
+      "sameAs": [
+        "<?= $header_details['header_instagram_link'] ?>",
+        "<?= $header_details['header_fb_link'] ?>",
+        "<?= $header_details['header_youtube_link'] ?>"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "<?= $footer_info['footer_contact_number2'] ?>",
+        "contactType": "sales",
+        "email": "<?= $footer_info['footer_email_id'] ?>",
+        "areaServed": "AE"
+      },
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "<?= $footer_info['footer_address'] ?>",
+        "addressLocality": "Dubai",
+        "addressCountry": "AE"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
         {
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": "Organization",
-              "name": "<?= $home_meta['meta_title'] ?>",
-              "url": "<?= BASE_URL ?>",
-              "logo": "<?= BASE_URL ?>images/dre-logo.png",
-              "description": "<?= $home_meta['meta_description'] ?>",
-              "sameAs": [
-                "<?= $header_details['header_instagram_link'] ?>",
-                "<?= $header_details['header_fb_link'] ?>",
-                "<?= $header_details['header_youtube_link'] ?>"
-              ],
-              "contactPoint": {
-                "@type": "ContactPoint",
-                "telephone": "<?= $footer_info['footer_contact_number2'] ?>",
-                "contactType": "sales",
-                "email": "<?= $footer_info['footer_email_id'] ?>",
-                "areaServed": "AE"
-              },
-              "address": {
-                "@type": "PostalAddress",
-                "streetAddress": "<?= $footer_info['footer_address'] ?>",
-                "addressLocality": "Dubai",
-                "addressCountry": "AE"
-              }
-            },
-            {
-              "@type": "BreadcrumbList",
-              "itemListElement": [
-                {
-                  "@type": "ListItem",
-                  "position": 1,
-                  "name": "Home",
-                  "item": "<?= BASE_URL ?>"
-                },
-                {
-                  "@type": "ListItem",
-                  "position": 2,
-                  "name": "Our Blogs",
-                  "item": "<?= BASE_URL ?>our-blogs/"
-                },
-                {
-                  "@type": "ListItem",
-                  "position": 3,
-                  "name": "<?= htmlspecialchars($meta_tags['meta_title']) ?>",
-                  "item": "<?= BASE_URL . $slug ?>"
-                }
-              ]
-            },
-            {
-              "@type": "BlogPosting",
-              "headline": "<?= htmlspecialchars($meta_tags['meta_title']) ?>",
-              "description": "<?= htmlspecialchars($meta_tags['meta_description']) ?>",
-              "image": "<?= BASE_URL_IMG . 'meta/' . $home_meta['meta_og_img'] ?>",
-              "author": {
-                "@type": "Organization",
-                "name": "<?= $home_meta['meta_title'] ?>",
-                "logo": {
-                  "@type": "ImageObject",
-                  "url": "<?= BASE_URL ?>images/dre-logo.png"
-                }
-              },
-              "mainEntityOfPage": {
-                "@type": "WebPage",
-                "@id": "<?= BASE_URL . $slug ?>"
-              }
-            }
-          ]
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "<?= BASE_URL ?>"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Our Blogs",
+          "item": "<?= BASE_URL ?>our-blogs/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "<?= htmlspecialchars($meta_tags['meta_title']) ?>",
+          "item": "<?= BASE_URL . $slug ?>"
         }
-        </script>
-    <?php
-    return ob_get_clean();
-  }
+      ]
+    },
+    {
+      "@type": "BlogPosting",
+      "headline": "<?= htmlspecialchars($meta_tags['meta_title']) ?>",
+      "description": "<?= htmlspecialchars($meta_tags['meta_description']) ?>",
+      "image": "<?= BASE_URL_IMG . 'meta/' . $home_meta['meta_og_img'] ?>",
+      "author": {
+        "@type": "Organization",
+        "name": "<?= $home_meta['meta_title'] ?>",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "<?= BASE_URL ?>images/dre-logo.png"
+        }
+      },
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "<?= BASE_URL . $slug ?>"
+      }
+    }
+  ]
+}
+</script>
+<?php
+        return ob_get_clean();
+    }
 
-  // ✅ Case 3.1: Company News Single Page (Updated Dynamic)
-  elseif (preg_match('/^company-news\/(.+)$/', $slug, $matches)) {
-    $news_slug = $matches[1];
-    ob_start();
-    ?>
-    <script type="application/ld+json">
-        {
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": "Organization",
-              "name": "<?= $home_meta['meta_title'] ?>",
-              "description": "<?= $home_meta['meta_description'] ?>",
-              "logo": "<?= BASE_URL ?>images/dre-logo.png",
-              "image": "<?= BASE_URL_IMG ?>meta/<?= $home_meta['meta_og_img'] ?>",
-              "url": "<?= BASE_URL ?>",
-              "sameAs": [
-                "<?= $header_details['header_instagram_link'] ?>",
-                "<?= $header_details['header_fb_link'] ?>",
-                "<?= $header_details['header_youtube_link'] ?>",
-                "https://www.linkedin.com/company/drehomes-real-estate-brokers/"
-              ],
-              "telephone": "<?= $footer_info['footer_contact_number2'] ?>",
-              "email": "<?= $footer_info['footer_email_id'] ?>",
-              "address": [
-                "<?= $footer_info['footer_address'] ?>",
-                "<?= $footer_info['footer_address2'] ?>"
-              ]
-            },
-            {
-              "@type": "BreadcrumbList",
-                "itemListElement": [
-                  {
-                    "@type": "ListItem",
-                    "position": 1,
-                    "item": {
-                      "@id": "<?= BASE_URL ?>",
-                      "name": "Home"
-                    }
-                  },
-                  {
-                    "@type": "ListItem",
-                    "position": 2,
-                    "item": {
-                      "@id": "<?= BASE_URL ?>company-news/",
-                      "name": "Company News"
-                    }
-                  },
-                  {
-                    "@type": "ListItem",
-                    "position": 3,
-                    "item": {
-                      "@id": "<?= BASE_URL . $slug ?>",
-                      "name": "<?= htmlspecialchars($meta_tags['meta_title']) ?>"
-                    }
-                  }
-                ]
-
-            },
-                {
-              "@type": "BlogPosting",
-              "headline": "<?= htmlspecialchars($meta_tags['meta_title']) ?>",
-              "description": "<?= htmlspecialchars($meta_tags['meta_description']) ?>",
-              "image": "<?= BASE_URL_IMG . 'meta/' . $home_meta['meta_og_img'] ?>",
-              "author": {
-                "@type": "Organization",
-                "name": "<?= $home_meta['meta_title'] ?>",
-                "logo": {
-                  "@type": "ImageObject",
-                  "url": "<?= BASE_URL ?>images/dre-logo.png"
-                }
-              },
-              "mainEntityOfPage": {
-                "@type": "WebPage",
-                "@id": "<?= BASE_URL . $slug ?>"
-              }
+    // ✅ Case 3.1: Company News Single Page (Updated Dynamic)
+    elseif (preg_match('/^company-news\/(.+)$/', $slug, $matches)) {
+        $news_slug = $matches[1];
+        ob_start();
+        ?>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "name": "<?= $home_meta['meta_title'] ?>",
+      "description": "<?= $home_meta['meta_description'] ?>",
+      "logo": "<?= BASE_URL ?>images/dre-logo.png",
+      "image": "<?= BASE_URL_IMG ?>meta/<?= $home_meta['meta_og_img'] ?>",
+      "url": "<?= BASE_URL ?>",
+      "sameAs": [
+        "<?= $header_details['header_instagram_link'] ?>",
+        "<?= $header_details['header_fb_link'] ?>",
+        "<?= $header_details['header_youtube_link'] ?>",
+        "https://www.linkedin.com/company/drehomes-real-estate-brokers/"
+      ],
+      "telephone": "<?= $footer_info['footer_contact_number2'] ?>",
+      "email": "<?= $footer_info['footer_email_id'] ?>",
+      "address": [
+        "<?= $footer_info['footer_address'] ?>",
+        "<?= $footer_info['footer_address2'] ?>"
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "item": {
+              "@id": "<?= BASE_URL ?>",
+              "name": "Home"
             }
-
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "item": {
+              "@id": "<?= BASE_URL ?>company-news/",
+              "name": "Company News"
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "item": {
+              "@id": "<?= BASE_URL . $slug ?>",
+              "name": "<?= htmlspecialchars($meta_tags['meta_title']) ?>"
+            }
+          }
         ]
+
+    },
+        {
+      "@type": "BlogPosting",
+      "headline": "<?= htmlspecialchars($meta_tags['meta_title']) ?>",
+      "description": "<?= htmlspecialchars($meta_tags['meta_description']) ?>",
+      "image": "<?= BASE_URL_IMG . 'meta/' . $home_meta['meta_og_img'] ?>",
+      "author": {
+        "@type": "Organization",
+        "name": "<?= $home_meta['meta_title'] ?>",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "<?= BASE_URL ?>images/dre-logo.png"
         }
-        </script>
-    <?php
-    return ob_get_clean();
-  } elseif (preg_match('#^(property|buy-property|rent-property|international-properties|ready-to-move-in)/(.+)$#', $slug, $matches)) {
+      },
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "<?= BASE_URL . $slug ?>"
+      }
+    }
+
+]
+}
+</script>
+<?php
+        return ob_get_clean();
+    }
+    
+elseif (preg_match('#^(property|buy-property|rent-property|international-properties|ready-to-move-in)/(.+)$#', $slug, $matches)) {
     $category = $matches[1];
     $project_slug = $matches[2];
 
@@ -419,191 +420,260 @@ function generateProjectDetailSchema($home_meta, $header_details, $footer_info, 
     // ✅ Gather images correctly
     $image_list = [];
     if (!empty($images) && is_array($images)) {
-      foreach ($images as $img) {
-        if (!empty($img['gallery_img'])) {
-          $image_list[] = BASE_URL_IMG . 'project/gallery/' . $img['gallery_img'];
+        foreach ($images as $img) {
+            if (!empty($img['gallery_img'])) {
+                $image_list[] = BASE_URL_IMG . 'project/gallery/' . $img['gallery_img'];
+            }
         }
-      }
     }
     if (empty($image_list) && !empty($home_meta['meta_og_img'])) {
-      $image_list[] = BASE_URL_IMG . 'meta/' . $home_meta['meta_og_img'];
+        $image_list[] = BASE_URL_IMG . 'meta/' . $home_meta['meta_og_img'];
     }
 
     ob_start();
     ?>
-    <script type="application/ld+json">
-        {
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": "Organization",
-              "name": "DRE Homes Real Estate | Dubai | Buy, Sell or Rent Property",
-              "description": "We help you find a home directly with developers. We work directly with Emaar Properties, Nakheel, Danube, Meraas, Sobha Realty, Damac Properties. Off-plan and ready projects across Downtown, Palm Jumeirah, JVC, Dubai Hills, Damac Hills, and more.",
-              "logo": "https://drehomes.com/admin_xcs6iwyiueuu8wd/assets/media/header/header_logo_7708_dre-logo-b.png",
-              "image": "https://drehomes.com/images/dre-banner-new.jpg",
-              "url": "https://drehomes.com/",
-              "sameAs": [
-                "https://www.instagram.com/drehomes_realestate/",
-                "https://www.facebook.com/drehomesrealestateuae/",
-                "https://www.youtube.com/@DrehomesRE",
-                "https://www.linkedin.com/company/drehomes-real-estate-brokers/"
-              ],
-              "telephone": "+971527543243",
-              "email": "sales@drehomes.com",
-              "address": [
-                "Park Heights Square 2 | Offices 401-402-405-406, Dubai Hills Estate, Dubai, AE",
-                "Business Bay Tower, Office 301, Business Bay, Dubai, AE"
-              ]
-            },
-            {
-              "@type": "BreadcrumbList",
-              "itemListElement": [
-                <?php foreach ($breadcrumbs as $index => $breadcrumb): ?>
-                    {
-                      "@type": "ListItem",
-                      "position": <?= $index + 1 ?>,
-                      "item": {
-                        "@id": "<?= $breadcrumb['url'] ?>",
-                        "name": "<?= htmlspecialchars($breadcrumb['name'], ENT_QUOTES) ?>"
-                      }
-                    }<?= $index < count($breadcrumbs) - 1 ? ',' : '' ?>
-                <?php endforeach; ?>
-              ]
-            },
-            {
-              "@type": "WebPage",
-              "name": "<?= htmlspecialchars($project_name) ?>",
-              "description": "<?= htmlspecialchars($project_description) ?>",
-              "keywords": "<?= htmlspecialchars($project_keywords) ?>",
-              "url": "<?= BASE_URL . $slug ?>",
-              "image": [
-        <?= implode(",\n        ", array_map(fn($img) => '"' . $img . '"', $image_list)); ?>
-
-              ],
-              "mainEntity": {
-                "@type": "Offer",
-                "name": "<?= htmlspecialchars($project_name) ?>",
-        <?php if (!empty($project_price)): ?>
-                    "price": "<?= $project_price ?>",
-                    "priceCurrency": "<?= $currency ?>",
-                    "availability": "https://schema.org/InStock",
-        <?php endif; ?>
-                "itemOffered": {
-                  "@type": "House",
-                  "name": "<?= htmlspecialchars($project_name) ?>",
-                  "url": "<?= BASE_URL . $slug ?>",
-                  "image": "<?= !empty($image_list[0]) ? $image_list[0] : '' ?>"
-                },
-                "offeredBy": {
-                  "@type": "Organization",
-                  "name": "DRE Homes Real Estate",
-                  "image": "https://drehomes.com/images/dre-banner-new.jpg"
-                }
-              }
-            }
-          ]
-        }
-        </script>
-    <?php
-    return ob_get_clean();
-  }
-
-
-  // Case 4: Regular dynamic project schema
-  ob_start();
-  ?>
-  <script type="application/ld+json">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
     {
-      "@context": "https://schema.org",
-      "@graph": [...]
+      "@type": "Organization",
+      "name": "DRE Homes Real Estate | Dubai | Buy, Sell or Rent Property",
+      "description": "We help you find a home directly with developers. We work directly with Emaar Properties, Nakheel, Danube, Meraas, Sobha Realty, Damac Properties. Off-plan and ready projects across Downtown, Palm Jumeirah, JVC, Dubai Hills, Damac Hills, and more.",
+      "logo": "https://drehomes.com/admin_xcs6iwyiueuu8wd/assets/media/header/header_logo_7708_dre-logo-b.png",
+      "image": "https://drehomes.com/images/dre-banner-new.jpg",
+      "url": "https://drehomes.com/",
+      "sameAs": [
+        "https://www.instagram.com/drehomes_realestate/",
+        "https://www.facebook.com/drehomesrealestateuae/",
+        "https://www.youtube.com/@DrehomesRE",
+        "https://www.linkedin.com/company/drehomes-real-estate-brokers/"
+      ],
+      "telephone": "+971527543243",
+      "email": "sales@drehomes.com",
+      "address": [
+        "Park Heights Square 2 | Offices 401-402-405-406, Dubai Hills Estate, Dubai, AE",
+        "Business Bay Tower, Office 301, Business Bay, Dubai, AE"
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        <?php foreach ($breadcrumbs as $index => $breadcrumb): ?>
+        {
+          "@type": "ListItem",
+          "position": <?= $index + 1 ?>,
+          "item": {
+            "@id": "<?= $breadcrumb['url'] ?>",
+            "name": "<?= htmlspecialchars($breadcrumb['name'], ENT_QUOTES) ?>"
+          }
+        }<?= $index < count($breadcrumbs) - 1 ? ',' : '' ?>
+        <?php endforeach; ?>
+      ]
+    },
+    {
+      "@type": "WebPage",
+      "name": "<?= htmlspecialchars($project_name) ?>",
+      "description": "<?= htmlspecialchars($project_description) ?>",
+      "keywords": "<?= htmlspecialchars($project_keywords) ?>",
+      "url": "<?= BASE_URL . $slug ?>",
+      "image": [
+<?= implode(",\n        ", array_map(fn($img) => '"' . $img . '"', $image_list)); ?>
+
+      ],
+      "mainEntity": {
+        "@type": "Offer",
+        "name": "<?= htmlspecialchars($project_name) ?>",
+<?php if (!empty($project_price)): ?>
+        "price": "<?= $project_price ?>",
+        "priceCurrency": "<?= $currency ?>",
+        "availability": "https://schema.org/InStock",
+<?php endif; ?>
+        "itemOffered": {
+          "@type": "House",
+          "name": "<?= htmlspecialchars($project_name) ?>",
+          "url": "<?= BASE_URL . $slug ?>",
+          "image": "<?= !empty($image_list[0]) ? $image_list[0] : '' ?>"
+        },
+        "offeredBy": {
+          "@type": "Organization",
+          "name": "DRE Homes Real Estate",
+          "image": "https://drehomes.com/images/dre-banner-new.jpg"
+        }
+      }
     }
-    </script>
-  <?php
-  return ob_get_clean();
+  ]
+}
+</script>
+<?php
+    return ob_get_clean();
 }
 
 
-function slugify($string)
+    // Case 4: Regular dynamic project schema
+    ob_start();
+    ?>
+<script type="application/ld+json">
 {
-  // Convert to lowercase
-  $string = strtolower($string);
-
-  // Remove special characters
-  $string = preg_replace('/[^a-z0-9\s-]/', '', $string);
-
-  // Replace multiple spaces or dashes with a single dash
-  $string = preg_replace('/[\s-]+/', '-', $string);
-
-  // Trim dashes from the beginning and end
-  $string = trim($string, '-');
-
-  return $string;
+  "@context": "https://schema.org",
+  "@graph": [...]
+}
+</script>
+<?php
+    return ob_get_clean();
 }
 
-function getBreadcrumbs($proj_detail = null, $category_name = '', $category_slug = '', $slug = '')
-{
-  $breadcrumbs = [
-    [
-      'name' => 'Home',
-      'url' => BASE_URL,
-    ],
-  ];
 
-  if ($proj_detail && $category_name && $category_slug) {
-    // Project detail breadcrumbs
-    $breadcrumbs[] = [
-      'name' => $category_name,
-      'url' => rtrim(BASE_URL, '/') . '/' . trim($category_slug, '/') . '/',
-    ];
-    $breadcrumbs[] = [
-      'name' => $proj_detail['proj_name'],
-      'url' => rtrim(BASE_URL, '/') . '/property/' . $proj_detail['proj_slug'] . '/',
-    ];
-  } elseif ($slug) {
-    // For non-project pages: build breadcrumb from slug parts
-    $parts = explode('/', trim($slug, '/'));
-    $accumulatedUrl = rtrim(BASE_URL, '/');
+function slugify($string) {
+    // Convert to lowercase
+    $string = strtolower($string);
 
-    foreach ($parts as $part) {
-      $accumulatedUrl .= '/' . $part;
-      $breadcrumbs[] = [
-        'name' => ucwords(str_replace('-', ' ', $part)),
-        'url' => $accumulatedUrl . '/',
-      ];
+    // Remove special characters
+    $string = preg_replace('/[^a-z0-9\s-]/', '', $string);
+
+    // Replace multiple spaces or dashes with a single dash
+    $string = preg_replace('/[\s-]+/', '-', $string);
+
+    // Trim dashes from the beginning and end
+    $string = trim($string, '-');
+
+    return $string;
+}
+
+function getBreadcrumbs($proj_detail = null, $category_name = '', $category_slug = '', $slug = '') {
+    $breadcrumbs = [
+        [
+            'name' => 'Home',
+            'url' => BASE_URL,
+        ],
+    ];
+
+    if ($proj_detail && $category_name && $category_slug) {
+        // Project detail breadcrumbs
+        $breadcrumbs[] = [
+            'name' => $category_name,
+            'url' => rtrim(BASE_URL, '/') . '/' . trim($category_slug, '/') . '/',
+        ];
+        $breadcrumbs[] = [
+            'name' => $proj_detail['proj_name'],
+            'url'  => rtrim(BASE_URL, '/') . '/property/' . $proj_detail['proj_slug'] . '/',
+        ];
+    } elseif ($slug) {
+        // For non-project pages: build breadcrumb from slug parts
+        $parts = explode('/', trim($slug, '/'));
+        $accumulatedUrl = rtrim(BASE_URL, '/');
+
+        foreach ($parts as $part) {
+            $accumulatedUrl .= '/' . $part;
+            $breadcrumbs[] = [
+                'name' => ucwords(str_replace('-', ' ', $part)),
+                'url' => $accumulatedUrl . '/',
+            ];
+        }
     }
-  }
 
-  return $breadcrumbs;
+    return $breadcrumbs;
 }
 
 
-
-
-function select_query($tbl_name, $cond)
+// // ---------------------------------------------------------------
+// // Prepared-statement helpers. Use these for every query that includes
+// // a variable: put ? in the SQL and pass the values in $params.
+// // Integers are bound as integers, everything else as strings.
+// // ---------------------------------------------------------------
+function db_query($sql, $params = [])
 {
   global $conn;
-  $query = mysqli_query($conn, "SELECT * FROM $tbl_name WHERE $cond");
-  if ($query) {
-    return $query;
+
+  $stmt = mysqli_prepare($conn, $sql);
+  if (!$stmt) {
+    error_log("MySQL Prepare Error: " . mysqli_error($conn) . " | Query: $sql");
+    return false;
   }
-  return false;
+
+  if (!empty($params)) {
+    $types = '';
+    $values = [];
+    foreach ($params as $param) {
+      if (is_int($param) || is_bool($param)) {
+        $types .= 'i';
+        $values[] = (int) $param;
+      } elseif (is_float($param)) {
+        $types .= 'd';
+        $values[] = $param;
+      } else {
+        $types .= 's';
+        $values[] = $param === null ? null : (string) $param;
+      }
+    }
+    mysqli_stmt_bind_param($stmt, $types, ...$values);
+  }
+
+  if (!mysqli_stmt_execute($stmt)) {
+    error_log("MySQL Execute Error: " . mysqli_stmt_error($stmt) . " | Query: $sql");
+    mysqli_stmt_close($stmt);
+    return false;
+  }
+
+  // Rows changed by the last INSERT, UPDATE or DELETE run through db_query().
+  $GLOBALS['db_affected_rows'] = mysqli_stmt_affected_rows($stmt);
+
+  // SELECT gives a mysqli_result, so existing mysqli_fetch_* loops keep working.
+  $result = mysqli_stmt_get_result($stmt);
+  mysqli_stmt_close($stmt);
+
+  return $result === false ? true : $result;
+}
+
+function db_row($sql, $params = [])
+{
+  $result = db_query($sql, $params);
+  if (!$result || $result === true) {
+    return false;
+  }
+  $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+  return $row ?: false;
+}
+
+function db_all($sql, $params = [])
+{
+  $result = db_query($sql, $params);
+  if (!$result || $result === true) {
+    return [];
+  }
+  $rows = [];
+  while ($row = mysqli_fetch_assoc($result)) {
+    $rows[] = $row;
+  }
+  return $rows;
 }
 
 
-function truncateHeading($text, $maxLength = 60)
+
+function select_query($tbl_name,$cond)
 {
-  if (strlen($text) > $maxLength) {
-    return substr($text, 0, $maxLength) . '...';
-  }
-  return $text;
+	global $conn;
+    $query=mysqli_query($conn,"select * from $tbl_name where $cond");
+	if($query)
+	{
+		return $query;
+	}
+	return false;
 }
 
-function truncateParagraph($text, $maxLength = 180)
-{
-  if (strlen($text) > $maxLength) {
-    return substr($text, 0, $maxLength) . '...';
-  }
-  return $text;
+
+function truncateHeading($text, $maxLength = 60) {
+    if (strlen($text) > $maxLength) {
+        return substr($text, 0, $maxLength) . '...';
+    }
+    return $text;
+}
+
+function truncateParagraph($text, $maxLength = 180) {
+    if (strlen($text) > $maxLength) {
+        return substr($text, 0, $maxLength) . '...';
+    }
+    return $text;
 }
 
 
@@ -612,23 +682,20 @@ function truncateParagraph($text, $maxLength = 180)
 
 function select_row($tbl_name, $cond)
 {
-  global $conn;
+    global $conn;
 
-  $sql = "SELECT * FROM $tbl_name WHERE $cond";
-  $result = mysqli_query($conn, $sql);
+    $sql = "SELECT * FROM $tbl_name WHERE $cond";
+    $result = mysqli_query($conn, $sql);
 
-  if (!$result) {
-    // Log the error for debugging
-    error_log("MySQL Error: " . mysqli_error($conn) . " | Query: $sql");
-    return false;
-  }
+    if (!$result) {
+        // Log the error for debugging
+        error_log("MySQL Error: " . mysqli_error($conn) . " | Query: $sql");
+        return false;
+    }
 
-  $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-  return $row ?: false;
+    $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+    return $row ?: false;
 }
-
-
-
 function select_all($tbl_name, $cond)
 {
     global $conn;
@@ -649,79 +716,76 @@ function select_all($tbl_name, $cond)
     return $rows;
 }
 
-
 function select_project_detail($id, $type)
 {
-  global $conn;
-
-  $query = mysqli_fetch_array(mysqli_query($conn, "select tp.*,td.dev_img as developer_image,td.dev_img_alt from tbl_proj as tp LEFT JOIN tbl_developer as td ON tp.prj_dev_id=td.dev_id where tp.proj_slug='$id' and tp.is_active=1 and prj_type_id=$type"));
-  if ($query) {
-    return $query;
-  } else {
-    header('Location: ' . BASE_URL . '404.php');
-    exit;
-  }
-  return false;
+    global $conn;
+    
+    $query=mysqli_fetch_array(mysqli_query($conn,"select tp.*,td.dev_img as developer_image,td.dev_img_alt from tbl_proj as tp LEFT JOIN tbl_developer as td ON tp.prj_dev_id=td.dev_id where tp.proj_slug='$id' and tp.is_active=1 and prj_type_id=$type"));
+    if($query)
+    {
+        return $query;
+    }else{
+      header('Location: '.BASE_URL.'404.php');
+      exit;
+    }
+    return false;
 }
 
-function roundDownToHalf($number)
-{
-  $remainder = ($number * 10) % 10;
-  $half = $remainder >= 5 ? 0.5 : 0;
-  $value = floatval(intval($number) + $half);
-  return number_format($value, 1, '.', '');
+function roundDownToHalf($number) {
+     $remainder = ($number * 10) % 10;
+     $half = $remainder >= 5 ? 0.5 : 0;
+     $value = floatval(intval($number) + $half);
+     return number_format($value, 1, '.', '');
 }
 function star_rating($rating)
 {
 
-  $rating_round = roundDownToHalf($rating);
+    $rating_round = roundDownToHalf($rating);
+   
+
+      // Determine the number of filled stars based on the rating value
+$filledStars = round($rating);
 
 
-  // Determine the number of filled stars based on the rating value
-  $filledStars = round($rating);
-
-
-  for ($i = 1; $i <= 5; $i++) {
+for ($i = 1; $i <= 5; $i++) {
     $starClass = ($i <= $filledStars) ? 'fa-star' : 'fa-star-o';
-    $result .= '<i class="fa ' . $starClass . '" aria-hidden="true"></i>';
-  }
+    $result.='<i class="fa ' . $starClass . '" aria-hidden="true"></i>';
+}
 
-  return $result;
+return $result;
 
-
+    
 }
 
 
 
-function star_home_rating($rating)
-{
-  $fullStars = floor($rating); // Get the integer part of the rating
-  $halfStar = ($rating - $fullStars) >= 0.5; // Check if there's a half star
-  $emptyStars = 5 - $fullStars - ($halfStar ? 1 : 0); // Calculate the number of empty stars
+function star_home_rating($rating) {
+    $fullStars = floor($rating); // Get the integer part of the rating
+    $halfStar = ($rating - $fullStars) >= 0.5; // Check if there's a half star
+    $emptyStars = 5 - $fullStars - ($halfStar ? 1 : 0); // Calculate the number of empty stars
 
-  echo '<div class="rating">';
-
-  // Display full stars
-  for ($i = 0; $i < $fullStars; $i++) {
-    echo '<i class="fa fa-star" aria-hidden="true" style="color:#ffd602;"></i>';
-  }
-
-  // Display half star (if needed)
-  if ($halfStar) {
-    echo '<i class="fa fa-star-half-o" aria-hidden="true" style="color:#ffd602;"></i>';
-  }
-
-  // Display empty stars
-  for ($i = 0; $i < $emptyStars; $i++) {
-    echo '<i class="fa fa-star-o" aria-hidden="true" style="color:#ffd602;"></i>';
-  }
-
-  echo '</div>';
+    echo '<div class="rating">';
+    
+    // Display full stars
+    for ($i = 0; $i < $fullStars; $i++) {
+        echo '<i class="fa fa-star" aria-hidden="true" style="color:#ffd602;"></i>';
+    }
+    
+    // Display half star (if needed)
+    if ($halfStar) {
+        echo '<i class="fa fa-star-half-o" aria-hidden="true" style="color:#ffd602;"></i>';
+    }
+    
+    // Display empty stars
+    for ($i = 0; $i < $emptyStars; $i++) {
+        echo '<i class="fa fa-star-o" aria-hidden="true" style="color:#ffd602;"></i>';
+    }
+    
+    echo '</div>';
 }
 
-function getDeveloper($dev_id)
-{
-  $dev_name = select_query("tbl_developer", "dev_id=" . (int) $dev_id);
+function getDeveloper($dev_id){
+  $dev_name = select_query("tbl_developer", "dev_id=" . (int)$dev_id);
   $dev_row = mysqli_fetch_assoc($dev_name);
 
   return $dev_row['dev_heading'] ?? ''; // ✅ return string
@@ -730,34 +794,36 @@ function getDeveloper($dev_id)
 
 function get_client_ip()
 {
-  $ipaddress = '';
-  if (getenv('HTTP_X_FORWARDED_FOR'))
-    $ipaddress = getenv('HTTP_X_FORWARDED_FOR');
-  else if (getenv('HTTP_X_FORWARDED'))
-    $ipaddress = getenv('HTTP_X_FORWARDED');
-  else if (getenv('HTTP_FORWARDED_FOR'))
-    $ipaddress = getenv('HTTP_FORWARDED_FOR');
-  else if (getenv('HTTP_FORWARDED'))
-    $ipaddress = getenv('HTTP_FORWARDED');
-  else if (getenv('REMOTE_ADDR'))
-    $ipaddress = getenv('REMOTE_ADDR');
-  return $ipaddress;
+  // Forwarded headers can be set by any visitor, so they are only read when the
+  // request really comes from one of our own proxies (see 'trusted_proxies').
+  $remote_addr = $_SERVER['REMOTE_ADDR'] ?? '';
+  $trusted_proxies = (array) secret('trusted_proxies', []);
+
+  if ($remote_addr !== '' && in_array($remote_addr, $trusted_proxies, true) && !empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+    $forwarded = array_map('trim', explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']));
+    for ($i = count($forwarded) - 1; $i >= 0; $i--) {
+      if (filter_var($forwarded[$i], FILTER_VALIDATE_IP) && !in_array($forwarded[$i], $trusted_proxies, true)) {
+        return $forwarded[$i];
+      }
+    }
+  }
+  return $remote_addr;
 }
 
 
-function ip_details($IPaddress)
+function ip_details($IPaddress) 
 {
-  $json = file_get_contents("http://ipinfo.io/{$IPaddress}");
-  $details = json_decode($json);
-  return $details;
+    $json       = file_get_contents("http://ipinfo.io/{$IPaddress}");
+    $details    = json_decode($json);
+    return $details;
 }
 
 
 function current_url()
 {
-  $actual_link = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+    $actual_link = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
 
-  return $actual_link;
+    return $actual_link;
 
 }
 
@@ -765,7 +831,7 @@ function current_url()
 
 function currency_dropdown_list($key)
 {
-  $record = '<select id="currencySelect"  name="to" data-id=' . $key . '>
+    $record='<select id="currencySelect"  name="to" data-id='.$key.'>
     <option value="AED" selected>AED</option>
     <option value="AFN">AFN</option>
     <option value="ALL">ALL</option>
@@ -931,7 +997,126 @@ function currency_dropdown_list($key)
 </select>
 ';
 
-  return $record;
+return $record;
 
 }
 
+/**
+ * Page speed helpers.
+ *
+ * dre_img() returns the URL of a smaller copy of a site image, made once and
+ * kept in images/cache/. The copy is WebP when this PHP build can write it,
+ * otherwise JPEG (or PNG when the picture has transparency). Anything it cannot handle (remote URL, missing
+ * file, cache folder not writable) comes back unchanged, so the page never breaks.
+ */
+function dre_img($url, $max_width = 800)
+{
+    static $root = null, $cache_ok = null;
+    if ($root === null) {
+        $root = dirname(__DIR__) . '/';
+        $cache_ok = function_exists('imagecreatefromjpeg') && is_dir($root . 'images/cache') && is_writable($root . 'images/cache');
+    }
+    if (!$cache_ok || !is_string($url) || $url === '') {
+        return $url;
+    }
+    $rel = (strpos($url, BASE_URL) === 0) ? substr($url, strlen(BASE_URL)) : $url;
+    $rel = ltrim(rawurldecode(strtok($rel, '?')), '/');
+    if (preg_match('#^[a-z]+://#i', $rel) || strpos($rel, '..') !== false) {
+        return $url;
+    }
+    $ext = strtolower(pathinfo($rel, PATHINFO_EXTENSION));
+    if (!in_array($ext, ['jpg', 'jpeg', 'png'], true)) {
+        return $url;
+    }
+    $src = $root . $rel;
+    if (!is_file($src)) {
+        return $url;
+    }
+    $webp = function_exists('imagewebp');
+    $key = md5($rel . '|' . filemtime($src) . '|' . (int) $max_width);
+    $dir = $root . 'images/cache/';
+    $name = '';
+    foreach ($webp ? ['webp'] : ['jpg', 'png'] as $try) {
+        if (is_file($dir . $key . '.' . $try)) {
+            $name = $key . '.' . $try;
+            break;
+        }
+    }
+    $out = $dir . $name;
+    if ($name === '') {
+        $info = @getimagesize($src);
+        // Skip very large pictures: decoding them needs more memory than a page request should use
+        if (!$info || $info[0] * $info[1] > 30000000) {
+            return $url;
+        }
+        $im = ($info[2] === IMAGETYPE_PNG) ? @imagecreatefrompng($src) : (($info[2] === IMAGETYPE_JPEG) ? @imagecreatefromjpeg($src) : false);
+        if (!$im) {
+            return $url;
+        }
+        imagepalettetotruecolor($im);
+        if ($info[0] > $max_width) {
+            // imagecopyresampled works on every PHP build; imagescale() fails on some of them.
+            $height = max(1, (int) round($info[1] * $max_width / $info[0]));
+            $scaled = imagecreatetruecolor((int) $max_width, $height);
+            imagealphablending($scaled, false);
+            imagesavealpha($scaled, true);
+            if (imagecopyresampled($scaled, $im, 0, 0, 0, 0, (int) $max_width, $height, $info[0], $info[1])) {
+                imagedestroy($im);
+                $im = $scaled;
+            } else {
+                imagedestroy($scaled);
+            }
+        }
+        imagealphablending($im, false);
+        imagesavealpha($im, true);
+        $type = 'webp';
+        if (!$webp) {
+            // JPEG has no transparency, so a PNG that uses it stays a PNG
+            $type = 'jpg';
+            if ($info[2] === IMAGETYPE_PNG) {
+                $probe = imagescale($im, 24, 24, IMG_NEAREST_NEIGHBOUR);
+                imagealphablending($probe, false);
+                for ($y = 0; $y < 24 && $type === 'jpg'; $y++) {
+                    for ($x = 0; $x < 24; $x++) {
+                        if ((imagecolorat($probe, $x, $y) >> 24) & 0x7F) {
+                            $type = 'png';
+                            break;
+                        }
+                    }
+                }
+                imagedestroy($probe);
+            }
+        }
+        $name = $key . '.' . $type;
+        $out = $dir . $name;
+        $tmp = $out . '.' . getmypid() . '.tmp';
+        if ($type === 'webp') {
+            $saved = @imagewebp($im, $tmp, 80);
+        } elseif ($type === 'jpg') {
+            imageinterlace($im, true);
+            $saved = @imagejpeg($im, $tmp, 80);
+        } else {
+            $saved = @imagepng($im, $tmp, 9);
+        }
+        imagedestroy($im);
+        if (!$saved || !@rename($tmp, $out)) {
+            @unlink($tmp);
+            return $url;
+        }
+        // Keep the original when the copy did not come out smaller
+        if (filesize($out) >= filesize($src) && $info[0] <= $max_width) {
+            @file_put_contents($out . '.skip', '');
+        }
+    }
+    if (is_file($out . '.skip')) {
+        return $url;
+    }
+    return BASE_URL . 'images/cache/' . $name;
+}
+
+/** Local css/js URL with the file's change time appended, so browsers can cache it for long. */
+function dre_asset($rel)
+{
+    $file = dirname(__DIR__) . '/' . $rel;
+    return BASE_URL . $rel . (is_file($file) ? '?v=' . filemtime($file) : '');
+}

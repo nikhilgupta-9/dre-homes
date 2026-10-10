@@ -87186,7 +87186,7 @@ body {
         padding-top: 65px;
     }
     .header-fixed.subheader-fixed.subheader-enabled .wrapper {
-        padding-top: 80px;
+        padding-top: 90px;
     }
     .aside-fixed .wrapper {
         padding-left: 265px;
@@ -90482,5 +90482,3 @@ input[name="order_no"].error {
     animation: shake 0.3s ease;
     border-color: #dc3545 !important;
 }
-
-

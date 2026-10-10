@@ -55,7 +55,7 @@ $dev_detail = select_row('tbl_developer', "dev_slug='$detail' and is_active='1'"
                 <div class="post-container">
                     <div class="boxed-content">
                         <div class="boxed-content-title">
-                            <h3>Why Choose <?= $dev_detail['dev_heading'] ?> Properties?</h3>
+                            <h3>Why Choose <?= $dev_detail['dev_heading'] ?>?</h3>
                         </div>
                         <div class="boxed-content-item">
                             <div class="row justify-content-center align-items-center">
@@ -191,6 +191,7 @@ $prj_query = select_query(
                                                         </div>
 
                                                         <div class="geodir-category-footer list-footer">
+                                                            <div class="d-flex">
                                                             <?php
                                                             $bedroom1 = '';
 
@@ -224,12 +225,12 @@ $prj_query = select_query(
                                                                 </div>';
                                                             }
                                                             ?>
-                                                            <div class="off-p-f2">
+                                                            <div class="off-p-f2 ms-2">
                                                                 <?php if (is_numeric($row["proj_price"]) && $row["proj_price"] != 0): ?>
                                                                     <div class="price-row" style="display: flex; align-items: flex-start; flex-direction: column; gap: 0; font-size:1em;">
                                                                         <div class="text-muted off-f-h">Starting Price: </div>
                                                                         <!-- Price Output -->
-                                                                        <div class="geodir-category-content_price text-muted      currency-price off-f-b ms-1" "
+                                                                        <div class="geodir-category-content_price text-muted      currency-price off-f-b " "
                                                             data-price=" <?= $row["proj_price"] ?>"
                                                                             data-original-currency="AED"
                                                                             data-original-price="<?= $row["proj_price"] ?>">
@@ -241,9 +242,10 @@ $prj_query = select_query(
                                                                 <?php else: ?>
                                                                     <div class="geodir-category-content_price text-muted " style="font-size:1em; flex-direction: column; align-items: flex-start;">
                                                                         <div class="text-muted off-f-h">Starting Price:</div>
-                                                                        <div class="off-f-b ms-1" ">Call Us</div>
+                                                                        <div class="off-f-b " ">Call Us</div>
                                                     </div>
                                                 <?php endif; ?>
+                                            </div>
                                             </div>
                                             <div class=" clearfix"></div>
                                                                         <?php
@@ -264,7 +266,7 @@ $prj_query = select_query(
 
                                                                                 <img src="<?= BASE_URL ?>images/wa-chat-logo-w.png"
                                                                                     alt="Whatsapp Icon" width="100%" title="Whatsapp">
-                                                                                WHATSAPP
+                                                                                <span class="d-none d-md-inline">WHATSAPP</span>
                                                                             </a>
                                                                         </div>
                                                                     </div>

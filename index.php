@@ -1,4 +1,7 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 include('db/config.php');
 $meta_tags = select_row("tbl_tags", "id=7 and is_active=1");
 include('common/header.php');
@@ -27,7 +30,7 @@ include('common/header.php');
                                 <div class="hero-section-container hsc2">
                                     <div class="row align-items-center">
                                         <div class="col-lg-4">
-                                            <h1>Find Your <span class="dre-cl">DRE</span>am Property</h1>
+                                            <h1>Find Your <span class="dre-gradient-text">DRE</span>am Property</h1>
                                             <p class="pb-0 mb-0">Search the best properties across the prime location
                                             </p>
                                         </div>
@@ -41,42 +44,35 @@ include('common/header.php');
                                                     </div>
 
                                                     <div class="dre-search-content">
-                                                        <select name="type" class="chosen-select">
-                                                            <option value="Offplan">Off Plan</option>
-                                                            <option value="Buy">Buy</option>
-                                                            <option value="Rent">Rent</option>
+                                                        <select name="type" id="propertyType" class="chosen-select">
+                                                            <option value="Offplan" data-id="1">Off Plan</option>
+                                                            <option value="Buy" data-id="7">Buy</option>
+                                                            <option value="Rent" data-id="8">Rent</option>
                                                         </select>
                                                     </div>
                                                 </div>
 
                                                 <!-- Property Type -->
-                                                <div class="dre-search-item">
+                                                <!-- `<div class="dre-search-item">
                                                     <div class="dre-search-icon">
                                                         <i class="fa-regular fa-building"></i>
                                                     </div>
 
                                                     <div class="dre-search-content" style="z-index: 10;">
-                                                        <select name="unitType" class="chosen-select">
-                                                            <option value="all">All Types</option>
-                                                            <option value="apartments">Apartment</option>
-                                                            <option value="duplex">Duplex</option>
-                                                            <option value="triplex">Triplex</option>
-                                                            <option value="penthouse">Penthouse</option>
-                                                            <option value="villa">Villa</option>
-                                                            <option value="townhouse">Townhouse</option>
-                                                            <option value="plot">Plot</option>
+                                                        <select name="unitType" id="propertyTypeSuggestions" class="chosen-select">
+                                                            
                                                         </select>
                                                     </div>
-                                                </div>
+                                                </div>` -->
 
-                                               <!-- Location -->
+                                                <!-- Location -->
                                                 <div class="dre-search-item">
                                                     <div class="dre-search-icon">
                                                         <i class="fa-solid fa-location-dot"></i>
                                                     </div>
 
                                                     <div class="dre-search-content">
-                                                        <input type="text" name="location" id="locationInput1" placeholder="Enter location" autocomplete="off">
+                                                        <input type="text" name="location" id="locationInput1" placeholder="Enter Location" autocomplete="off">
 
                                                         <span id="clearLocationInput" class="clear-input-btn">
                                                             &times;
@@ -94,7 +90,7 @@ include('common/header.php');
 
                                                     <div class="dre-search-content">
                                                         <input type="text" name="property" id="propertyInput1"
-                                                            placeholder="Enter project name" autocomplete="off">
+                                                            placeholder="Enter Project Name" autocomplete="off">
 
                                                             <span id="clearPropertyInput" class="clear-input-btn">
                                                             &times;
@@ -118,9 +114,29 @@ include('common/header.php');
 
                                 <!-- VIDEO -->
                                 <div class="bg-wrap bg-hero fs-wrapper">
-                                    <video class="hero-video" autoplay muted loop playsinline preload="auto">
-                                        <source src="<?= BASE_URL_IMG . $hero['desktop']['media_path'] ?>" type="video/mp4">
+                                    <?php
+                                    // Lighter copy and poster of the hero video, used when they exist next to the upload
+                                    $hero_video = $hero['desktop']['media_path'];
+                                    $hero_base = preg_replace('/\.[a-z0-9]+$/i', '', $hero_video);
+                                    $hero_dir = __DIR__ . '/admin_nsrdwsc/assets/media/';
+                                    if (is_file($hero_dir . $hero_base . '.web.mp4')) {
+                                        $hero_video = $hero_base . '.web.mp4';
+                                    }
+                                    $hero_poster = is_file($hero_dir . $hero_base . '.poster.jpg') ? BASE_URL_IMG . $hero_base . '.poster.jpg' : '';
+                                    ?>
+                                    <video class="hero-video" muted loop playsinline webkit-playsinline preload="none"<?= $hero_poster ? ' poster="' . $hero_poster . '"' : '' ?>
+                                        data-src="<?= BASE_URL_IMG . $hero_video ?>">
                                     </video>
+                                    <script>
+                                        // The video starts downloading only after the page itself has finished loading
+                                        window.addEventListener('load', function () {
+                                            var v = document.querySelector('.hero-video[data-src]');
+                                            if (!v) return;
+                                            v.src = v.getAttribute('data-src');
+                                            var p = v.play();
+                                            if (p && p.catch) p.catch(function () {});
+                                        });
+                                    </script>
                                     <div class="hero-overlay"></div>
                                 </div>
 
@@ -169,131 +185,141 @@ include('common/header.php');
                                 <div class="swiper-wrapper">
 
                                     <?php
-                                    $query = select_query('tbl_proj', 'proj_showonhomepage=1 and is_active=1 order by prj_id');
+                                    $query = select_query('tbl_proj', 'proj_showonhomepage=1 and is_active=1 order by home_card_order_no IS NULL, home_card_order_no ASC');
                                     while ($row = mysqli_fetch_array($query)) {
                                         $proj_dev = select_row("tbl_developer", "dev_id=" . $row["prj_dev_id"]);
+
                                         if (!empty($row['home_card_img'])) {
 
-                                                    $proj_thumb_mg =
-                                                        BASE_URL_IMG . "project/home-card-img/" . $row['home_card_img'];
+                                            $proj_thumb_mg =
+                                                BASE_URL_IMG . "project/home-card-img/" . $row['home_card_img'];
 
-                                                } else {
+                                        } else {
 
-                                                    $prj_thumb_arr = explode(",", $row['prj_thumb_img']);
+                                            $prj_thumb_arr = explode(",", $row['prj_thumb_img']);
 
-                                                    $proj_thumb_img1 =
-                                                        !empty($prj_thumb_arr[0])
-                                                        ? $prj_thumb_arr[0]
-                                                        : '';
+                                            $proj_thumb_img1 =
+                                                !empty($prj_thumb_arr[0])
+                                                ? $prj_thumb_arr[0]
+                                                : '';
 
-                                                    $proj_thumb_mg =
-                                                        BASE_URL_IMG . "project/thumb/" . $proj_thumb_img1;
+                                            $proj_thumb_mg =
+                                                BASE_URL_IMG . "project/thumb/" . $proj_thumb_img1;
 
-                                                }
-                                    ?>
+                                        }
+                                        ?>
                                         <div class="swiper-slide">
                                             <div class="testi-item">
                                                 <div class="listing-item">
                                                     <div class="geodir-category-listing">
                                                         <div class="geodir-category-img">
-                                                            <a href="<?= BASE_URL ?>property/<?= $row["proj_slug"] ?>" class="geodir-category-img_item">
+                                                            <a href="<?= BASE_URL ?>property/<?= $row["proj_slug"] ?>"
+                                                                class="geodir-category-img_item">
                                                                 <div class="off-plan-thumb">
-                                                                    <img src="<?= $proj_thumb_mg ?>" alt="<?= $row['proj_name'] ?>" loading="lazy"
-    decoding="async">
+                                                                    <img loading="lazy" decoding="async" src="<?= dre_img($proj_thumb_mg, 700) ?>" alt="">
                                                                 </div>
                                                                 <div class="overlay"></div>
                                                             </a>
                                                             <div class="geodir-category-location">
                                                                 <div class="geodir-category-location-item">
                                                                     <?php if (!empty($row['proj_name_on_card'])) { ?>
-                                                                    <h3>
-                                                                        <a href="<?= BASE_URL ?>property/<?= $row["proj_slug"] ?>">
-                                                                        <?= $row['proj_name_on_card'] ?>
-                                                                        </a>
-                                                                    </h3>
+                                                                        <h3>
+                                                                            <a
+                                                                                href="<?= BASE_URL ?>property/<?= $row["proj_slug"] ?>">
+                                                                                <?= $row['proj_name_on_card'] ?>
+                                                                            </a>
+                                                                        </h3>
                                                                     <?php } else { ?>
-                                                                    <h3>
-                                                                        <a href="<?= BASE_URL ?>property/<?= $row["proj_slug"] ?>">
-                                                                        <?= $row['proj_name'] ?>
-                                                                        </a>
-                                                                    </h3>
+                                                                        <h3>
+                                                                            <a
+                                                                                href="<?= BASE_URL ?>property/<?= $row["proj_slug"] ?>">
+                                                                                <?= $row['proj_name'] ?>
+                                                                            </a>
+                                                                        </h3>
                                                                     <?php } ?>
                                                                     <!-- <h5>
                                                                         <span class="off-n-sp1">By</span>
                                                                         <span class="off-n-sp2"><?= getDeveloper($row["prj_dev_id"]) ?></span>
                                                                     </h5> -->
-                                                                    <a href="<?= BASE_URL ?>property/<?= $row["proj_slug"] ?>" class="map-item"><i
+                                                                    <a href="<?= BASE_URL ?>property/<?= $row["proj_slug"] ?>"
+                                                                        class="map-item"><i
                                                                             class="fas fa-map-marker-alt"></i>
-                                                                            <?= $row["proj_location"] ?></a>
+                                                                        <?= $row["proj_location"] ?>
+                                                                    </a>
                                                                     <div class="dre-op-f">
                                                                         <div class="dre-op-f-item">
                                                                             <div class="text-muted off-f-h">Starting Price: </div>
                                                                             <div>
                                                                                 <?php if (is_numeric($row["proj_price"]) && $row["proj_price"] != 0): ?>
-                                                                                                <div class="price-row" style="display: flex; align-items: flex-end; flex-direction: column; gap: 0; font-size:1em;">
-                                                                                                    
-                                                                                                    <!-- Price Output -->
-                                                                                                    <div class="geodir-category-content_price text-muted      currency-price off-f-b" "
-                                                                                        data-price=" <?= $row["proj_price"] ?>"
-                                                                                                        data-original-currency="AED"
-                                                                                                        data-original-price="<?= $row["proj_price"] ?>">
-                                                                                                        <img src="<?= BASE_URL ?>images/symbol/currency-symbol-w.png" alt="Currency"
-                                                                                                            style="height: 16px; vertical-align: middle;">
-                                                                                                        AED <?= number_format($row["proj_price"]) ?>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            <?php else: ?>
-                                                                                                <div class="geodir-category-content_price text-muted " style="font-size:1em; flex-direction: column; align-items: flex-end;">
-                                                                                                    
-                                                                                                    <div class="off-f-b " ">Call Us</div>
-                                                                                                </div>
-                                                                                                <?php endif; ?>
-                                                                             </div>
+                                                                                    <div class="price-row"
+                                                                                        style="display: flex; align-items: flex-end; flex-direction: column; gap: 0; font-size:1em;">
+
+                                                                                        <!-- Price Output -->
+                                                                                        <div class="geodir-category-content_price text-muted      currency-price off-f-b" "
+                                                                                                                                                                                                                data-price="
+                                                                                        <?= $row["proj_price"] ?>"
+                                                                                            data-original-currency="AED"
+                                                                                            data-original-price="<?= $row["proj_price"] ?>">
+                                                                                            <img loading="lazy" decoding="async" src="<?= BASE_URL ?>images/symbol/currency-symbol-w.png"
+                                                                                                alt="Currency"
+                                                                                                style="height: 16px; vertical-align: middle;">
+                                                                                            AED
+                                                                                            <?= number_format($row["proj_price"]) ?>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                <?php else: ?>
+                                                                                    <div class="geodir-category-content_price text-muted "
+                                                                                        style="font-size:1em; flex-direction: column; align-items: flex-end;">
+
+                                                                                        <div class="off-f-b " ">Call Us</div>
+                                                                                    </div>
+                                                                                <?php endif; ?>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
                                                                 
                                                                 
                                                             </div>
-                                                            <ul class="list-single-opt_header_cat off-n">
-                                                                <?php if (!empty($row['proj_handover'])): ?>
-                                                                    <li>
-                                                                        <a href="javascript:void(0)" class="cat-opt">
-                                                                            <?= $row['proj_handover'] ?></a>
-                                                                    </li>
-                                                                <?php endif; ?>
-                                                            </ul>
+                                                                <ul class="list-single-opt_header_cat off-n">
+                                                                    <?php if (!empty($row['proj_handover'])): ?>
+                                                                        <li>
+                                                                            <a href="javascript:void(0)"  class="cat-opt">
+                                                                                <?= $row['proj_handover'] ?></a>
+                                                                        </li>
+                                                                    <?php endif; ?>
+                                                                </ul>
                                                         </div>
-                                                        <!-- <div class="geodir-category-content prop-gcc off-n">
+                                                                                    <!-- <div class="geodir-category-content prop-gcc off-n">
 
-                                                            <?php if (!empty($row['proj_name_on_card'])) { ?>
-                                                                <h3>
-                                                                    <a href="<?= BASE_URL ?>property/<?= $row["proj_slug"] ?>">
-                                                                        <?= $row['proj_name_on_card'] ?>
-                                                                    </a>
-                                                                </h3>
-                                                            <?php } else { ?>
-                                                                <h3>
-                                                                    <a href="<?= BASE_URL ?>property/<?= $row["proj_slug"] ?>">
-                                                                        <?= $row['proj_name'] ?>
-                                                                    </a>
-                                                                </h3>
-                                                            <?php } ?>
-                                                            <h5>
-                                                                <span class="off-n-sp1">By</span>
-                                                                <span class="off-n-sp2"><?= getDeveloper($row["prj_dev_id"]) ?></span>
-                                                            </h5>
+                                                                                        <?php if (!empty($row['proj_name_on_card'])) { ?>
+                                                                                            <h3>
+                                                                                                <a href="<?= BASE_URL ?>property/<?= $row["proj_slug"] ?>">
+                                                                                                    <?= $row['proj_name_on_card'] ?>
+                                                                                                </a>
+                                                                                            </h3>
+                                                                                        <?php } else { ?>
+                                                                                            <h3>
+                                                                                                <a href="<?= BASE_URL ?>property/<?= $row["proj_slug"] ?>">
+                                                                                                    <?= $row['proj_name'] ?>
+                                                                                                </a>
+                                                                                            </h3>
+                                                                                        <?php } ?>
+                                                                                        <h5>
+                                                                                            <span class="off-n-sp1">By</span>
+                                                                                            <span class="off-n-sp2"><?= getDeveloper($row["prj_dev_id"]) ?></span>
+                                                                                        </h5>
 
-                                                        </div> -->
+                                                                                    </div> -->
 
-                                                        
-                                                            </div>
-                                                        </div>
+
                                                     </div>
                                                 </div>
-                                            <?php } ?>
-
                                             </div>
+                                        </div>
+                                    <?php } ?>
+
+                                </div>
                                         </div>
                                         
                                 </div>
@@ -341,7 +367,7 @@ include('common/header.php');
                                                                     <h2 style="color:#5f574c;"><?= $commun_header ?>
                                                                     </h2>
                                                                     <p style="color:#5f574c;"><?= $commun_content ?></p>
-                                                                    <a href="listing.html" class="commentssubmit"
+                                                                    <a href="https://drehomes.com/community" class="commentssubmit"
                                                                         style="margin-top: 20px; background:#5f574c;">Explore
                                                                         All<i class="fa-solid fa-caret-right"></i></a>
                                                                 </div>
@@ -366,13 +392,14 @@ include('common/header.php');
                                                                                 ?>
 
                                                                                 <div class="swiper-slide">
+                                                                                    <a href="<?=BASE_URL ."community/". $values['comm_slug']?>">
                                                                                     <div class="city-carousel-item">
 
                                                                                         <div class="bg-wrap fs-wrapper">
 
                                                                                             <div class="img-box">
 
-                                                                                                <img src="<?= $comm_img ?>"
+                                                                                                <img decoding="async" src="<?= dre_img($comm_img, 700) ?>"
                                                                                                     alt="<?= $values['comm_heading'] ?>"
                                                                                                     width="100%" loading="lazy">
 
@@ -385,9 +412,9 @@ include('common/header.php');
                                                                                         <div class="city-carousel-content">
                                                                                             <div class="hc-counter"><?=count(select_all('tbl_proj', 'prj_comm_id='.$values['comm_id'].''))?> Properties</div>
                                                                                             <h3>
-                                                                                                <a href="<?=BASE_URL ."community/". $values['comm_slug']?>">
+                                                                                                
                                                                                                     <?= $values['comm_heading'] ?>
-                                                                                                </a>
+                                                                                                
                                                                                             </h3>
 
                                                                                             <p>
@@ -404,6 +431,7 @@ include('common/header.php');
                                                                                         </div>
 
                                                                                     </div>
+                                                                                    </a>
                                                                                 </div>
 
                                                                                 <?php
@@ -428,7 +456,7 @@ include('common/header.php');
 
 
                 <!-- linking section starts -->
-                <div class="container">
+                <div class="container desk-link">
                     <div class="row">
                         <!-- boxed-content -->
                         <div class="col-12">
@@ -442,7 +470,7 @@ include('common/header.php');
                                                     <div class="geodir-category-img">
                                                         <a href="<?= BASE_URL ?>offplan-properties" class="geodir-category-img_item">
                                                             <div class="home-bg" data-bg="">
-                                                                <img src="images/home-sec/offplan-property.jpg" alt="" width="100%">
+                                                                <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/home-sec/offplan-property.jpg', 900) ?>" alt="" width="100%">
                                                                 <div class="home-bg-h">
                                                                     <h4>OFF-PLAN PROPERTY</h4>
                                                                     <!--<i class="fa-solid fa-arrow-right-long"></i>-->
@@ -470,7 +498,7 @@ include('common/header.php');
                                                     <div class="geodir-category-img">
                                                         <a href="<?= BASE_URL ?>buy-property" class="geodir-category-img_item">
                                                             <div class="home-bg" data-bg="">
-                                                                <img src="images/home-sec/buy-property.jpg" alt="" width="100%">
+                                                                <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/home-sec/buy-property.jpg', 900) ?>" alt="" width="100%">
                                                                 <div class="home-bg-h">
                                                                     <h4>BUY PROPERTY</h4>
                                                                     <!--<i class="fa-solid fa-arrow-right-long"></i>-->
@@ -498,7 +526,7 @@ include('common/header.php');
                                                     <div class="geodir-category-img">
                                                         <a href="<?= BASE_URL ?>rent-property" class="geodir-category-img_item">
                                                             <div class="home-bg" data-bg="">
-                                                                <img src="images/home-sec/rent-property-1.jpg" alt="" width="100%">
+                                                                <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/home-sec/rent-property-1.jpg', 900) ?>" alt="" width="100%">
                                                                 <div class="home-bg-h">
                                                                     <h4>RENT PROPERTY</h4>
                                                                     <!--<i class="fa-solid fa-arrow-right-long"></i>-->
@@ -531,7 +559,121 @@ include('common/header.php');
                 </div>
                 <!-- linking section ends -->
 
-                
+                <!-- linking caraousel -->
+                                    <div class="container mob-link">
+                                        <div class="links-caraousel-box">
+
+                                            <!-- clients-carousel-wrap-->
+                                            <div class="links-carousel-wrap">
+                                                <div class="links-carousel">
+                                                    <div class="swiper-container">
+                                                        <div class="swiper-wrapper">
+                                                            <div class="swiper-slide">
+                                                                <div class="listing-item">
+                                                                    <div class="geodir-category-listing">
+                                                                        <div class="geodir-category-img">
+                                                                            <a href="<?= BASE_URL ?>offplan-properties"
+                                                                                class="geodir-category-img_item">
+                                                                                <div class="home-bg" data-bg="">
+                                                                                    <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/home-sec/offplan-property.jpg', 900) ?>"
+                                                                                        alt="" width="100%">
+                                                                                    <div class="home-bg-h">
+                                                                                        <h4>OFF-PLAN PROPERTY</h4>
+                                                                                        <!--<i class="fa-solid fa-arrow-right-long"></i>-->
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div class="overlay"></div>
+                                                                            </a>
+                                                                        </div>
+                                                                        <div class="geodir-category-content">
+                                                                            <h3><a
+                                                                                    href="<?= BASE_URL ?>offplan-properties">Hot
+                                                                                    Property Launches</a></h3>
+                                                                            <p>Discover the newest and most sought-after
+                                                                                projects fresh on the Dubai market.</p>
+                                                                            <!-- <p><a href="<?= BASE_URL ?>offplan-properties" class="home-s-btn">Explore <i class="fa-solid fa-arrow-right-long"></i></a></p> -->
+                                                                        </div>
+                                                                        <!-- <div class="geodir-category-footer">
+                                                <a href="<?= BASE_URL ?>offplan-properties" class="commentssubmit ">Learn More</a>
+                                            </div> -->
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="swiper-slide">
+                                                                <div class="listing-item">
+                                                                    <div class="geodir-category-listing">
+                                                                        <div class="geodir-category-img">
+                                                                            <a href="<?= BASE_URL ?>buy-property"
+                                                                                class="geodir-category-img_item">
+                                                                                <div class="home-bg" data-bg="">
+                                                                                    <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/home-sec/buy-property.jpg', 900) ?>"
+                                                                                        alt="" width="100%">
+                                                                                    <div class="home-bg-h">
+                                                                                        <h4>BUY PROPERTY</h4>
+                                                                                        <!--<i class="fa-solid fa-arrow-right-long"></i>-->
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div class="overlay"></div>
+                                                                            </a>
+                                                                        </div>
+                                                                        <div class="geodir-category-content">
+                                                                            <h3><a href="<?= BASE_URL ?>buy-property">Top
+                                                                                    Resale Deals</a></h3>
+                                                                            <p>Unlock unbeatable value with handpicked
+                                                                                pre-owned homes across prime locations.
+                                                                            </p>
+                                                                            <!-- <p><a href="<?= BASE_URL ?>buy-property" class="home-s-btn">Explore <i class="fa-solid fa-arrow-right-long"></i></a></p> -->
+                                                                        </div>
+                                                                        <!-- <div class="geodir-category-footer">
+                                                <a href="javascript:void(0)" class="commentssubmit ">Learn More</a>
+                                            </div> -->
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="swiper-slide">
+                                                                <div class="listing-item">
+                                                                    <div class="geodir-category-listing">
+                                                                        <div class="geodir-category-img">
+                                                                            <a href="<?= BASE_URL ?>rent-property"
+                                                                                class="geodir-category-img_item">
+                                                                                <div class="home-bg" data-bg="">
+                                                                                    <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/home-sec/rent-property-1.jpg', 900) ?>"
+                                                                                        alt="" width="100%">
+                                                                                    <div class="home-bg-h">
+                                                                                        <h4>RENT PROPERTY</h4>
+                                                                                        <!--<i class="fa-solid fa-arrow-right-long"></i>-->
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div class="overlay"></div>
+                                                                            </a>
+                                                                        </div>
+                                                                        <div class="geodir-category-content">
+                                                                            <h3><a href="<?= BASE_URL ?>rent-property">Trending
+                                                                                    Rental Homes</a></h3>
+                                                                            <p>Browse the most in-demand rental listings
+                                                                                tailored to your lifestyle and budget.
+                                                                            </p>
+                                                                            <!-- <p><a href="<?= BASE_URL ?>rent-property" class="home-s-btn">Explore <i class="fa-solid fa-arrow-right-long"></i></a></p> -->
+                                                                        </div>
+                                                                        <!-- <div class="geodir-category-footer">
+                                                <a href="<?= BASE_URL ?>rent-property" class="commentssubmit ">Learn More</a>
+                                            </div> -->
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                        </div>
+                                                    </div>
+                                                    <!--<div class="cc-button cc-button-next"><i-->
+                                                    <!--        class="fal fa-angle-right"></i></div>-->
+                                                    <!--<div class="cc-button cc-button-prev"><i-->
+                                                    <!--        class="fal fa-angle-left"></i></div>-->
+                                                </div>
+                                            </div>
+                                            <!-- clients-carousel-wrap end-->
+                                        </div>
+                                    </div>
+                                    <!--linking caraousel end-->
 
                 
 
@@ -545,11 +687,11 @@ include('common/header.php');
                                 <a href="<?= BASE_URL ?>golden-visa#golden-visa-box" class="gvd-btn">Get Golden Visa Consultation</a>
                             </div>
                             <div class="col-lg-6 gvd-item-2">
-                                <img src="images/bg/Golden-Visa-14.png" alt="" width="100%">
+                                <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/bg/Golden-Visa-14.png', 1920) ?>" alt="" width="100%">
                             </div>
                         </div>
 
-                        <!-- <img src="images/bg/golden-visa-updated.jpg" alt="" width="100%"> -->
+                        <!-- <img loading="lazy" decoding="async" src="images/bg/golden-visa-updated.jpg" alt="" width="100%"> -->
                     </div>
                 </div>
                  
@@ -580,14 +722,14 @@ include('common/header.php');
                                 
                                 <div class="col-lg-6 about-img1">
                                     <div class="about-img">
-                                        <img src="images/dre-tree.jpg" class="respimg" alt="">
+                                        <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/dre-tree.jpg', 900) ?>" class="respimg" alt="">
                                         <div class="about-img-hotifer">
                                             <p>Your Gateway to Premium Dubai Real Estate Opportunities.</p>
                                             <!-- <h4>DRE Real Estate</h4> -->
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-lg-6">
+                                <div class="col-lg-6 px-0">
                                     <div class="about-title ab-hero">
                                         <p>About DRE</p>
                                         <h2>Elevating Real Estate with Trust and Excellence. </h2>
@@ -627,7 +769,7 @@ include('common/header.php');
                     <div class="boxed-content ">
                         <div class="about-wrap boxed-content-item">
                             <div class="row justify-content-center align-items-center about-boxn">
-                                <div class="col-lg-6">
+                                <div class="col-lg-6 ab-space">
                                     <div class="about-title ab-hero">
                                         <p>Meet the vision behind DRE</p>
                                         <h2>Built on relationships, driven by results.</h2>
@@ -637,9 +779,9 @@ include('common/header.php');
                                     </div>
                                     
                                 </div>
-                                <div class="col-lg-6">
+                                <div class="col-lg-6 ab-space">
                                     <div class="about-img">
-                                        <img src="images/qurat-and-mudi.jpg" class="respimg" alt="">
+                                        <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/qurat-and-mudi.jpg', 900) ?>" class="respimg" alt="">
                                         <!-- <div class="about-img-hotifer">
                                             <p>Your trusted partner for buying, renting, and investing in Dubai real estate.</p>
                                             <h4>DRE Real Estate</h4>
@@ -660,7 +802,7 @@ include('common/header.php');
                             <div class="row justify-content-center align-items-center about-boxn">
                                 <div class="col-lg-6 tsb-item-1">
                                     <div class="about-img">
-                                        <img src="images/town-square-office.jpg" class="respimg" alt="">
+                                        <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/town-square-office.jpg', 900) ?>" class="respimg" alt="">
                                         <!-- <div class="about-img-hotifer">
                                             <p>Your trusted partner for buying, renting, and investing in Dubai real estate.</p>
                                             <h4>DRE Real Estate</h4>
@@ -684,18 +826,9 @@ include('common/header.php');
                     </div>
                 </div>    
                 <!-- Town Square Branch  -->
-
-                <!-- award section -->
-                <div class="container-full">
-                    <div class="dre-new-awrd">
-                        
-                         <div><img src="images/award-image.png" alt="" width="100%"></div>
-                    </div>
-                </div>
-                <!-- award section -->
-
+                
                 <!--main-content-->
-                <div class="main-content ms_vir_height">
+                <div class=" ms_vir_height">
                     <!--container -->
                     <div class="container">
                         <div class="dre-newc">
@@ -713,18 +846,20 @@ include('common/header.php');
                                     <div class="swiper-container">
                                         <div class="swiper-wrapper">
 
-                                            <?php
-                                            $query = select_query('tbl_developer', 'dev_showonhomepage=1 and is_active=1 and dev_id != 0 order by dev_id desc');
+                                                                        <?php
+                                                                        $query = select_query('tbl_developer', 'dev_showonhomepage=1 AND is_active=1 ORDER BY dev_order_no ASC');
 
-                                            while ($row = mysqli_fetch_array($query)) {
-                                            ?>
-                                                <div class="swiper-slide">
-                                                    <a href="<?= BASE_URL ?>developer/<?= $row['dev_slug'] ?>" class="client-item"><img src="<?= BASE_URL_IMG ?>developer/homepage-image/<?= $row['dev_homp_img'] ?>"
-                                                            alt="<?= $row['dev_homp_img_alt'] ?>"></a>
-                                                </div>
-                                            <?php } ?>
+                                                                        while ($row = mysqli_fetch_array($query)) {
+                                                                            ?>
+                                                                            <div class="swiper-slide">
+                                                                                <a href="<?= BASE_URL ?>developer/<?= $row['dev_slug'] ?>"
+                                                                                    class="client-item"><img loading="lazy" decoding="async"
+                                                                                        src="<?= BASE_URL_IMG ?>developer/homepage-image/<?= $row['dev_homp_img'] ?>"
+                                                                                        alt="<?= $row['dev_homp_img_alt'] ?>"></a>
+                                                                            </div>
+                                                                        <?php } ?>
 
-                                        </div>
+                                                                    </div>
                                     </div>
                                     <div class="cc-button cc-button-next"><i class="fal fa-angle-right"></i></div>
                                     <div class="cc-button cc-button-prev"><i class="fal fa-angle-left"></i></div>
@@ -736,6 +871,17 @@ include('common/header.php');
                     <!--container end-->
                 </div>
                 <!--main-content end-->
+
+                <!-- award section -->
+                <div class="container-full">
+                    <div class="dre-new-awrd">
+                        
+                         <div><img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/award-image.png', 1400) ?>" alt="" width="100%"></div>
+                    </div>
+                </div>
+                <!-- award section -->
+
+                
                 <!-- DRE Developer Partnership Section -->
 
                 <section class="dre-partner-sec">
@@ -743,7 +889,7 @@ include('common/header.php');
 
                         <!-- Heading -->
                         <div class="dre-partner-head text-center">
-                            <p><img src="images/home-partner/DRE-X-BLACK-GOLD-cc.png" alt="" width="150px" style="display: block; margin: auto; padding-bottom:15px;"></p>
+                            <p><img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/home-partner/DRE-X-BLACK-GOLD-cc.png', 900) ?>" alt="" width="150px" style="display: block; margin: auto; padding-bottom:15px;"></p>
                             <p class="dre-partner-subtitle">
                                 STRONG PARTNERSHIPS. ICONIC DEVELOPMENTS.
                             </p>
@@ -762,7 +908,7 @@ include('common/header.php');
 
                                     <!-- Image -->
                                     <div class="dre-dev-img">
-                                        <a href="https://drehomes.com/company-news/sharafi-development-unveils-marea-residences-with-dre-x-as-exclusive-sales-partner"><img src="images/home-partner/Sharafi-deal1.jpeg" alt=""></a>
+                                        <a href="https://drehomes.com/company-news/sharafi-development-unveils-marea-residences-with-dre-x-as-exclusive-sales-partner"><img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/home-partner/Sharafi-deal1.jpeg', 900) ?>" alt=""></a>
                                     </div>
 
                                     <!-- Content -->
@@ -770,7 +916,7 @@ include('common/header.php');
 
                                         <!-- Logo -->
                                         <div class="dre-dev-logo">
-                                            <a href="https://drehomes.com/developer/sharafi-development"><img src="images/home-partner/sharafi-logo1.png" alt=""></a>
+                                            <a href="https://drehomes.com/developer/sharafi-development"><img loading="lazy" decoding="async" src="images/home-partner/sharafi-logo1.png" alt=""></a>
                                         </div>
 
                                         <!-- Text -->
@@ -796,7 +942,7 @@ include('common/header.php');
 
                                     <!-- Image -->
                                     <div class="dre-dev-img">
-                                        <a href="https://drehomes.com/company-news/dubai-tonino-lamborghini-residences-unveils-final-phase"><img src="images/home-partner/gulf-deal1.jpeg" alt=""></a>
+                                        <a href="https://drehomes.com/company-news/dubai-tonino-lamborghini-residences-unveils-final-phase"><img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/home-partner/gulf-deal1.jpeg', 900) ?>" alt=""></a>
                                     </div>
 
                                     <!-- Content -->
@@ -804,7 +950,7 @@ include('common/header.php');
 
                                         <!-- Logo -->
                                         <div class="dre-dev-logo">
-                                            <a href="https://drehomes.com/developer/gulf-land-property"><img src="images/home-partner/gulf-logo1.png" alt=""></a>
+                                            <a href="https://drehomes.com/developer/gulf-land-property"><img loading="lazy" decoding="async" src="images/home-partner/gulf-logo1.png" alt=""></a>
                                         </div>
 
                                         <!-- Text -->
@@ -843,7 +989,7 @@ include('common/header.php');
                                 </div>
                             </div>
                         </div>
-                        <div class="pm-icon-bg"><img src="images/pm-sec-bg.png" alt="" width="450px"></div>
+                        <div class="pm-icon-bg"><img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/pm-sec-bg.png', 900) ?>" alt="" width="450px"></div>
                     </div>
                 </div>
                 <!-- parallex section  -->
@@ -854,7 +1000,7 @@ include('common/header.php');
                         <div class="row d-flex align-items-center justify-content-center">
                             <div  class="col-lg-4 col-12  ">
                                 <div class="crb-item-1">
-                                    <img src="images/why-c.jpg" alt="" width="100%">
+                                    <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/why-c.jpg', 900) ?>" alt="" width="100%">
                                     <div class="overlay"></div>
                                     <div class="review-ot">
                                         <div class="customer-review-box">
@@ -914,7 +1060,7 @@ include('common/header.php');
                                                                     <a href="<?= !empty($item['instagram_url']) ? htmlspecialchars($item['instagram_url']) : '#' ?>"
                                                                         target="_blank"
                                                                         class="insta-item insta-square-card">
-                                                                        <img src="<?= BASE_URL_IMG . $item['media_url'] ?>"
+                                                                        <img decoding="async" src="<?= dre_img(BASE_URL_IMG . $item['media_url'], 600) ?>"
                                                                             alt="" loading="lazy">
                                                                             <i
                                                                 class="fa-brands fa-instagram"></i>
@@ -925,7 +1071,7 @@ include('common/header.php');
                                                                     <?php $item = $insta_items[1]; ?>
                                                                     <a href="<?= !empty($item['instagram_url']) ? htmlspecialchars($item['instagram_url']) : '#' ?>"
                                                                         target="_blank" class="insta-item insta-reel-card">
-                                                                        <img src="<?= BASE_URL_IMG . $item['media_url'] ?>"
+                                                                        <img decoding="async" src="<?= dre_img(BASE_URL_IMG . $item['media_url'], 600) ?>"
                                                                             alt="" loading="lazy">
                                                                             <i
                                                                 class="fa-brands fa-instagram"></i>
@@ -939,7 +1085,7 @@ include('common/header.php');
                                                                     <?php $item = $insta_items[2]; ?>
                                                                     <a href="<?= !empty($item['instagram_url']) ? htmlspecialchars($item['instagram_url']) : '#' ?>"
                                                                         target="_blank" class="insta-item insta-reel-card">
-                                                                        <img src="<?= BASE_URL_IMG . $item['media_url'] ?>"
+                                                                        <img decoding="async" src="<?= dre_img(BASE_URL_IMG . $item['media_url'], 600) ?>"
                                                                             alt="" loading="lazy">
                                                                             <i
                                                                 class="fa-brands fa-instagram"></i>
@@ -951,7 +1097,7 @@ include('common/header.php');
                                                                     <a href="<?= !empty($item['instagram_url']) ? htmlspecialchars($item['instagram_url']) : '#' ?>"
                                                                         target="_blank"
                                                                         class="insta-item insta-square-card">
-                                                                        <img src="<?= BASE_URL_IMG . $item['media_url'] ?>"
+                                                                        <img decoding="async" src="<?= dre_img(BASE_URL_IMG . $item['media_url'], 600) ?>"
                                                                             alt="" loading="lazy">
                                                                             <i
                                                                 class="fa-brands fa-instagram"></i>
@@ -966,7 +1112,7 @@ include('common/header.php');
                                                                     <a href="<?= !empty($item['instagram_url']) ? htmlspecialchars($item['instagram_url']) : '#' ?>"
                                                                         target="_blank"
                                                                         class="insta-item insta-square-card">
-                                                                        <img src="<?= BASE_URL_IMG . $item['media_url'] ?>"
+                                                                        <img decoding="async" src="<?= dre_img(BASE_URL_IMG . $item['media_url'], 600) ?>"
                                                                             alt="" loading="lazy">
                                                                             <i
                                                                 class="fa-brands fa-instagram"></i>
@@ -977,7 +1123,7 @@ include('common/header.php');
                                                                     <?php $item = $insta_items[5]; ?>
                                                                     <a href="<?= !empty($item['instagram_url']) ? htmlspecialchars($item['instagram_url']) : '#' ?>"
                                                                         target="_blank" class="insta-item insta-reel-card">
-                                                                        <img src="<?= BASE_URL_IMG . $item['media_url'] ?>"
+                                                                        <img decoding="async" src="<?= dre_img(BASE_URL_IMG . $item['media_url'], 600) ?>"
                                                                             alt="" loading="lazy">
                                                                             <i
                                                                 class="fa-brands fa-instagram"></i>
@@ -991,7 +1137,7 @@ include('common/header.php');
                                                                     <?php $item = $insta_items[6]; ?>
                                                                     <a href="<?= !empty($item['instagram_url']) ? htmlspecialchars($item['instagram_url']) : '#' ?>"
                                                                         target="_blank" class="insta-item insta-reel-card">
-                                                                        <img src="<?= BASE_URL_IMG . $item['media_url'] ?>"
+                                                                        <img decoding="async" src="<?= dre_img(BASE_URL_IMG . $item['media_url'], 600) ?>"
                                                                             alt="" loading="lazy">
                                                                             <i
                                                                 class="fa-brands fa-instagram"></i>
@@ -1003,7 +1149,7 @@ include('common/header.php');
                                                                     <a href="<?= !empty($item['instagram_url']) ? htmlspecialchars($item['instagram_url']) : '#' ?>"
                                                                         target="_blank"
                                                                         class="insta-item insta-square-card">
-                                                                        <img src="<?= BASE_URL_IMG . $item['media_url'] ?>"
+                                                                        <img decoding="async" src="<?= dre_img(BASE_URL_IMG . $item['media_url'], 600) ?>"
                                                                             alt="" loading="lazy">
                                                                             <i
                                                                 class="fa-brands fa-instagram"></i>
@@ -1020,7 +1166,7 @@ include('common/header.php');
                                                                     <a href="<?= !empty($item['instagram_url']) ? htmlspecialchars($item['instagram_url']) : '#' ?>"
                                                                         target="_blank"
                                                                         class="insta-item insta-square-card">
-                                                                        <img src="<?= BASE_URL_IMG . $item['media_url'] ?>"
+                                                                        <img decoding="async" src="<?= dre_img(BASE_URL_IMG . $item['media_url'], 600) ?>"
                                                                             alt="" loading="lazy">
                                                                             <i
                                                                 class="fa-brands fa-instagram"></i>
@@ -1030,7 +1176,7 @@ include('common/header.php');
                                                                     <?php $item = $insta_items[8]; ?>
                                                                     <a href="<?= !empty($item['instagram_url']) ? htmlspecialchars($item['instagram_url']) : '#' ?>"
                                                                         target="_blank" class="insta-item insta-reel-card">
-                                                                        <img src="<?= BASE_URL_IMG . $item['media_url'] ?>"
+                                                                        <img decoding="async" src="<?= dre_img(BASE_URL_IMG . $item['media_url'], 600) ?>"
                                                                             alt="" loading="lazy">
                                                                             <i
                                                                 class="fa-brands fa-instagram"></i>
@@ -1046,7 +1192,7 @@ include('common/header.php');
             <!--content  end-->
             <!-- <div class="whatsapp-icon-fixed">
             <a href="https://wa.me/+971527543243" target="_blank">
-            <img src="images/wa-chat-logo.png" alt="Whatsapp Logo" width="80px">
+            <img loading="lazy" decoding="async" src="images/wa-chat-logo.png" alt="Whatsapp Logo" width="80px">
             </a>
         </div> -->
         

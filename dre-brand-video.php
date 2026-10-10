@@ -75,49 +75,56 @@ $youtube_embed_base_url = $youtube_id ? "https://www.youtube.com/embed/$youtube_
                                                     <div
                                                         class="ratio ratio-16x9 mb-1 d-flex justify-content-center align-items-center position-relative">
 
-                                                        <?php
-                                                        $isYoutube = ($brand_video_content['video_source'] == "youtube");
-                                                        $videoSrc = $isYoutube
-                                                            ? $youtube_embed_base_url
-                                                            : BASE_URL_IMG . "brand-video/videos/" . htmlspecialchars($brand_video_content['brand_video_2']);
-                                                        ?>
+                                                        <?php if ($brand_video_content['video_source'] == "youtube") { ?>
 
-                                                        <!-- Thumbnail (COMMON for both) -->
-                                                        <img src="<?= BASE_URL_IMG ?>brand-video/<?= htmlspecialchars($youtube_img) ?>"
-                                                            class="object-fit-cover position-absolute top-0 start-0 w-100 h-100"
-                                                            style="z-index: 1; object-fit: cover;">
+                                                            <!-- Thumbnail -->
+                                                            <img src="<?= BASE_URL_IMG ?>brand-video/<?= htmlspecialchars($youtube_img) ?>"
+                                                                class="object-fit-cover position-absolute top-0 start-0 w-100 h-100"
+                                                                style="z-index: 1; object-fit: cover;">
 
-                                                        <!-- Video container (COMMON) -->
-                                                        <div class="video-container position-absolute top-0 start-0 w-100 h-100"
-                                                            style="display: none; z-index: 4;">
-
-                                                            <?php if ($isYoutube): ?>
+                                                            <!-- Video iframe -->
+                                                            <div class="video-container position-absolute top-0 start-0 w-100 h-100"
+                                                                style="display: none; z-index: 4;">
                                                                 <iframe width="100%" height="100%" frameborder="0"
-                                                                    allowfullscreen allow="autoplay; encrypted-media">
+                                                                    allowfullscreen
+                                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
                                                                 </iframe>
-                                                            <?php else: ?>
-                                                                <video class="w-100 h-100" controls
-                                                                    style="object-fit: cover;">
-                                                                    <source src="<?= $videoSrc ?>" type="video/mp4">
-                                                                </video>
-                                                            <?php endif; ?>
-
-                                                        </div>
-
-                                                        <!-- Play Button (COMMON) -->
-                                                        <div class="banner-widget_content position-absolute"
-                                                            style="z-index: 3;">
-                                                            <div class="video-box-btn">
-                                                                <?php if (!empty($videoSrc)): ?>
-                                                                    <button class="play-button"
-                                                                        onclick="playVideoSection('<?= $videoSrc ?>', this, <?= $isYoutube ? 'true' : 'false' ?>)">
-                                                                        <i class="fas fa-play"></i>
-                                                                    </button>
-                                                                <?php else: ?>
-                                                                    <p>Video unavailable.</p>
-                                                                <?php endif; ?>
                                                             </div>
-                                                        </div>
+
+                                                            <!-- Play button -->
+                                                            <div class="banner-widget_content position-absolute"
+                                                                style="z-index: 3;">
+                                                                <div class="video-box-btn">
+                                                                    <?php if ($youtube_embed_base_url): ?>
+                                                                        <button class="play-button"
+                                                                            onclick="playVideoSection('<?= htmlspecialchars($youtube_embed_base_url) ?>', this)">
+                                                                            <i class="fas fa-play"></i>
+                                                                        </button>
+                                                                    <?php else: ?>
+                                                                        <p>Video unavailable.</p>
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                            </div>
+
+                                                        <?php } else { ?>
+
+                                                            <!-- ✅ LOCAL VIDEO -->
+                                                            <?php if (!empty($brand_video_content['brand_video_2'])) { ?>
+
+                                                                <video class="w-100 h-100" controls preload="metadata"
+                                                                    style="object-fit: cover;">
+                                                                    <source
+                                                                        src="<?= BASE_URL_IMG ?>brand-video/videos/<?= htmlspecialchars($brand_video_content['brand_video_2']) ?>"
+                                                                        type="video/mp4">
+                                                                    Your browser does not support the video tag.
+                                                                </video>
+
+                                                            <?php } else { ?>
+                                                                <p>No video available.</p>
+                                                            <?php } ?>
+
+                                                        <?php } ?>
+
                                                     </div>
 
                                                 </div>
@@ -151,65 +158,26 @@ $youtube_embed_base_url = $youtube_id ? "https://www.youtube.com/embed/$youtube_
     <!--content end-->
 
     <script>
-function playVideoSection(src, btn, isYoutube) {
-    const ratio = btn.closest('.ratio');
-    const container = ratio.querySelector('.video-container');
-    const img = ratio.querySelector('img');
-    
-    if (isYoutube) {
-        // Handle YouTube
-        container.style.display = 'block';
-        const iframe = container.querySelector('iframe');
-        iframe.src = src + "?autoplay=1&mute=1";
-        
-        // Hide thumbnail and button
-        if (img) img.style.display = 'none';
-        btn.style.display = 'none';
-    } else {
-        // Handle Local Video
-        const video = container.querySelector('video');
-        
-        // CRITICAL: Make sure video element is visible and has source
-        console.log("Video source:", src);
-        console.log("Video element:", video);
-        console.log("Source element:", video.querySelector('source'));
-        
-        // Check if source exists and has src
-        const source = video.querySelector('source');
-        if (source && source.src) {
-            console.log("Source URL:", source.src);
-        } else {
-            console.error("No source found for video");
-            return;
+        function playVideoSection(videoUrl, button) {
+            const ratioContainer = button.closest('.ratio');
+            const videoContainer = ratioContainer.querySelector('.video-container');
+            const iframe = videoContainer.querySelector('iframe');
+
+            // Append autoplay=1 param
+            iframe.src = videoUrl + (videoUrl.includes('?') ? '&' : '?') + 'autoplay=1&mute=1';
+
+            // Show iframe container
+            videoContainer.style.display = 'block';
+
+            // Hide thumbnail
+            const thumbnail = ratioContainer.querySelector('img');
+            if (thumbnail) {
+                thumbnail.style.visibility = 'hidden';
+            }
+
+            // Hide play button
+            button.style.display = 'none';
         }
-        
-        // Show container first
-        container.style.display = 'block';
-        
-        // Force video to load and play
-        video.load();
-        
-        // Small delay to ensure video is ready
-        setTimeout(() => {
-            video.play().then(() => {
-                console.log("Video playing successfully");
-                // Hide thumbnail and button only after play starts
-                if (img) img.style.display = 'none';
-                btn.style.display = 'none';
-            }).catch(error => {
-                console.error("Play failed:", error);
-                // Show error message or keep controls visible
-                btn.innerHTML = '<i class="fas fa-play"></i> Click to play';
-                btn.style.display = 'flex';
-                
-                // Some browsers need user interaction - add click handler to video
-                video.addEventListener('click', function playOnClick() {
-                    video.play();
-                    video.removeEventListener('click', playOnClick);
-                });
-            });
-        }, 100);
-    }
-}
-</script>
+    </script>
+
     <?php include 'common/footer.php'; ?>

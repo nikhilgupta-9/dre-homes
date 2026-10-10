@@ -1,13 +1,11 @@
 <!DOCTYPE HTML>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <?php
+<?php
     $header_details = select_row('tbl_header_info', 'is_active=1');
-    $home_meta = select_row('tbl_tags', 'id=7 and is_active=1');
-    $footer_info = select_row('tbl_footer_info', 'is_active=1');
-    $meta_tags = $home_meta ?? [];
+    $home_meta = select_row('tbl_tags','id=7 and is_active=1');
+    $footer_info = select_row('tbl_footer_info','is_active=1');
 
     $pageURL = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
     $baseURL = parse_url($pageURL, PHP_URL_SCHEME) . '://' . parse_url($pageURL, PHP_URL_HOST) . parse_url($pageURL, PHP_URL_PATH);
@@ -45,26 +43,24 @@
     }
 
     echo '<meta http-equiv="content-type" content="text/html;charset=UTF-8" />';
-    ?>
+?>
 
 
 
     <meta http-equiv="x-ua-compatible" content="ie=edge">
 
-    <title><?= $meta_tags['meta_title'] ?></title>
-    <meta name="description" content="<?= $meta_tags['meta_description'] ?>">
+    <title><?= $meta_tags['meta_title']?? '' ?></title>
+    <meta name="description" content="<?= htmlspecialchars($meta_tags['meta_description'] ?? '') ?>">
     <meta name="author" content="DRE Real Estate">
     <meta name="robots" content="follow,index">
     <meta http-equiv="Cache-control" content="public">
 
     <!-- Canonical & OpenGraph -->
-    <link rel="canonical"
-        href="<?= htmlspecialchars((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']) ?>" />
-    <meta property="og:url"
-        content="<?= htmlspecialchars((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']) ?>" />
-    <meta property="og:title" content="<?= htmlspecialchars($meta_tags['meta_title']) ?>" />
-    <meta property="og:description" content="<?= htmlspecialchars($meta_tags['meta_description']) ?>" />
-    <?= !empty($meta_tags['meta_og_img']) ?
+    <link rel="canonical" href="<?= htmlspecialchars((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']) ?>" />
+    <meta property="og:url" content="<?= htmlspecialchars((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']) ?>" />
+    <meta property="og:title" content="<?= htmlspecialchars($meta_tags['meta_title'] ?? '') ?>" />
+    <meta property="og:description" content="<?= htmlspecialchars($meta_tags['meta_description'] ?? '') ?>" />
+<?= !empty($meta_tags['meta_og_img']) ?
         '<meta property="og:image" content="' . htmlspecialchars(BASE_URL_IMG . 'meta/' . $meta_tags['meta_og_img']) . '" />' :
         (!empty($meta_tags['prj_thumb_img']) ?
             '<meta property="og:image" content="' . htmlspecialchars(BASE_URL_IMG . 'project/thumb/' . trim(explode(',', $meta_tags['prj_thumb_img'])[0])) . '" />' :
@@ -76,13 +72,13 @@
                         '<meta property="og:image" content="' . htmlspecialchars(BASE_URL_IMG . 'blog/thumb/' . trim(explode(',', $meta_tags['blog_thumb_img'])[0])) . '" />' :
                         (!empty($meta_tags['team_img']) ?
                             '<meta property="og:image" content="' . htmlspecialchars(BASE_URL_IMG . 'team/' . $meta_tags['team_img']) . '" />' :
-                            (!empty($meta_tags['news_inner_img']) ?
-                                '<meta property="og:image" content="' . htmlspecialchars(BASE_URL_IMG . 'company-news/inner/' . $meta_tags['news_inner_img']) . '" />' : ''
-                            )
+                                (!empty($meta_tags['news_inner_img']) ?
+                                    '<meta property="og:image" content="' . htmlspecialchars(BASE_URL_IMG . 'company-news/inner/' . $meta_tags['news_inner_img']) . '" />' : ''
                         )
-                    )
+                    )   
                 )
             )
+        )
         )
         ?>
 
@@ -90,18 +86,34 @@
 
 
     <!-- Styles -->
-    <link type="text/css" rel="stylesheet" href="<?= BASE_URL ?>css/plugins.css">
-    <link type="text/css" rel="stylesheet" href="<?= BASE_URL ?>css/style.css?cache=11112271">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700;800;900&display=swap">
+    <link type="text/css" rel="stylesheet" href="<?= dre_asset('css/plugins.css') ?>">
+    <link type="text/css" rel="stylesheet" href="<?= dre_asset('css/style.css') ?>">
+    <link type="text/css" rel="stylesheet" href="<?= dre_asset('css/dark-mode.css') ?>">
+    <link type="text/css" rel="stylesheet" href="<?= dre_asset('css/floating-dock.css') ?>">
+    <!-- Dark mode: applied before the page paints so there is no light flash -->
+    <script>
+        try {
+            if (localStorage.getItem('dre_theme') === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        } catch (e) {}
+    </script>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link rel="stylesheet" type="text/css"
-        href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/21.2.7/css/intlTelInput.css">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/21.2.7/css/intlTelInput.css">
 
     <!-- Favicon -->
     <link rel="shortcut icon" href="<?= BASE_URL ?>images/favicon.ico">
 
-    <!-- Chart.js -->
+    <!-- Chart.js: only the pages that draw a chart load it -->
+    <?php if (in_array(basename($_SERVER['SCRIPT_NAME']), ['buy-property-single.php', 'mortgage-calculator.php'], true)) { ?>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.css" />
+    <?php } ?>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.css" />
     <!-- Base URL JS variable -->
     <script type="text/javascript">
         var base_url = '<?= BASE_URL ?>';
@@ -109,30 +121,25 @@
 
     <!-- Google Tag Manager -->
     <script>
-        (function (w, d, s, l, i) {
-            w[l] = w[l] || []; w[l].push({
-                'gtm.start':
-                    new Date().getTime(), event: 'gtm.js'
-            }); var f = d.getElementsByTagName(s)[0],
-                j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
-                    'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
-        })(window, document, 'script', 'dataLayer', 'GTM-NDFF757K');
+        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-NDFF757K');
     </script>
     <!-- End Google Tag Manager -->
+    
 
+<?= generateProjectDetailSchema($home_meta, $header_details, $footer_info, $breadcrumbs, $proj_detail ?? '', $images, $category_slug ?? '', $slug, $meta_tags ?? '') ?>
 
-    <?= generateProjectDetailSchema($home_meta, $header_details, $footer_info, $breadcrumbs, $proj_detail, $images, $category_slug, $slug, $meta_tags) ?>
-
-
+    
 
 </head>
-
 <body>
 
     <!-- Google Tag Manager (noscript) -->
     <noscript>
-        <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NDFF757K" height="0" width="0"
-            style="display:none;visibility:hidden;border:none;"></iframe>
+        <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NDFF757K" height="0" width="0" style="display:none;visibility:hidden;border:none;"></iframe>
     </noscript>
 
     <!-- Loader -->
@@ -146,15 +153,14 @@
             <div class="container">
                 <div class="header-inner">
                     <a href="javascript:void(0)" class="logo-holder badge-holder">
-                        <?php
+                     <?php
                         if($header_details['greate_place_logo']){
                         ?>
-                        <img src="<?= BASE_URL_IMG ?>header/<?= $header_details['greate_place_logo'] ?>" alt="Great Place to Work">
+                        <img src="<?= dre_img(BASE_URL_IMG . 'header/' . $header_details['greate_place_logo'], 300) ?>" alt="Great Place to Work">
                         <?php } ?>
                     </a>
                     <a href="<?= BASE_URL ?>" class="logo-holder">
-                        <img src="<?= BASE_URL_IMG ?>header/<?= $header_details['header_logo'] ?>"
-                            alt="<?= $header_details['header_logo_alt'] ?>">
+                        <img src="<?= BASE_URL_IMG ?>header/<?= $header_details['header_logo'] ?>" alt="<?= $header_details['header_logo_alt'] ?>">
                     </a>
 
                     <!-- Navigation -->
@@ -169,8 +175,7 @@
                                         <li><a href="<?= BASE_URL ?>offplan-properties">Off Plan Property</a></li>
                                         <li><a href="<?= BASE_URL ?>buy-property">Buy Property</a></li>
                                         <li><a href="<?= BASE_URL ?>rent-property">Rent Property</a></li>
-                                        <li><a href="<?= BASE_URL ?>international-properties">International
-                                                Properties</a></li>
+                                        <li><a href="<?= BASE_URL ?>international-properties">International Properties</a></li>
                                         <li><a href="<?= BASE_URL ?>ready-to-move-in">Ready To Move In</a></li>
                                     </ul>
                                 </li>
@@ -180,21 +185,19 @@
                                 <li><a href="<?= BASE_URL ?>our-blogs/">Blogs</a></li>
 
                                 <?php
-                                $query = select_query('tbl_service_section', 'is_active=1');
-                                if (mysqli_num_rows($query) > 0):
-                                    ?>
-                                    <li class="services-list">
-                                        <a href="javascript:void(0)">Services <i class="fa-solid fa-caret-down"></i></a>
-                                        <ul>
-                                            <?php while ($row = mysqli_fetch_array($query)): ?>
-                                                <li><a
-                                                        href="<?= BASE_URL ?>services/<?= $row['serv_sec_slug'] ?>"><?= $row['serv_sec_name'] ?></a>
-                                                </li>
-                                            <?php endwhile; ?>
-                                            <li><a href="<?= BASE_URL ?>mortgage-calculator">Mortgage Calculator</a></li>
-                                            <li><a href="<?= BASE_URL ?>golden-visa">Golden Visa</a></li>
-                                        </ul>
-                                    </li>
+                                    $query = select_query('tbl_service_section', 'is_active=1');
+                                    if (mysqli_num_rows($query) > 0):
+                                ?>
+                                <li class="services-list">
+                                    <a href="javascript:void(0)">Services <i class="fa-solid fa-caret-down"></i></a>
+                                    <ul>
+                                        <?php while($row = mysqli_fetch_array($query)): ?>
+                                            <li><a href="<?= BASE_URL ?>services/<?= $row['serv_sec_slug'] ?>"><?= $row['serv_sec_name'] ?></a></li>
+                                        <?php endwhile; ?>
+                                        <li><a href="<?= BASE_URL ?>mortgage-calculator">Mortgage Calculator</a></li>
+                                        <li><a href="<?= BASE_URL ?>golden-visa">Golden Visa</a></li>
+                                    </ul>
+                                </li>
                                 <?php endif; ?>
 
                                 <li>
@@ -216,10 +219,8 @@
                                         <li><a href="<?= BASE_URL ?>clients-testimonials">Client Testimonial</a></li>
                                         <li><a href="<?= BASE_URL ?>our-awards">Our Awards</a></li>
                                         <li><a href="<?= BASE_URL ?>careers">Careers</a></li>
-                                        <li><a href="<?= BASE_URL ?>message-from-co-founder-and-clo">Message From
-                                                CLO</a></li>
-                                        <li><a href="<?= BASE_URL ?>message-from-co-founder-and-ceo">Message From
-                                                CEO</a></li>
+                                        <li><a href="<?= BASE_URL ?>message-from-co-founder-and-clo">Message From CLO</a></li>
+                                        <li><a href="<?= BASE_URL ?>message-from-co-founder-and-ceo">Message From CEO</a></li>
                                     </ul>
                                 </li>
                             </ul>
@@ -229,7 +230,7 @@
                     <!-- Currency Dropdown -->
                     <div class="currency-change">
                         <ul class="no-list-style d-flex align-items-center gap-2 m-0">
-                            <li>
+                            <li class="drop-ar">
                                 <select id="global-currency-select" class="cur-dd currency-select" style="width: 50px;">
                                     <option value="AED">AED</option>
                                     <option value="USD">USD</option>

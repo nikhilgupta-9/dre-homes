@@ -88,7 +88,7 @@ $internationalprop_content = select_row("tbl_international_content", "is_active=
 <!--warpper-->
 <div class="wrapper">
     <!--content-->
-    <div class="content">
+    <div class="content search-pgs">
         <!--section-->
         <div class="section hero-section hero-section_sin">
             <div class="hero-section-wrap">
@@ -372,7 +372,7 @@ if ($proj_count > 0): ?>
                             <div class="list-main-wrap-header box-list-header" style="margin-top: 0">
                                 <!-- list-main-wrap-title-->
                                 <div class="list-main-wrap-title">
-    <h2>Results For : <span><?= $searchRaw ?></span><strong><?= $count ?></strong></h2>
+    <h2>Results : <span><?= $searchRaw ?></span><strong><?= $count ?></strong></h2>
 </div>
                                 <!-- list-main-wrap-title end-->
                             </div>

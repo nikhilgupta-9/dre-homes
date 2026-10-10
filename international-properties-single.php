@@ -126,33 +126,33 @@ $dev_detail = select_row('tbl_developer', 'dev_id=' . $proj_detail['prj_dev_id']
                                     <?php endif; ?>
 
                                     <!-- Bedroom -->
-                                    <?php if (!empty($proj_detail['proj_bedroom'])): ?>
-                                        <div class="ps-facts-item">
-                                            <h4>Bedroom</h4>
-                                            <h5>
-                                                <?php
-                                                    $items = array_filter(array_map('trim', explode(',', $proj_detail['proj_bedroom'])), 'strlen');
+<?php if (!empty($proj_detail['proj_bedroom'])): ?>
+    <div class="ps-facts-item">
+        <h4>Bedroom</h4>
+        <h5>
+            <?php
+                $items = array_filter(array_map('trim', explode(',', $proj_detail['proj_bedroom'])), 'strlen');
 
-                                                    $text = [];
-                                                    $numbers = [];
+                $text = [];
+                $numbers = [];
 
-                                                    foreach ($items as $item) {
-                                                        if (is_numeric($item)) {
-                                                            $numbers[] = $item;
-                                                        } else {
-                                                            $text[] = $item;
-                                                        }
-                                                    }
+                foreach ($items as $item) {
+                    if (is_numeric($item)) {
+                        $numbers[] = $item;
+                    } else {
+                        $text[] = $item;
+                    }
+                }
 
-                                                    // Optional: sort numbers ascending
-                                                    sort($numbers, SORT_NUMERIC);
+                // Optional: sort numbers ascending
+                sort($numbers, SORT_NUMERIC);
 
-                                                    echo htmlspecialchars(implode(', ', array_merge($text, $numbers)));
-                                                ?>
-                                            </h5>
-                                            <i class="fa-light fa-bed"></i>
-                                        </div>
-                                    <?php endif; ?>
+                echo htmlspecialchars(implode(', ', array_merge($text, $numbers)));
+            ?>
+        </h5>
+        <i class="fa-light fa-bed"></i>
+    </div>
+<?php endif; ?>
 
                             
                             
@@ -180,32 +180,32 @@ $dev_detail = select_row('tbl_developer', 'dev_id=' . $proj_detail['prj_dev_id']
                                         <div class="pp-single-opt-wrap">
                                             <div class="pp-single-opt-links">
                                                <?php if (!empty($proj_detail['proj_brochure']) || !empty($proj_detail['proj_payplan']) || !empty($proj_detail['proj_floorplan'])): ?>
-                                                    <ul>
-                                                        <?php if (!empty($proj_detail['proj_brochure'])): ?>
-                                                            <li class="modal-open">
-                                                                <a data-url="<?= $proj_detail['proj_brochure'] ?>">
-                                                                    <i class="fa-light fa-file-pdf"></i> Brochure
-                                                                </a>
-                                                            </li>
-                                                        <?php endif; ?>
+    <ul>
+        <?php if (!empty($proj_detail['proj_brochure'])): ?>
+            <li class="modal-open">
+                <a data-url="<?= $proj_detail['proj_brochure'] ?>">
+                    <i class="fa-light fa-file-pdf"></i> Brochure
+                </a>
+            </li>
+        <?php endif; ?>
 
-                                                        <?php if (!empty($proj_detail['proj_payplan'])): ?>
-                                                            <li class="modal-open">
-                                                                <a data-url="<?= $proj_detail['proj_payplan'] ?>">
-                                                                    <i class="fa-light fa-file-pdf"></i> Payment Plan
-                                                                </a>
-                                                            </li>
-                                                        <?php endif; ?>
+        <?php if (!empty($proj_detail['proj_payplan'])): ?>
+            <li class="modal-open">
+                <a data-url="<?= $proj_detail['proj_payplan'] ?>">
+                    <i class="fa-light fa-file-pdf"></i> Payment Plan
+                </a>
+            </li>
+        <?php endif; ?>
 
-                                                        <?php if (!empty($proj_detail['proj_floorplan'])): ?>
-                                                            <li class="modal-open">
-                                                                <a data-url="<?= $proj_detail['proj_floorplan'] ?>">
-                                                                    <i class="fa-light fa-file-pdf"></i> Floor Plan
-                                                                </a>
-                                                            </li>
-                                                        <?php endif; ?>
-                                                    </ul>
-                                                <?php endif; ?>
+        <?php if (!empty($proj_detail['proj_floorplan'])): ?>
+            <li class="modal-open">
+                <a data-url="<?= $proj_detail['proj_floorplan'] ?>">
+                    <i class="fa-light fa-file-pdf"></i> Floor Plan
+                </a>
+            </li>
+        <?php endif; ?>
+    </ul>
+<?php endif; ?>
 
                                             </div>
                                         </div>
@@ -269,22 +269,22 @@ $dev_detail = select_row('tbl_developer', 'dev_id=' . $proj_detail['prj_dev_id']
                                     <div class="boxed-content-item">
                                         <div class="pp-single-opt">
                                             <div class="pp-single-features ">
-                                            <ul>
-                                                <?php
-                                                $feat_fac_query = select_query('tbl_proj_featfac', 'is_active=1');
-                                                $feat_fac_arr = explode(',', $proj_detail['proj_fea_fac_opt']);
-                                                while ($row = mysqli_fetch_array($feat_fac_query)) {
-                                                    if (in_array($row['featfac_id'], $feat_fac_arr)) {
-                                                        ?>
-                                                        <li>
-                                                            <a href="#">
-                                                                <i class="fa <?= htmlspecialchars($row['featfac_faicon']) ?> me-2"></i>
-                                                                <?= htmlspecialchars($row['featfac_name']) ?>
-                                                            </a>
-                                                        </li>
-                                                    <?php }
-                                                } ?>
-                                            </ul>
+                                          <ul>
+    <?php
+    $feat_fac_query = select_query('tbl_proj_featfac', 'is_active=1');
+    $feat_fac_arr = explode(',', $proj_detail['proj_fea_fac_opt']);
+    while ($row = mysqli_fetch_array($feat_fac_query)) {
+        if (in_array($row['featfac_id'], $feat_fac_arr)) {
+            ?>
+            <li>
+                <a href="#">
+                    <i class="fa <?= htmlspecialchars($row['featfac_faicon']) ?> me-2"></i>
+                    <?= htmlspecialchars($row['featfac_name']) ?>
+                </a>
+            </li>
+        <?php }
+    } ?>
+</ul>
 
 
                                             </div>
@@ -355,9 +355,7 @@ $dev_detail = select_row('tbl_developer', 'dev_id=' . $proj_detail['prj_dev_id']
                                             <div class="boxed-content-item p-4">
                                                 <p class="form-heading">Fill the form. And book a viewing</p>
                                                 <div class="custom-form" id="single_cf">
-                                                   <?php
-                                                    include_once "common/sidebare-form.php";
-                                                    ?>
+                                                    <?php include_once "common/sidebare-form.php";?>
                                                     <!--<div class="log-separator py-3"><span>or</span></div>-->
 
                                                 </div>
@@ -404,128 +402,132 @@ $dev_detail = select_row('tbl_developer', 'dev_id=' . $proj_detail['prj_dev_id']
                     </div>
                     <div class="limit-box"></div>
                 </div>
+                <?php
+                // Similar properties worked out by ai/cron/build_similar.php, with the old list as fallback.
+                require_once __DIR__ . '/ai/SimilarProjects.php';
+                $prj_query = SimilarProjects::forPage($proj_detail['prj_id'], 3);
+                if (!$prj_query) {
+                    $prj_query = db_query("SELECT * FROM tbl_proj WHERE prj_dev_id = ? AND proj_slug != ? AND is_active = 1 ORDER BY proj_posted_on DESC", [(int) $proj_detail['prj_dev_id'], (string) $proj_detail['proj_slug']]);
+                }
+                if(mysqli_num_rows($prj_query)){
+                ?>
+                <div class="boxed-container proj-sim-box">
+                    <div class="boxed-content-title bcst_ca">
+                        <h3>More Like This</h3>
+                    </div>
+                    <div class="single-carousel-wrap">
+                        <div class="single-carousel equal-elc">
+                            <div class="swiper-container">
+                                <div class="swiper-wrapper">
 
-                    <?php
-                    $prj_query = select_query('tbl_proj', 'prj_dev_id="' . $proj_detail['prj_dev_id'] . '" and proj_slug!="' . $proj_detail['proj_slug'] . '" and is_active=1 ORDER BY proj_posted_on desc');
-                    if(mysqli_num_rows($prj_query)){
-                    ?>
-                    <div class="boxed-container proj-sim-box">
-                        <div class="boxed-content-title bcst_ca">
-                            <h3>More Like This</h3>
-                        </div>
-                        <div class="single-carousel-wrap">
-                            <div class="single-carousel equal-elc">
-                                <div class="swiper-container">
-                                    <div class="swiper-wrapper">
+                                    <?php
+                                    $key = 0;
+                                    while ($row = mysqli_fetch_array($prj_query)) {
+                                        $proj_dev = select_row(
+                                            "tbl_developer",
+                                            "dev_id=" . $row["prj_dev_id"] . ""
+                                        );
+                                        $prj_thumb_arr = explode(',', $row['prj_thumb_img']);
 
-                                        <?php
-                                        $key = 0;
-                                        while ($row = mysqli_fetch_array($prj_query)) {
-                                            $proj_dev = select_row(
-                                                "tbl_developer",
-                                                "dev_id=" . $row["prj_dev_id"] . ""
-                                            );
-                                            $prj_thumb_arr = explode(',', $row['prj_thumb_img']);
+                                        if (count($prj_thumb_arr) > 1) {
+                                            $prj_thumb_img = $prj_thumb_arr[0];
+                                        } else {
+                                            $prj_thumb_img = $row['prj_thumb_img'];
+                                        }
+                                        ?>
 
-                                            if (count($prj_thumb_arr) > 1) {
-                                                $prj_thumb_img = $prj_thumb_arr[0];
-                                            } else {
-                                                $prj_thumb_img = $row['prj_thumb_img'];
-                                            }
-                                            ?>
-
-                                            <div class="swiper-slide">
-                                                <!-- listing-item -->
-                                                <div class="listing-item">
-                                                    <div class="geodir-category-listing">
-                                                        <div class="geodir-category-img">
+                                        <div class="swiper-slide">
+                                            <!-- listing-item -->
+                                            <div class="listing-item">
+                                                <div class="geodir-category-listing">
+                                                    <div class="geodir-category-img">
+                                                        <a href="<?= BASE_URL ?>property/<?= $row['proj_slug'] ?>"
+                                                            class="geodir-category-img_item">
+                                                            <div class="off-plan-thumb">
+                                                                <img src="<?= BASE_URL_IMG ?>project/thumb/<?= $prj_thumb_img ?>"
+                                                                    alt="">
+                                                            </div>
+                                                            <div class="overlay"></div>
+                                                        </a>
+                                                        <div class="geodir-category-location">
                                                             <a href="<?= BASE_URL ?>property/<?= $row['proj_slug'] ?>"
-                                                                class="geodir-category-img_item">
-                                                                <div class="off-plan-thumb">
-                                                                    <img src="<?= BASE_URL_IMG ?>project/thumb/<?= $prj_thumb_img ?>"
-                                                                        alt="">
-                                                                </div>
-                                                                <div class="overlay"></div>
-                                                            </a>
-                                                            <div class="geodir-category-location">
-                                                                <a href="<?= BASE_URL ?>property/<?= $row['proj_slug'] ?>"
-                                                                    class="map-item"><i class="fas fa-map-marker-alt"></i>
-                                                                    <?= $row['proj_location'] ?></a>
-                                                            </div>
-                                                            <ul class="list-single-opt_header_cat">
-                                                                    <li><a href="javascript:void(0)" class="cat-opt">
-                                                                            <?= $row['proj_pplan_cont'] ?></a>
-                                                                    </li>
-                                                            </ul>
+                                                                class="map-item"><i class="fas fa-map-marker-alt"></i>
+                                                                <?= $row['proj_location'] ?></a>
                                                         </div>
-                                                        <div class="geodir-category-content prop-gcc">
-                                                            <h3><a
-                                                                    href="<?= BASE_URL ?>property/<?= $row['proj_slug'] ?>"><?= $row['proj_name'] ?></a>
-                                                            </h3>
-                                                            <?php if (is_numeric($row["proj_price"]) && $row["proj_price"] != 0): ?>
-        <div class="price-row" style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
-            <!-- Price Output -->
-            <div class="geodir-category-content_price text-muted currency-price"
-                data-price="<?= $row["proj_price"] ?>"
-                data-original-currency="AED"
-                data-original-price="<?= $row["proj_price"] ?>">
-                <img src="<?= BASE_URL ?>images/symbol/currency-symbol.png" alt="Currency"
-                    style="height: 14px; vertical-align: middle;">
-                AED <?= number_format($row["proj_price"]) ?>
-            </div>
+                                                        <ul class="list-single-opt_header_cat">
+                                                                <li><a href="javascript:void(0)" class="cat-opt">
+                                                                        <?= $row['proj_pplan_cont'] ?></a>
+                                                                </li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="geodir-category-content prop-gcc">
+                                                        <h3><a
+                                                                href="<?= BASE_URL ?>property/<?= $row['proj_slug'] ?>"><?= $row['proj_name'] ?></a>
+                                                        </h3>
+                                                         <?php if (is_numeric($row["proj_price"]) && $row["proj_price"] != 0): ?>
+    <div class="price-row" style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+        <!-- Price Output -->
+        <div class="geodir-category-content_price text-muted currency-price"
+             data-price="<?= $row["proj_price"] ?>"
+             data-original-currency="AED"
+             data-original-price="<?= $row["proj_price"] ?>">
+            <img src="<?= BASE_URL ?>images/symbol/currency-symbol.png" alt="Currency"
+                 style="height: 14px; vertical-align: middle;">
+            AED <?= number_format($row["proj_price"]) ?>
         </div>
-    <?php else: ?>
-        <div class="geodir-category-content_price text-muted">
-            Call Us
-        </div>
-    <?php endif; ?>
+    </div>
+<?php else: ?>
+    <div class="geodir-category-content_price text-muted">
+        Call Us
+    </div>
+<?php endif; ?>
 
 
 
 
 
-                                                            <!--<p><?= $row['proj_short_descp'] ?></p>-->
+                                                        <!--<p><?= $row['proj_short_descp'] ?></p>-->
 
-                                                        </div>
-                                                        <div class="geodir-category-footer list-footer">
-                                                            <!--<a href="<?= BASE_URL ?>property/<?= $row['proj_slug'] ?>"-->
-                                                            <!--    class="gcf-company">-->
-                                                            <!--    <img src="<?= BASE_URL_IMG ?>project/dev/<?= $row['proj_dev_img'] ?>"-->
-                                                            <!--        alt=""></a>-->
-                                                            <a href="<?= BASE_URL ?>property/<?= $row['proj_slug'] ?>" class="gcf-company post-card_link-2">View<i class="fa-solid fa-caret-right"></i></a>
-                                                            <div class="clearfix"></div>
-                                                            <div class="list-contact-icon">
-                                                                <a href="tel:<?= $header_details['header_contact_number'] ?>" target="_blank"
-                                                                    class=" pcl_btn" data-microtip-position="right"><img
-                                                                        src="<?= BASE_URL ?>images/c-icon/call-icon.png"
-                                                                        alt="Call Icon" width="100%" title="Call"></a>
-                                                                <a href="https://wa.me/<?= $header_details['header_contact_number'] ?>"
-                                                                    target="_blank" class=" pcl_btn"
-                                                                    data-microtip-position="right"><img
-                                                                        src="<?= BASE_URL ?>images/c-icon/whatsapp-icon.png"
-                                                                        alt="Whatsapp Icon" width="100%" title="Whatsapp"></a>
-                                                            </div>
+                                                    </div>
+                                                    <div class="geodir-category-footer list-footer">
+                                                        <!--<a href="<?= BASE_URL ?>property/<?= $row['proj_slug'] ?>"-->
+                                                        <!--    class="gcf-company">-->
+                                                        <!--    <img src="<?= BASE_URL_IMG ?>project/dev/<?= $row['proj_dev_img'] ?>"-->
+                                                        <!--        alt=""></a>-->
+                                                        <a href="<?= BASE_URL ?>property/<?= $row['proj_slug'] ?>" class="gcf-company post-card_link-2">View<i class="fa-solid fa-caret-right"></i></a>
+                                                        <div class="clearfix"></div>
+                                                        <div class="list-contact-icon">
+                                                            <a href="tel:<?= $header_details['header_contact_number'] ?>" target="_blank"
+                                                                class=" pcl_btn" data-microtip-position="right"><img
+                                                                    src="<?= BASE_URL ?>images/c-icon/call-icon.png"
+                                                                    alt="Call Icon" width="100%" title="Call"></a>
+                                                            <a href="https://wa.me/<?= $header_details['header_contact_number'] ?>"
+                                                                target="_blank" class=" pcl_btn"
+                                                                data-microtip-position="right"><img
+                                                                    src="<?= BASE_URL ?>images/c-icon/whatsapp-icon.png"
+                                                                    alt="Whatsapp Icon" width="100%" title="Whatsapp"></a>
                                                         </div>
                                                     </div>
-                                                </div> <!-- listing-item end-->
-                                            </div>
+                                                </div>
+                                            </div> <!-- listing-item end-->
+                                        </div>
 
-                                            <?php $key++;
-                                        } ?>
-                                    </div>
-                                </div>
-
-                                <div class="ss-carousel-button ss-carousel-button-prev"><i
-                                            class="fas fa-caret-left"></i>
-                                </div>
-                                <div class="ss-carousel-button ss-carousel-button-next"><i
-                                            class="fas fa-caret-right"></i>
+                                        <?php $key++;
+                                    } ?>
                                 </div>
                             </div>
-                        </div>
 
+                            <div class="ss-carousel-button ss-carousel-button-prev"><i
+                                        class="fas fa-caret-left"></i>
+                            </div>
+                            <div class="ss-carousel-button ss-carousel-button-next"><i
+                                        class="fas fa-caret-right"></i>
+                            </div>
+                        </div>
                     </div>
-                    <?php } ?>
+
+                </div>
+                <?php } ?>
             </div>
 
         </div>

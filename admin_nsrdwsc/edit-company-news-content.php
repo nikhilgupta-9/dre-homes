@@ -1,245 +1,457 @@
-<?php 
+<?php
 include('db/config.php');
 include('includes/header.php');
-include ('lock2.php');
+include('lock2.php');
+include('includes/Logger.php');
 
-$err[]='';
-$id=base64_decode($_GET['edit']);
-if(isset($_POST['update_company_news_content']))
-{
-    $company_news_cont_heading=prepStr($_POST['company_news_cont_heading']);
-    $company_news_cont_inner_heading=prepStr($_POST['company_news_cont_inner_heading']);
-    $company_news_cont_img='company_news_cont_img_'.rand(0,10000).'_'.$_FILES['company_news_cont_img']['name'];
-    $is_active=(prepStr($_POST['is_active']!='' ? 1 : 2));
-
-
-
-$allowed_image_extension = array(
-"png",
-"jpg",
-"jpeg"
-);
-
-$company_news_file_extension = pathinfo($_FILES["company_news_cont_img"]["name"], PATHINFO_EXTENSION);
-
-if(!in_array($company_news_file_extension,$allowed_image_extension) && !empty($_FILES['company_news_cont_img']['name']))
-{
-$err[]='Invalid Image. Only PNG,JPG and JPEG are allowed.';
+// Nothing below runs unless someone is signed in.
+if (empty($_SESSION['email_id'])) {
+  exit;
 }
 
+$logger = new Logger($conn);
 
+if (empty($_SESSION['admin_csrf'])) {
+  $_SESSION['admin_csrf'] = bin2hex(random_bytes(16));
+}
 
-	if(!empty($_FILES['company_news_cont_img']['name']))
+// The page-content editors share one layout. This copy edits one page: its table, the
+// names of its columns, and where it shows on the website.
+$page = [
+  'title' => 'Company News',
+  'table' => 'tbl_company_news_content',
+  'id_column' => 'company_news_cont_id',
+  'image_column' => 'company_news_cont_img',
+  'heading_column' => 'company_news_cont_heading',
+  'second_column' => 'company_news_cont_inner_heading',
+  'second_label' => 'Heading on a news item page',
+  'second_help' => 'The title over the banner when one news item is open.',
+  'image_folder' => 'assets/media/company-news/',
+  'file' => 'edit-company-news-content.php',
+  'list_file' => 'manage-company-news.php',
+  'public_path' => 'company-news',
+  'count_table' => 'tbl_news',
+  'post_flag' => 'update_company_news_content',
+];
+
+function listc_e($text)
 {
-$company_news_cont_img='company_news_img_'.rand(0,10000).'_'.$_FILES['company_news_cont_img']['name'];
+  return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
 }
-else
+
+// Runs a prepared query and returns its rows (or true for a write).
+function listc_query($conn, $sql, array $params = [])
 {
-$company_news_cont_img=$_POST['company_news_cont_img_hidden'];
+  $stmt = mysqli_prepare($conn, $sql);
+  if (!$stmt) {
+    error_log('Page content query failed: ' . mysqli_error($conn));
+    return false;
+  }
+  if ($params) {
+    $types = '';
+    foreach ($params as $param) {
+      $types .= is_int($param) ? 'i' : 's';
+    }
+    mysqli_stmt_bind_param($stmt, $types, ...$params);
+  }
+  if (!mysqli_stmt_execute($stmt)) {
+    error_log('Page content query failed: ' . mysqli_stmt_error($stmt));
+    mysqli_stmt_close($stmt);
+    return false;
+  }
+  $result = mysqli_stmt_get_result($stmt);
+  mysqli_stmt_close($stmt);
+  if ($result === false) {
+    return true;
+  }
+  $rows = [];
+  while ($row = mysqli_fetch_assoc($result)) {
+    $rows[] = $row;
+  }
+  return $rows;
 }
 
-if(count($err)==1)
-{
+const LISTC_IMAGE = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp'];
+const LISTC_IMAGE_MAX = 5 * 1024 * 1024;
 
-	if(!empty($_FILES['company_news_cont_img']['name']))
-	{
-	move_uploaded_file($_FILES['company_news_cont_img']['tmp_name'], "assets/media/company-news/$company_news_cont_img");
-	unlink('assets/media/company-news/'.$_POST['company_news_cont_img_hidden']);
-	}
+$id = (int) base64_decode(is_string($_GET['edit'] ?? null) ? $_GET['edit'] : '', true);
+$details = $id > 0 ? (listc_query($conn, "SELECT * FROM {$page['table']} WHERE {$page['id_column']} = ?", [$id]) ?: []) : [];
+$details = $details ? $details[0] : null;
 
-	$query=mysqli_query($conn,"update tbl_company_news_content
-	                    SET company_news_cont_img='$company_news_cont_img',
-	                        company_news_cont_heading='$company_news_cont_heading',
-	                         company_news_cont_inner_heading='$company_news_cont_inner_heading',
-	                        is_active='$is_active',
-	                         tstp='".$date."' where company_news_cont_id=$id");
-	if($query)
-	{
-
-	header('Location:'.BASE_URL.'edit-company-news-content.php?edit='.$_GET['edit'].'');
-	}
-
+$errors = [];
+$old = ['heading' => '', 'text' => '', 'is_active' => ''];
+if ($details) {
+  $old = [
+    'heading' => (string) $details[$page['heading_column']],
+    'text' => (string) $details[$page['second_column']],
+    'is_active' => $details['is_active'] === '1' ? '1' : '',
+  ];
 }
 
+if ($details && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST[$page['post_flag']])) {
+  $old['heading'] = isset($_POST['heading']) && is_string($_POST['heading']) ? mb_substr(trim($_POST['heading']), 0, 255) : '';
+  $old['text'] = isset($_POST['text']) && is_string($_POST['text']) ? mb_substr(trim($_POST['text']), 0, 255) : '';
+  $old['is_active'] = isset($_POST['is_active']) ? '1' : '';
+
+  if (!is_string($_POST['csrf'] ?? null) || !hash_equals($_SESSION['admin_csrf'], $_POST['csrf'])) {
+    $errors[] = 'The form expired. Please check your entries and save again.';
+  }
+  if ($old['heading'] === '') {
+    $errors[] = 'Page heading is needed.';
+  }
+
+  // The banner keeps its saved picture unless a new one is chosen. A new one is checked by
+  // extension and by its real content, and stored under a name made here.
+  $stored = (string) $details[$page['image_column']];
+  $new_file = '';
+  $file = $_FILES['banner'] ?? null;
+  if (is_array($file) && !is_array($file['name']) && $file['error'] !== UPLOAD_ERR_NO_FILE && (string) $file['name'] !== '') {
+    if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE || $file['size'] > LISTC_IMAGE_MAX) {
+      $errors[] = 'The banner image is too large (maximum 5 MB).';
+    } elseif ($file['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
+      $errors[] = 'The banner image could not be uploaded. Please try again.';
+    } else {
+      $extension = strtolower(pathinfo((string) $file['name'], PATHINFO_EXTENSION));
+      $finfo = new finfo(FILEINFO_MIME_TYPE);
+      $real_extension = array_search($finfo->file($file['tmp_name']), ['jpg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp'], true);
+      if (!isset(LISTC_IMAGE[$extension]) || $real_extension === false) {
+        $errors[] = 'The banner image must be one of: JPG, PNG, WEBP.';
+      } else {
+        $new_file = $page['image_column'] . '_' . bin2hex(random_bytes(6)) . '.' . $real_extension;
+      }
+    }
+  }
+
+  if (!$errors && $new_file !== '' && !move_uploaded_file($file['tmp_name'], $page['image_folder'] . $new_file)) {
+    $errors[] = 'The banner image could not be stored on the server. Nothing was saved.';
+  }
+
+  if (!$errors) {
+    $old_data = $logger->getOldRecordData($page['table'], $id);
+    $assignments = "{$page['image_column']} = ?, {$page['heading_column']} = ?, is_active = ?, tstp = NOW()";
+    $values = [$new_file !== '' ? $new_file : $stored, $old['heading'], $old['is_active'] === '1' ? '1' : '2'];
+    $assignments .= ", {$page['second_column']} = ?";
+    $values[] = $old['text'];
+    $values[] = $id;
+    $saved = listc_query($conn, "UPDATE {$page['table']} SET $assignments WHERE {$page['id_column']} = ?", $values);
+    if (!$saved) {
+      if ($new_file !== '' && is_file($page['image_folder'] . $new_file)) {
+        @unlink($page['image_folder'] . $new_file);
+      }
+      $errors[] = 'The changes could not be saved. Please try again.';
+    } else {
+      $old_name = basename(trim($stored));
+      if ($new_file !== '' && $old_name !== '' && is_file($page['image_folder'] . $old_name)) {
+        @unlink($page['image_folder'] . $old_name);
+      }
+      $logger->log('UPDATE', $page['table'], $id, $old_data, $logger->getOldRecordData($page['table'], $id), $page['title'] . ' page content updated');
+      header('Location: ' . BASE_URL . $page['file'] . '?edit=' . base64_encode($id) . '&saved=1');
+      exit;
+    }
+  }
 }
 
-$details=mysqli_fetch_array(mysqli_query($conn,"select * from tbl_company_news_content where company_news_cont_id=$id"));
+$just_saved = $details && isset($_GET['saved']) && !$errors;
+$banner_url = $details && trim((string) $details[$page['image_column']]) !== '' ? BASE_URL . $page['image_folder'] . rawurlencode($details[$page['image_column']]) : '';
+$public_url = BASE_URL_HOME . $page['public_path'];
+$counted = listc_query($conn, "SELECT COUNT(*) AS n FROM {$page['count_table']} WHERE is_active = '1'");
+$live_listings = $counted ? (int) $counted[0]['n'] : 0;
 ?>
-	<!--begin::Body-->
-	<body id="kt_body" class="header-fixed header-mobile-fixed subheader-enabled subheader-fixed aside-enabled aside-fixed aside-minimize-hoverable page-loading">
-		<!--begin::Main-->
-		<!--begin::Header Mobile-->
-		<div id="kt_header_mobile" class="header-mobile align-items-center header-mobile-fixed">
-			<!--begin::Logo-->
-			<a href="index.html">
-				<img alt="Logo" src="<?=BASE_URL?>assets/media/logos/logo-light.png" />
-			</a>
-			<!--end::Logo-->
-			<!--begin::Toolbar-->
-			<div class="d-flex align-items-center">
-				<!--begin::Aside Mobile Toggle-->
-				<button class="btn p-0 burger-icon burger-icon-left" id="kt_aside_mobile_toggle">
-					<span></span>
-				</button>
-				<!--end::Aside Mobile Toggle-->
-				<!--begin::Header Menu Mobile Toggle-->
-				<button class="btn p-0 burger-icon ml-4" id="kt_header_mobile_toggle">
-					<span></span>
-				</button>
-				<!--end::Header Menu Mobile Toggle-->
-				<!--begin::Topbar Mobile Toggle-->
-				<button class="btn btn-hover-text-primary p-0 ml-2" id="kt_header_mobile_topbar_toggle">
-					<span class="svg-icon svg-icon-xl">
-						<!--begin::Svg Icon | path:<?=BASE_URL?>assets/media/svg/icons/General/User.svg-->
-						<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
-							<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-								<polygon points="0 0 24 0 24 24 0 24" />
-								<path d="M12,11 C9.790861,11 8,9.209139 8,7 C8,4.790861 9.790861,3 12,3 C14.209139,3 16,4.790861 16,7 C16,9.209139 14.209139,11 12,11 Z" fill="#000000" fill-rule="nonzero" opacity="0.3" />
-								<path d="M3.00065168,20.1992055 C3.38825852,15.4265159 7.26191235,13 11.9833413,13 C16.7712164,13 20.7048837,15.2931929 20.9979143,20.2 C21.0095879,20.3954741 20.9979143,21 20.2466999,21 C16.541124,21 11.0347247,21 3.72750223,21 C3.47671215,21 2.97953825,20.45918 3.00065168,20.1992055 Z" fill="#000000" fill-rule="nonzero" />
-							</g>
-						</svg>
-						<!--end::Svg Icon-->
-					</span>
-				</button>
-				<!--end::Topbar Mobile Toggle-->
-			</div>
-			<!--end::Toolbar-->
-		</div>
-		<!--end::Header Mobile-->
-		<div class="d-flex flex-column flex-root">
-			<!--begin::Page-->
-			<div class="d-flex flex-row flex-column-fluid page">
-				<!--begin::Aside-->
-				<?php include('includes/sidebar.php');?>
-				<!--end::Aside-->
-				<!--begin::Wrapper-->
-				<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
-					<!--begin::Header-->
-					<div id="kt_header" class="header header-fixed">
-						<!--begin::Container-->
-						<div class="container-fluid d-flex align-items-stretch justify-content-between">
-							<!--begin::Header Menu Wrapper-->
-							<div class="header-menu-wrapper header-menu-wrapper-left" id="kt_header_menu_wrapper">
-								<!--begin::Header Menu-->
-								<div id="kt_header_menu" class="header-menu header-menu-mobile header-menu-layout-default">
-									
-								</div>
-								<!--end::Header Menu-->
-							</div>
-							<!--end::Header Menu Wrapper-->
-							<!--begin::Topbar-->
-							<div class="topbar">
-							
-								<!--begin::User-->
-								<div class="topbar-item">
-									<div class="btn btn-icon btn-icon-mobile w-auto btn-clean d-flex align-items-center btn-lg px-2" id="kt_quick_user_toggle">
-										<span class="text-muted font-weight-bold font-size-base d-none d-md-inline mr-1">Hi,</span>
-										<span class="text-dark-50 font-weight-bolder font-size-base d-none d-md-inline mr-3"><?=$_SESSION['username']?></span>
-										<span class="symbol symbol-lg-35 symbol-25 symbol-light-success">
-											<span class="symbol-label font-size-h5 font-weight-bold"><?=substr($_SESSION['username'],0,1)?></span>
-										</span>
-									</div>
-								</div>
-								<!--end::User-->
-							</div>
-							<!--end::Topbar-->
-						</div>
-						<!--end::Container-->
-					</div>
-					<!--end::Header-->
-					<!--begin::Content-->
-					<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
-				
-						<!--begin::Entry-->
-					<div class="d-flex flex-column-fluid">
-<!--begin::Container-->
-<div class="container">
+<!--begin::Body-->
 
-<!--begin::Card-->
-<div class="card card-custom gutter-b">
-<div class="card-header flex-wrap py-3">
-<div class="card-title">
-<h3 class="card-label">Company News Content</h3>
-</div>
-</div>
-<div class="card-body">
-<?php if(count($err)>1){?>
-<ul class="err_list">
-<?php foreach($err as $list_err){ ?>
-<li><?=$list_err?></li>
-<?php } ?>
-</ul>
-<?php }?>
+<body id="kt_body"
+  class="header-fixed header-mobile-fixed subheader-enabled subheader-fixed aside-enabled aside-fixed aside-minimize-hoverable page-loading">
+  <!--begin::Main-->
+  <!--begin::Header Mobile-->
+  <div id="kt_header_mobile" class="header-mobile align-items-center header-mobile-fixed">
+    <!--begin::Logo-->
+    <a href="index.html">
+      <img alt="Logo" src="<?= BASE_URL ?>assets/media/logos/logo-light.png" />
+    </a>
+    <!--end::Logo-->
+    <!--begin::Toolbar-->
+    <div class="d-flex align-items-center">
+      <!--begin::Aside Mobile Toggle-->
+      <button class="btn p-0 burger-icon burger-icon-left" id="kt_aside_mobile_toggle">
+        <span></span>
+      </button>
+      <!--end::Aside Mobile Toggle-->
+      <!--begin::Header Menu Mobile Toggle-->
+      <button class="btn p-0 burger-icon ml-4" id="kt_header_mobile_toggle">
+        <span></span>
+      </button>
+      <!--end::Header Menu Mobile Toggle-->
+      <!--begin::Topbar Mobile Toggle-->
+      <button class="btn btn-hover-text-primary p-0 ml-2" id="kt_header_mobile_topbar_toggle">
+        <span class="svg-icon svg-icon-xl">
+          <!--begin::Svg Icon | path:<?= BASE_URL ?>assets/media/svg/icons/General/User.svg-->
+          <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px"
+            viewBox="0 0 24 24" version="1.1">
+            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+              <polygon points="0 0 24 0 24 24 0 24" />
+              <path
+                d="M12,11 C9.790861,11 8,9.209139 8,7 C8,4.790861 9.790861,3 12,3 C14.209139,3 16,4.790861 16,7 C16,9.209139 14.209139,11 12,11 Z"
+                fill="#000000" fill-rule="nonzero" opacity="0.3" />
+              <path
+                d="M3.00065168,20.1992055 C3.38825852,15.4265159 7.26191235,13 11.9833413,13 C16.7712164,13 20.7048837,15.2931929 20.9979143,20.2 C21.0095879,20.3954741 20.9979143,21 20.2466999,21 C16.541124,21 11.0347247,21 3.72750223,21 C3.47671215,21 2.97953825,20.45918 3.00065168,20.1992055 Z"
+                fill="#000000" fill-rule="nonzero" />
+            </g>
+          </svg>
+          <!--end::Svg Icon-->
+        </span>
+      </button>
+      <!--end::Topbar Mobile Toggle-->
+    </div>
+    <!--end::Toolbar-->
+  </div>
+  <!--end::Header Mobile-->
+  <div class="d-flex flex-column flex-root">
+    <!--begin::Page-->
+    <div class="d-flex flex-row flex-column-fluid page">
+      <!--begin::Aside-->
+      <?php include('includes/sidebar.php'); ?>
+      <!--end::Aside-->
+      <!--begin::Wrapper-->
+      <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+        <!--begin::Header-->
+        <div id="kt_header" class="header header-fixed">
+          <!--begin::Container-->
+          <div class="container-fluid d-flex align-items-stretch justify-content-between">
+            <!--begin::Header Menu Wrapper-->
+            <div class="header-menu-wrapper header-menu-wrapper-left" id="kt_header_menu_wrapper">
+              <!--begin::Header Menu-->
+              <div id="kt_header_menu" class="header-menu header-menu-mobile header-menu-layout-default">
 
-<div class=" card-custom gutter-b example example-compact">
+              </div>
+              <!--end::Header Menu-->
+            </div>
+            <!--end::Header Menu Wrapper-->
+            <!--begin::Topbar-->
+            <div class="topbar">
 
+              <!--begin::User-->
+              <div class="topbar-item">
+                <div class="btn btn-icon btn-icon-mobile w-auto btn-clean d-flex align-items-center btn-lg px-2"
+                  id="kt_quick_user_toggle">
+                  <span class="text-muted font-weight-bold font-size-base d-none d-md-inline mr-1">Hi,</span>
+                  <span
+                    class="text-dark-50 font-weight-bolder font-size-base d-none d-md-inline mr-3"><?= $_SESSION['username'] ?></span>
+                  <span class="symbol symbol-lg-35 symbol-25 symbol-light-success">
+                    <span
+                      class="symbol-label font-size-h5 font-weight-bold"><?= substr($_SESSION['username'], 0, 1) ?></span>
+                  </span>
+                </div>
+              </div>
+              <!--end::User-->
+            </div>
+            <!--end::Topbar-->
+          </div>
+          <!--end::Container-->
+        </div>
+        <!--end::Header-->
+        <!--begin::Content-->
+        <div class="content d-flex flex-column flex-column-fluid dre-dash-content" id="kt_content">
 
-<!--begin::Form-->
-<form action="" enctype="multipart/form-data" method="post"  id
-="edit-company-news-content">
-<div class="card-body">
+          <!--begin::Entry-->
+          <div class="d-flex flex-column-fluid">
+            <!--begin::Container-->
+            <div class="container">
+              <!--begin::Page content-->
+              <link href="<?= BASE_URL ?>assets/css/dre-dashboard.css?v=1" rel="stylesheet" type="text/css" />
+              <link href="<?= BASE_URL ?>assets/css/dre-leads.css?v=1" rel="stylesheet" type="text/css" />
+              <link href="<?= BASE_URL ?>assets/css/dre-form.css?v=1" rel="stylesheet" type="text/css" />
+              <link href="<?= BASE_URL ?>assets/css/dre-content.css?v=2" rel="stylesheet" type="text/css" />
 
+              <div class="dre-dash dre-leads dre-form-page dre-content-page">
 
-<div class="form-group">
-<label for="exampleInputPassword1">Image
-<span class="text-danger">*</span></label>
-<input type="file" id="company_news_cont_img" name="company_news_cont_img" value="" class="form-control">
-<?php if(!empty($details['company_news_cont_img'])){?>
-<img src="<?=BASE_URL?>assets/media/company-news/<?=$details['company_news_cont_img']?>" width='50' class="mt-3">
-<?php }?>
- <input type="hidden" name="company_news_cont_img_hidden" value="<?=$details['company_news_cont_img']?>">
-</div>
+                <div class="dre-glass dre-glass-dark dre-hero">
+                  <div>
+                    <h1><?= listc_e($page['title']) ?> page content</h1>
+                    <p>The banner and headings of the <?= listc_e($page['title']) ?> pages.</p>
+                  </div>
+                  <div class="dre-actions">
+                    <a href="<?= BASE_URL . $page['list_file'] ?>"><i class="bi bi-arrow-left"></i> Back to the list</a>
+                    <a href="<?= listc_e($public_url) ?>" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> View the page</a>
+                  </div>
+                </div>
 
+                <?php if (!$details): ?>
+                  <div class="dre-form-alert dre-form-bad" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <div><strong>This content could not be found.</strong> Open it from the menu: Page Content.</div>
+                  </div>
+                <?php elseif ($just_saved): ?>
+                  <div class="dre-form-alert dre-form-ok" role="status" id="listcSaved">
+                    <i class="bi bi-check-circle"></i>
+                    <div><strong>The changes were saved.</strong> <a href="<?= listc_e($public_url) ?>" target="_blank" rel="noopener">View the page</a></div>
+                  </div>
+                <?php endif; ?>
 
-	<div class="form-group">
-<label for="exampleInputPassword1">Heading</label>
-<input type="text" id="company_news_cont_heading" name="company_news_cont_heading" value="<?=$details['company_news_cont_heading']?>" class="form-control" placeholder="Heading">
-</div>
+                <?php if ($errors): ?>
+                  <div class="dre-form-alert dre-form-bad" role="alert" id="listcErrors" tabindex="-1">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <div>
+                      <strong>The changes were not saved. Please fix <?= count($errors) === 1 ? 'this' : 'these ' . count($errors) . ' things' ?>:</strong>
+                      <ul>
+                        <?php foreach ($errors as $error): ?>
+                          <li><?= listc_e($error) ?></li>
+                        <?php endforeach; ?>
+                      </ul>
+                    </div>
+                  </div>
+                <?php endif; ?>
 
+                <?php if ($details): ?>
+                <div class="dre-content-layout">
 
-	<div class="form-group">
-<label for="exampleInputPassword1">Inner Heading</label>
-<input type="text" id="company_news_cont_inner_heading" name="company_news_cont_inner_heading" value="<?=$details['company_news_cont_inner_heading']?>" class="form-control" placeholder="Inner Heading">
-</div>
+                  <!--begin::Form-->
+                  <form action="<?= BASE_URL . $page['file'] ?>?edit=<?= base64_encode($id) ?>" enctype="multipart/form-data" method="post" id="listing-content-form" class="dre-form">
+                    <input type="hidden" name="csrf" value="<?= listc_e($_SESSION['admin_csrf']) ?>">
+                    <input type="hidden" name="<?= listc_e($page['post_flag']) ?>" value="1">
 
+                    <section class="dre-glass dre-form-section">
+                      <h2><i class="bi bi-window"></i> Top of the page</h2>
+                      <label class="dre-field">
+                        <span>Page heading <b>*</b></span>
+                        <input type="text" name="heading" id="listcHeading" value="<?= listc_e($old['heading']) ?>" maxlength="255" autocomplete="off" required>
+                        <small>The title over the banner.</small>
+                      </label>
+                      <label class="dre-field">
+                        <span>Banner image</span>
+                        <input type="file" name="banner" id="listcImage" accept="image/jpeg,image/png,image/webp">
+                        <small>JPG, PNG or WEBP, up to 5 MB. A wide picture works best (about 1920 &times; 600). Leave empty to keep the current one.</small>
+                      </label>
+                      <label class="dre-field">
+                        <span><?= listc_e($page['second_label']) ?></span>
+                        <input type="text" name="text" id="listcSecond" value="<?= listc_e($old['text']) ?>" maxlength="255" autocomplete="off">
+                        <small><?= listc_e($page['second_help']) ?></small>
+                      </label>
+                    </section>
 
+                    <section class="dre-glass dre-form-section">
+                      <h2><i class="bi bi-send"></i> Publishing</h2>
+                      <label class="dre-toggle">
+                        <input type="checkbox" name="is_active" value="1" <?= $old['is_active'] === '1' ? 'checked' : '' ?>>
+                        <i></i>
+                        <span><strong>Use this content on the website</strong><small>Off = the <?= listc_e($page['title']) ?> pages lose their banner and headings. Keep it on unless you are replacing this content.</small></span>
+                      </label>
+                    </section>
 
+                    <div class="dre-form-bar">
+                      <div class="dre-form-progress">
+                        <div id="listcState">No unsaved changes</div>
+                      </div>
+                      <div class="dre-form-bar-buttons">
+                        <button type="submit" class="dre-btn dre-btn-main"><i class="bi bi-check2"></i> Save changes</button>
+                      </div>
+                    </div>
+                  </form>
+                  <!--end::Form-->
 
+                  <!-- How it will look -->
+                  <aside class="dre-content-side" aria-label="Preview">
+                    <div class="dre-glass dre-preview-card">
+                      <span class="dre-preview-label"><i class="bi bi-eye"></i> Page banner</span>
+                      <div class="dre-preview-banner" id="listcBanner"<?= $banner_url !== '' ? ' style="background-image: url(\'' . listc_e($banner_url) . '\')"' : '' ?>>
+                        <div class="dre-preview-glass">
+                          <strong id="listcBannerTitle"><?= listc_e($old['heading']) ?></strong>
+                          <span id="listcBannerSub"><?= listc_e($old['text']) ?></span>
+                        </div>
+                      </div>
+                      <small id="listcBannerNote"><?= $banner_url !== '' ? 'Current banner.' : 'No banner picture yet.' ?></small>
+                    </div>
+                    <div class="dre-glass dre-preview-card dre-preview-facts">
+                      <span class="dre-preview-label"><i class="bi bi-info-circle"></i> This page</span>
+                      <strong><?= number_format($live_listings) ?></strong>
+                      <span>live <?= $live_listings === 1 ? 'item' : 'items' ?> shown under this banner</span>
+                      <small>Last changed <?= !empty($details['tstp']) && strtotime($details['tstp']) > 0 ? date('d M Y', strtotime($details['tstp'])) : 'not known' ?>.</small>
+                    </div>
+                  </aside>
+                </div>
+                <?php endif; ?>
+              </div>
+              <!--end::Page content-->
 
+            </div>
+            <!--end::Container-->
+          </div>
+          <!--end::Entry-->
+        </div>
+        <!--end::Content-->
 
+        <?php
+        include('includes/footer-inner.php');
+        ?>
 
+        <script>
+          // Page content: a live preview next to the form, and a warning before leaving unsaved changes.
+          (function () {
+            var form = document.getElementById('listing-content-form');
+            if (!form) {
+              return;
+            }
+            var dirty = false;
+            var state = document.getElementById('listcState');
+            function changed() {
+              dirty = true;
+              state.textContent = 'Unsaved changes';
+              state.classList.add('dre-warn-text');
+            }
 
+            var heading = document.getElementById('listcHeading');
+            var second = document.getElementById('listcSecond');
+            function preview() {
+              document.getElementById('listcBannerTitle').textContent = heading.value.trim() || 'Page heading';
+              document.getElementById('listcBannerSub').textContent = second.value.trim();
+            }
+            form.addEventListener('input', function (event) {
+              event.target.classList.remove('dre-invalid');
+              changed();
+              preview();
+            });
+            form.addEventListener('change', changed);
+            preview();
+            // A newly picked banner is shown straight away, or refused with the reason.
+            var image = document.getElementById('listcImage');
+            var banner = document.getElementById('listcBanner');
+            var note = document.getElementById('listcBannerNote');
+            var savedBackground = banner.style.backgroundImage;
+            var savedNote = note.textContent;
+            image.addEventListener('change', function () {
+              var file = image.files[0];
+              var bad = '';
+              if (file && ['image/jpeg', 'image/png', 'image/webp'].indexOf(file.type) === -1) {
+                bad = '"' + file.name + '" is not a JPG, PNG or WEBP picture.';
+              } else if (file && file.size > 5 * 1024 * 1024) {
+                bad = '"' + file.name + '" is larger than 5 MB.';
+              }
+              image.setCustomValidity(bad);
+              image.classList.toggle('dre-invalid', bad !== '');
+              if (bad !== '') {
+                image.reportValidity();
+              }
+              if (file && bad === '') {
+                banner.style.backgroundImage = 'url("' + URL.createObjectURL(file) + '")';
+                note.textContent = 'New banner, not saved yet.';
+              } else {
+                banner.style.backgroundImage = savedBackground;
+                note.textContent = savedNote;
+              }
+            });
 
-<div class="form-group">
-<label for="exampleInputPassword1">Status</label>
-<span class="switch switch-md switch-icon">
-<label>
-<input type="checkbox" name="is_active" value="1" <?=($details['is_active']==1 ? 'checked' : '')?>>
-<span></span>
-</label>
-</span>
-</div>
+            form.addEventListener('invalid', function (event) { event.target.classList.add('dre-invalid'); }, true);
+            form.addEventListener('submit', function () {
+              dirty = false;
+            });
+            window.addEventListener('beforeunload', function (event) {
+              if (dirty) { event.preventDefault(); event.returnValue = ''; }
+            });
 
-</div>
-<div class="card-footer">
-<button type="submit" name="update_company_news_content" class="btn btn-primary mr-2">Update</button>
-<button type="reset" class="btn btn-secondary">Reset</button>
-</div>
-</form><!--end::Form-->
-</div>
-
-
-
-</div>
-</div>
-<!--end::Card-->
-
-</div>
-<!--end::Container-->
-</div>
-						<!--end::Entry-->
-					</div>
-					<!--end::Content-->
-<?php 
-include('includes/footer-inner.php');
-?>	
+            if (document.getElementById('listcSaved') && window.history.replaceState) {
+              // Reloading the page should not show "saved" again.
+              window.history.replaceState(null, '', window.location.href.replace(/&saved=1/, ''));
+            }
+            var errorBox = document.getElementById('listcErrors');
+            if (errorBox) { errorBox.focus(); errorBox.scrollIntoView({ block: 'start' }); }
+          })();
+        </script>

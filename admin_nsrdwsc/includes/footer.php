@@ -25,9 +25,8 @@
 		<script src="<?=BASE_URL?>assets/js/jquery.validate.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-		<script src="<?=BASE_URL?>assets/js/custom.js"></script>
-		<script src="<?=BASE_URL?>assets/js/manage-logs.js"></script>
-
+		<script src="<?=BASE_URL?>assets/js/custom.js?2255"></script>
+        <script src="<?=BASE_URL?>assets/js/manage-logs.js"></script>
 		<!--end::Page Scripts-->
 	</body>
 	<!--end::Body-->

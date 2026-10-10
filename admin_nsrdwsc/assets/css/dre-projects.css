@@ -1,0 +1,370 @@
+/* Projects page. Builds on dre-dashboard.css and dre-leads.css. */
+.dre-proj-filter {
+    grid-template-columns: minmax(220px, 2fr) repeat(3, minmax(140px, 1fr));
+}
+.dre-proj-filter .dre-leads-search {
+    grid-column: auto;
+}
+.dre-proj-filter .dre-proj-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 42px;
+    color: var(--dd-ink);
+    font-size: 0.92rem;
+    cursor: pointer;
+}
+.dre-proj-filter .dre-proj-check input,
+.dre-proj-all input,
+.dre-proj-box {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--dd-main);
+    cursor: pointer;
+}
+.dre-proj-filter .dre-leads-filter-buttons {
+    grid-column: auto;
+    justify-content: flex-end;
+}
+.dre-proj-all {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--dd-muted);
+    font-size: 0.88rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.dre-proj-row {
+    display: grid;
+    grid-template-columns: 26px minmax(260px, 2.2fr) minmax(170px, 1.1fr) minmax(170px, 1.1fr) 150px 132px;
+    gap: 16px;
+    align-items: center;
+    padding: 12px 6px;
+    border-bottom: 1px solid rgba(95, 87, 76, 0.10);
+}
+.dre-proj-row:last-child {
+    border-bottom: 0;
+}
+.dre-proj-row:not(.dre-proj-head):hover {
+    background: rgba(255, 255, 255, 0.45);
+    border-radius: 12px;
+}
+.dre-proj-row > div {
+    min-width: 0;
+}
+.dre-proj-head {
+    padding-top: 0;
+    padding-bottom: 10px;
+    color: var(--dd-muted);
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.dre-proj-row.is-hidden .dre-proj-thumb,
+.dre-proj-row.is-hidden .dre-proj-name {
+    opacity: 0.6;
+}
+
+.dre-proj-main {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.dre-proj-main > div {
+    min-width: 0;
+}
+.dre-proj-thumb {
+    position: relative;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 56px;
+    border-radius: 12px;
+    background: rgba(95, 87, 76, 0.10);
+    color: var(--dd-accent);
+    font-size: 1.3rem;
+    overflow: hidden;
+}
+.dre-proj-thumb img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.dre-projects .dre-proj-name {
+    display: block;
+    color: var(--dd-ink);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+.dre-projects .dre-proj-name:hover {
+    color: var(--dd-main);
+}
+.dre-proj-sub {
+    display: block;
+    margin-top: 2px;
+    color: var(--dd-muted);
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+}
+.dre-proj-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 6px;
+}
+.dre-proj-where span,
+.dre-proj-facts span {
+    display: block;
+    color: var(--dd-ink);
+    font-size: 0.9rem;
+    overflow-wrap: anywhere;
+}
+.dre-proj-where span + span {
+    margin-top: 4px;
+}
+.dre-proj-where i {
+    margin-right: 6px;
+    color: var(--dd-accent);
+}
+.dre-proj-where em {
+    color: var(--dd-muted);
+    font-style: normal;
+}
+.dre-proj-facts strong {
+    display: block;
+    font-weight: 600;
+}
+.dre-proj-facts span {
+    color: var(--dd-muted);
+    font-size: 0.85rem;
+}
+.dre-proj-facts .dre-proj-missing {
+    margin-top: 5px;
+    color: #a8701a;
+    font-size: 0.78rem;
+}
+.dre-proj-status form {
+    margin: 0;
+}
+.dre-proj-sync {
+    display: block;
+    margin-top: 6px;
+    color: var(--dd-muted);
+    font-size: 0.78rem;
+}
+
+/* Live / hidden switch */
+.dre-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--dd-muted);
+    font-size: 0.86rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.dre-switch i {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    border-radius: 22px;
+    background: rgba(95, 87, 76, 0.26);
+    transition: background 0.15s ease;
+}
+.dre-switch i::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    transition: left 0.15s ease;
+}
+.dre-switch.is-on {
+    color: #2c7353;
+}
+.dre-switch.is-on i {
+    background: #3f8f6b;
+}
+.dre-switch.is-on i::after {
+    left: 21px;
+}
+.dre-switch:focus-visible {
+    outline: 2px solid var(--dd-accent);
+    outline-offset: 3px;
+    border-radius: 6px;
+}
+
+.dre-proj-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+}
+.dre-proj-actions .dropdown-menu {
+    border: 1px solid rgba(95, 87, 76, 0.12);
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(73, 62, 50, 0.18);
+    padding: 6px;
+}
+.dre-proj-actions .dropdown-item {
+    border-radius: 9px;
+    padding: 9px 12px;
+    font-size: 0.92rem;
+}
+.dre-proj-actions .dropdown-item i {
+    color: inherit;
+}
+.dre-proj-actions form {
+    margin: 0;
+}
+.dre-proj-actions form .dropdown-item {
+    width: 100%;
+    border: 0;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+}
+
+/* Bar for the ticked projects */
+.dre-proj-bulk {
+    position: sticky;
+    bottom: 16px;
+    z-index: 50;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 auto;
+    padding: 12px 16px;
+    border-radius: 16px;
+    background: rgba(74, 67, 58, 0.94);
+    color: #fff;
+    box-shadow: 0 14px 36px rgba(47, 42, 37, 0.35);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+}
+.dre-proj-bulk[hidden] {
+    display: none;
+}
+.dre-proj-bulk > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.dre-projects .dre-proj-bulk .dre-btn {
+    height: 40px;
+    border-color: rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+.dre-projects .dre-proj-bulk .dre-btn:hover {
+    background: rgba(255, 255, 255, 0.24);
+}
+.dre-projects .dre-proj-bulk .dre-btn-main {
+    border-color: transparent;
+    background: #fff;
+    color: var(--dd-main);
+}
+
+@media (max-width: 1399px) {
+    .dre-proj-row {
+        grid-template-columns: 26px minmax(240px, 2fr) minmax(160px, 1fr) minmax(150px, 1fr) 132px;
+    }
+    .dre-proj-head > div:last-child {
+        display: none;
+    }
+    .dre-proj-actions {
+        grid-column: 2 / -1;
+        justify-content: flex-start;
+    }
+}
+@media (max-width: 1199px) {
+    .dre-proj-filter {
+        grid-template-columns: 1fr 1fr;
+    }
+    .dre-proj-filter .dre-leads-search,
+    .dre-proj-filter .dre-leads-filter-buttons {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+    }
+}
+@media (max-width: 991px) {
+    .dre-proj-head {
+        display: none;
+    }
+    /* Each project becomes its own card. */
+    .dre-proj-row {
+        grid-template-columns: 26px 1fr;
+        gap: 10px 12px;
+        align-items: start;
+        margin-bottom: 12px;
+        padding: 14px;
+        border: 1px solid rgba(95, 87, 76, 0.12);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.55);
+    }
+    .dre-proj-row:last-child {
+        border-bottom: 1px solid rgba(95, 87, 76, 0.12);
+        margin-bottom: 0;
+    }
+    .dre-proj-pick {
+        padding-top: 18px;
+    }
+    .dre-proj-where,
+    .dre-proj-facts,
+    .dre-proj-status,
+    .dre-proj-actions {
+        grid-column: 2;
+    }
+    .dre-proj-status {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 14px;
+    }
+    .dre-proj-sync {
+        margin-top: 0;
+    }
+    .dre-proj-actions {
+        gap: 8px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(95, 87, 76, 0.10);
+    }
+    .dre-projects .dre-proj-actions .dre-icon-btn {
+        width: 46px;
+        height: 44px;
+    }
+}
+@media (max-width: 575px) {
+    .dre-proj-filter {
+        grid-template-columns: 1fr;
+    }
+    .dre-proj-all span {
+        display: none;
+    }
+    .dre-proj-bulk {
+        bottom: 8px;
+    }
+    .dre-proj-bulk > div {
+        width: 100%;
+    }
+    .dre-projects .dre-proj-bulk .dre-btn {
+        flex: 1 1 calc(50% - 8px);
+        padding: 0 8px;
+    }
+}

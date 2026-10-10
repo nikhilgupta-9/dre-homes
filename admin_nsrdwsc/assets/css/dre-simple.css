@@ -1,0 +1,75 @@
+/* Testimonials and awards: list and forms. Builds on dre-projects.css, dre-articles.css and dre-form.css. */
+.dre-simple .dre-proj-thumb.dre-sim-initial {
+    background: rgba(171, 152, 137, 0.25);
+    border-radius: 50%;
+}
+.dre-simple .dre-sim-initial span {
+    color: var(--dd-main);
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+/* Five stars, filled from the left by the width of the inner bar */
+.dre-sim-stars {
+    position: relative;
+    display: inline-block;
+    width: 80px;
+    height: 16px;
+    margin-top: 3px;
+    background: linear-gradient(rgba(95, 87, 76, 0.22), rgba(95, 87, 76, 0.22));
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1.2l2.1 4.3 4.7.7-3.4 3.3.8 4.7L8 12l-4.2 2.2.8-4.7L1.2 6.2l4.7-.7z'/%3E%3C/svg%3E") left center / 16px 16px repeat-x;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1.2l2.1 4.3 4.7.7-3.4 3.3.8 4.7L8 12l-4.2 2.2.8-4.7L1.2 6.2l4.7-.7z'/%3E%3C/svg%3E") left center / 16px 16px repeat-x;
+    vertical-align: middle;
+}
+.dre-sim-stars i {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    background: #d79a1e;
+}
+.dre-simple .dre-proj-sub {
+    display: inline-block;
+    margin-left: 6px;
+}
+.dre-simple .dre-proj-bulk > div {
+    flex-wrap: wrap;
+}
+
+/* Rating picker in the form */
+.dre-rating-pick {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+.dre-rating-pick input[type="number"] {
+    width: 110px;
+}
+.dre-rating-pick .dre-sim-stars {
+    width: 120px;
+    height: 24px;
+    margin: 0;
+    -webkit-mask-size: 24px 24px;
+    mask-size: 24px 24px;
+}
+.dre-quote-preview {
+    margin-top: 6px;
+    padding: 16px 18px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(95, 87, 76, 0.12);
+}
+.dre-quote-preview p {
+    margin: 8px 0;
+    color: var(--dd-ink);
+    font-size: 0.9rem;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+.dre-quote-preview strong {
+    color: var(--dd-ink);
+}
+.dre-quote-preview small {
+    display: block;
+    color: var(--dd-muted);
+}

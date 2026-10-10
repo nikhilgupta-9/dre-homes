@@ -4,342 +4,471 @@ include('includes/header.php');
 include('lock2.php');
 include('includes/Logger.php');
 
-$logger = new Logger($conn);
-
-$err[] = '';
-$id = base64_decode($_GET['edit']);
-if (isset($_POST['tag_submit'])) {
-	$page_id = mysqli_real_escape_string($conn, $_POST['page_id']);
-	$meta_title = mysqli_real_escape_string($conn, $_POST['meta_title']);
-	$meta_keyword = mysqli_real_escape_string($conn, $_POST['meta_keyword']);
-	$meta_description = mysqli_real_escape_string($conn, $_POST['meta_description']);
-	$meta_og_img = 'meta_og_img_' . rand(0, 10000) . '_' . $_FILES['meta_og_img']['name'];
-	$is_active = (prepStr($_POST['is_active'] != '' ? 1 : 2));
-
-
-	$allowed_image_extension = array(
-		"png",
-		"jpg",
-		"jpeg"
-	);
-
-	$meta_og_img_file_extension = pathinfo($_FILES["meta_og_img"]["name"], PATHINFO_EXTENSION);
-
-	if (!in_array($meta_og_img_file_extension, $allowed_image_extension) && !empty($_FILES['meta_og_img']['name'])) {
-		$err[] = 'Invalid Meta Image. Only PNG,JPG and JPEG are allowed.';
-	}
-
-
-
-	if (!empty($_FILES['meta_og_img']['name'])) {
-		$meta_og_img = 'meta_og_img_' . rand(0, 10000) . '_' . $_FILES['meta_og_img']['name'];
-	} else {
-		$meta_og_img = $_POST['meta_og_img_hidden'];
-	}
-
-
-
-	if (empty($page_id)) {
-		$err[] = 'Page Name is required';
-	}
-
-	if (empty($meta_title)) {
-		$err[] = 'Meta Title is required';
-	}
-
-	if (empty($meta_keyword)) {
-		$err[] = 'Meta Keyword is required';
-	}
-
-
-	if (empty($meta_description)) {
-		$err[] = 'Meta Description is required';
-	}
-
-	if (empty($is_active)) {
-		$err[] = 'Status is required';
-	}
-
-
-	if (count($err) == 1) {
-
-		if (!empty($_FILES['meta_og_img']['name'])) {
-			move_uploaded_file($_FILES['meta_og_img']['tmp_name'], "assets/media/meta/$meta_og_img");
-			unlink('assets/media/meta/' . $_POST['meta_og_img_hidden']);
-		}
-
-		$old_data = $logger->getOldRecordData('tbl_tags', $id);
-
-		$query = mysqli_query($conn, "update tbl_tags
-                                                SET page_id='$page_id',
-                                                    meta_title='$meta_title',
-                                                    meta_keyword='$meta_keyword',
-                                                    meta_description='$meta_description',
-                                                    meta_og_img='$meta_og_img',
-                                                    is_active='$is_active',
-                                                    tstp='$date' where id=$id");
-
-
-		if ($query) {
-
-		$new_data = $logger->getOldRecordData('tbl_tags', $id);
-
-			$logger->log(
-				'UPDATE',
-				'tbl_tags',
-				$id,
-				$old_data,
-				$new_data,
-				'Meta Tags Updated : ' . $dev_heading
-			);
-
-			header('Location:manage-tags.php');
-		}
-
-	}
-
+// Nothing below runs unless someone is signed in.
+if (empty($_SESSION['email_id'])) {
+  exit;
 }
 
-$details = mysqli_fetch_array(mysqli_query($conn, "select * from tbl_tags where id=$id"));
+$logger = new Logger($conn);
 
+if (empty($_SESSION['admin_csrf'])) {
+  $_SESSION['admin_csrf'] = bin2hex(random_bytes(16));
+}
+
+function set_e($text)
+{
+  return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
+}
+
+// Runs a prepared query and returns its rows (or true for a write).
+function set_query($conn, $sql, array $params = [])
+{
+  try {
+    $stmt = mysqli_prepare($conn, $sql);
+    if (!$stmt) {
+      error_log('Settings query failed: ' . mysqli_error($conn));
+      return false;
+    }
+    if ($params) {
+      $types = '';
+      foreach ($params as $param) {
+        $types .= is_int($param) ? 'i' : 's';
+      }
+      mysqli_stmt_bind_param($stmt, $types, ...$params);
+    }
+    if (!mysqli_stmt_execute($stmt)) {
+      error_log('Settings query failed: ' . mysqli_stmt_error($stmt));
+      mysqli_stmt_close($stmt);
+      return false;
+    }
+    $result = mysqli_stmt_get_result($stmt);
+    mysqli_stmt_close($stmt);
+  } catch (mysqli_sql_exception $error) {
+    // This server reports database errors as exceptions.
+    error_log('Settings query failed: ' . $error->getMessage());
+    return false;
+  }
+  if ($result === false) {
+    return true;
+  }
+  $rows = [];
+  while ($row = mysqli_fetch_assoc($result)) {
+    $rows[] = $row;
+  }
+  return $rows;
+}
+
+// Picture types by what the file really contains: real type => extension it is stored with.
+const SET_IMAGE_TYPES = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
+const SET_ICON_TYPES = ['image/vnd.microsoft.icon' => 'ico', 'image/x-icon' => 'ico'];
+const SET_IMAGE_MAX = 5 * 1024 * 1024;
+
+// Checks one uploaded picture by extension and by its real content.
+// Returns [extension to store it with, error]; the extension is '' when no file was chosen.
+function set_check_upload($file, $label, $allow_icon = false)
+{
+  if (!is_array($file) || is_array($file['name']) || $file['error'] === UPLOAD_ERR_NO_FILE || (string) $file['name'] === '') {
+    return ['', ''];
+  }
+  if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE || $file['size'] > SET_IMAGE_MAX) {
+    return ['', "$label is too large (maximum 5 MB)."];
+  }
+  if ($file['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
+    return ['', "$label could not be uploaded. Please try again."];
+  }
+  $types = SET_IMAGE_TYPES + ($allow_icon ? SET_ICON_TYPES : []);
+  $extension = strtolower(pathinfo((string) $file['name'], PATHINFO_EXTENSION));
+  $finfo = new finfo(FILEINFO_MIME_TYPE);
+  $real = $finfo->file($file['tmp_name']);
+  if (!in_array($extension === 'jpeg' ? 'jpg' : $extension, $types, true) || !isset($types[$real])) {
+    return ['', "$label must be one of: " . strtoupper(implode(', ', array_unique(array_values($types)))) . '.'];
+  }
+  return [$types[$real], ''];
+}
+
+const TAG_FOLDER = 'assets/media/meta/';
+const TAG_TITLE_MAX = 70;
+const TAG_DESC_MIN = 70;
+const TAG_DESC_MAX = 160;
+
+$id = (int) base64_decode(is_string($_GET['edit'] ?? null) ? $_GET['edit'] : '', true);
+$details = $id > 0 ? (set_query($conn, "SELECT t.*, p.page_name, p.page_slug FROM tbl_tags t LEFT JOIN tbl_pages p ON p.id = t.page_id WHERE t.id = ?", [$id]) ?: []) : [];
+$details = $details ? $details[0] : null;
+
+$errors = [];
+$old = ['title' => '', 'description' => '', 'keyword' => '', 'is_active' => ''];
+if ($details) {
+  $old = ['title' => (string) $details['meta_title'], 'description' => (string) $details['meta_description'], 'keyword' => (string) $details['meta_keyword'], 'is_active' => $details['is_active'] === '1' ? '1' : ''];
+}
+$saved_image = $details ? trim((string) $details['meta_og_img']) : '';
+
+if ($details && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['save_tags'])) {
+  $old['title'] = isset($_POST['title']) && is_string($_POST['title']) ? mb_substr(trim($_POST['title']), 0, 255) : '';
+  $old['description'] = isset($_POST['description']) && is_string($_POST['description']) ? trim($_POST['description']) : '';
+  $old['keyword'] = isset($_POST['keyword']) && is_string($_POST['keyword']) ? mb_substr(trim($_POST['keyword']), 0, 255) : '';
+  $old['is_active'] = isset($_POST['is_active']) ? '1' : '';
+
+  if (!is_string($_POST['csrf'] ?? null) || !hash_equals($_SESSION['admin_csrf'], $_POST['csrf'])) {
+    $errors[] = 'The form expired. Please check your entries and save again.';
+  }
+  if ($old['title'] === '') {
+    $errors[] = 'Meta title is needed.';
+  }
+  if ($old['description'] === '') {
+    $errors[] = 'Meta description is needed.';
+  }
+  list($extension, $error) = set_check_upload($_FILES['image'] ?? null, 'The sharing picture');
+  $new_file = '';
+  if ($error !== '') {
+    $errors[] = $error;
+  } elseif ($extension !== '') {
+    $new_file = 'meta_og_img_' . bin2hex(random_bytes(6)) . '.' . $extension;
+  }
+  if (!$errors && $new_file !== '') {
+    if (!is_dir(TAG_FOLDER)) {
+      mkdir(TAG_FOLDER, 0755, true);
+    }
+    if (!move_uploaded_file($_FILES['image']['tmp_name'], TAG_FOLDER . $new_file)) {
+      $errors[] = 'The picture could not be stored on the server. Nothing was saved.';
+    }
+  }
+
+  if (!$errors) {
+    $old_data = $logger->getOldRecordData('tbl_tags', $id);
+    // The page these tags belong to is not changed here.
+    $saved = set_query($conn, "UPDATE tbl_tags SET meta_title = ?, meta_keyword = ?, meta_description = ?, meta_og_img = ?, is_active = ?, tstp = NOW() WHERE id = ?", [$old['title'], $old['keyword'], $old['description'], $new_file !== '' ? $new_file : $saved_image, $old['is_active'] === '1' ? '1' : '2', $id]);
+    if (!$saved) {
+      if ($new_file !== '' && is_file(TAG_FOLDER . $new_file)) {
+        @unlink(TAG_FOLDER . $new_file);
+      }
+      $errors[] = 'The changes could not be saved. Please try again.';
+    } else {
+      if ($new_file !== '' && $saved_image !== '' && is_file(TAG_FOLDER . basename($saved_image))) {
+        @unlink(TAG_FOLDER . basename($saved_image));
+      }
+      $logger->log('UPDATE', 'tbl_tags', $id, $old_data, $logger->getOldRecordData('tbl_tags', $id), 'SEO tags updated: ' . trim((string) $details['page_name']));
+      header('Location: ' . BASE_URL . 'manage-tags.php?done=saved');
+      exit;
+    }
+  }
+}
+
+$page_name = $details ? trim((string) $details['page_name']) : '';
+$page_url = $details ? BASE_URL_HOME . $details['page_slug'] : '';
+$image_url = $saved_image !== '' ? BASE_URL . TAG_FOLDER . rawurlencode($saved_image) : '';
 ?>
 <!--begin::Body-->
 
 <body id="kt_body"
-	class="header-fixed header-mobile-fixed subheader-enabled subheader-fixed aside-enabled aside-fixed aside-minimize-hoverable page-loading">
-	<!--begin::Main-->
-	<!--begin::Header Mobile-->
-	<div id="kt_header_mobile" class="header-mobile align-items-center header-mobile-fixed">
-		<!--begin::Logo-->
-		<a href="index.html">
-			<img alt="Logo" src="<?= BASE_URL ?>assets/media/logos/logo-light.png" />
-		</a>
-		<!--end::Logo-->
-		<!--begin::Toolbar-->
-		<div class="d-flex align-items-center">
-			<!--begin::Aside Mobile Toggle-->
-			<button class="btn p-0 burger-icon burger-icon-left" id="kt_aside_mobile_toggle">
-				<span></span>
-			</button>
-			<!--end::Aside Mobile Toggle-->
-			<!--begin::Header Menu Mobile Toggle-->
-			<button class="btn p-0 burger-icon ml-4" id="kt_header_mobile_toggle">
-				<span></span>
-			</button>
-			<!--end::Header Menu Mobile Toggle-->
-			<!--begin::Topbar Mobile Toggle-->
-			<button class="btn btn-hover-text-primary p-0 ml-2" id="kt_header_mobile_topbar_toggle">
-				<span class="svg-icon svg-icon-xl">
-					<!--begin::Svg Icon | path:<?= BASE_URL ?>assets/media/svg/icons/General/User.svg-->
-					<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px"
-						height="24px" viewBox="0 0 24 24" version="1.1">
-						<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-							<polygon points="0 0 24 0 24 24 0 24" />
-							<path
-								d="M12,11 C9.790861,11 8,9.209139 8,7 C8,4.790861 9.790861,3 12,3 C14.209139,3 16,4.790861 16,7 C16,9.209139 14.209139,11 12,11 Z"
-								fill="#000000" fill-rule="nonzero" opacity="0.3" />
-							<path
-								d="M3.00065168,20.1992055 C3.38825852,15.4265159 7.26191235,13 11.9833413,13 C16.7712164,13 20.7048837,15.2931929 20.9979143,20.2 C21.0095879,20.3954741 20.9979143,21 20.2466999,21 C16.541124,21 11.0347247,21 3.72750223,21 C3.47671215,21 2.97953825,20.45918 3.00065168,20.1992055 Z"
-								fill="#000000" fill-rule="nonzero" />
-						</g>
-					</svg>
-					<!--end::Svg Icon-->
-				</span>
-			</button>
-			<!--end::Topbar Mobile Toggle-->
-		</div>
-		<!--end::Toolbar-->
-	</div>
-	<!--end::Header Mobile-->
-	<div class="d-flex flex-column flex-root">
-		<!--begin::Page-->
-		<div class="d-flex flex-row flex-column-fluid page">
-			<!--begin::Aside-->
-			<?php include('includes/sidebar.php'); ?>
-			<!--end::Aside-->
-			<!--begin::Wrapper-->
-			<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
-				<!--begin::Header-->
-				<div id="kt_header" class="header header-fixed">
-					<!--begin::Container-->
-					<div class="container-fluid d-flex align-items-stretch justify-content-between">
-						<!--begin::Header Menu Wrapper-->
-						<div class="header-menu-wrapper header-menu-wrapper-left" id="kt_header_menu_wrapper">
-							<!--begin::Header Menu-->
-							<div id="kt_header_menu" class="header-menu header-menu-mobile header-menu-layout-default">
+  class="header-fixed header-mobile-fixed subheader-enabled subheader-fixed aside-enabled aside-fixed aside-minimize-hoverable page-loading">
+  <!--begin::Main-->
+  <!--begin::Header Mobile-->
+  <div id="kt_header_mobile" class="header-mobile align-items-center header-mobile-fixed">
+    <!--begin::Logo-->
+    <a href="index.html">
+      <img alt="Logo" src="<?= BASE_URL ?>assets/media/logos/logo-light.png" />
+    </a>
+    <!--end::Logo-->
+    <!--begin::Toolbar-->
+    <div class="d-flex align-items-center">
+      <!--begin::Aside Mobile Toggle-->
+      <button class="btn p-0 burger-icon burger-icon-left" id="kt_aside_mobile_toggle">
+        <span></span>
+      </button>
+      <!--end::Aside Mobile Toggle-->
+      <!--begin::Header Menu Mobile Toggle-->
+      <button class="btn p-0 burger-icon ml-4" id="kt_header_mobile_toggle">
+        <span></span>
+      </button>
+      <!--end::Header Menu Mobile Toggle-->
+      <!--begin::Topbar Mobile Toggle-->
+      <button class="btn btn-hover-text-primary p-0 ml-2" id="kt_header_mobile_topbar_toggle">
+        <span class="svg-icon svg-icon-xl">
+          <!--begin::Svg Icon | path:<?= BASE_URL ?>assets/media/svg/icons/General/User.svg-->
+          <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px"
+            viewBox="0 0 24 24" version="1.1">
+            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+              <polygon points="0 0 24 0 24 24 0 24" />
+              <path
+                d="M12,11 C9.790861,11 8,9.209139 8,7 C8,4.790861 9.790861,3 12,3 C14.209139,3 16,4.790861 16,7 C16,9.209139 14.209139,11 12,11 Z"
+                fill="#000000" fill-rule="nonzero" opacity="0.3" />
+              <path
+                d="M3.00065168,20.1992055 C3.38825852,15.4265159 7.26191235,13 11.9833413,13 C16.7712164,13 20.7048837,15.2931929 20.9979143,20.2 C21.0095879,20.3954741 20.9979143,21 20.2466999,21 C16.541124,21 11.0347247,21 3.72750223,21 C3.47671215,21 2.97953825,20.45918 3.00065168,20.1992055 Z"
+                fill="#000000" fill-rule="nonzero" />
+            </g>
+          </svg>
+          <!--end::Svg Icon-->
+        </span>
+      </button>
+      <!--end::Topbar Mobile Toggle-->
+    </div>
+    <!--end::Toolbar-->
+  </div>
+  <!--end::Header Mobile-->
+  <div class="d-flex flex-column flex-root">
+    <!--begin::Page-->
+    <div class="d-flex flex-row flex-column-fluid page">
+      <!--begin::Aside-->
+      <?php include('includes/sidebar.php'); ?>
+      <!--end::Aside-->
+      <!--begin::Wrapper-->
+      <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+        <!--begin::Header-->
+        <div id="kt_header" class="header header-fixed">
+          <!--begin::Container-->
+          <div class="container-fluid d-flex align-items-stretch justify-content-between">
+            <!--begin::Header Menu Wrapper-->
+            <div class="header-menu-wrapper header-menu-wrapper-left" id="kt_header_menu_wrapper">
+              <!--begin::Header Menu-->
+              <div id="kt_header_menu" class="header-menu header-menu-mobile header-menu-layout-default">
 
-							</div>
-							<!--end::Header Menu-->
-						</div>
-						<!--end::Header Menu Wrapper-->
-						<!--begin::Topbar-->
-						<div class="topbar">
+              </div>
+              <!--end::Header Menu-->
+            </div>
+            <!--end::Header Menu Wrapper-->
+            <!--begin::Topbar-->
+            <div class="topbar">
 
-							<!--begin::User-->
-							<div class="topbar-item">
-								<div class="btn btn-icon btn-icon-mobile w-auto btn-clean d-flex align-items-center btn-lg px-2"
-									id="kt_quick_user_toggle">
-									<span
-										class="text-muted font-weight-bold font-size-base d-none d-md-inline mr-1">Hi,</span>
-									<span
-										class="text-dark-50 font-weight-bolder font-size-base d-none d-md-inline mr-3"><?= $_SESSION['username'] ?></span>
-									<span class="symbol symbol-lg-35 symbol-25 symbol-light-success">
-										<span
-											class="symbol-label font-size-h5 font-weight-bold"><?= substr($_SESSION['username'], 0, 1) ?></span>
-									</span>
-								</div>
-							</div>
-							<!--end::User-->
-						</div>
-						<!--end::Topbar-->
-					</div>
-					<!--end::Container-->
-				</div>
-				<!--end::Header-->
-				<!--begin::Content-->
-				<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+              <!--begin::User-->
+              <div class="topbar-item">
+                <div class="btn btn-icon btn-icon-mobile w-auto btn-clean d-flex align-items-center btn-lg px-2"
+                  id="kt_quick_user_toggle">
+                  <span class="text-muted font-weight-bold font-size-base d-none d-md-inline mr-1">Hi,</span>
+                  <span
+                    class="text-dark-50 font-weight-bolder font-size-base d-none d-md-inline mr-3"><?= $_SESSION['username'] ?></span>
+                  <span class="symbol symbol-lg-35 symbol-25 symbol-light-success">
+                    <span
+                      class="symbol-label font-size-h5 font-weight-bold"><?= substr($_SESSION['username'], 0, 1) ?></span>
+                  </span>
+                </div>
+              </div>
+              <!--end::User-->
+            </div>
+            <!--end::Topbar-->
+          </div>
+          <!--end::Container-->
+        </div>
+        <!--end::Header-->
+        <!--begin::Content-->
+        <div class="content d-flex flex-column flex-column-fluid dre-dash-content" id="kt_content">
 
-					<!--begin::Entry-->
-					<div class="d-flex flex-column-fluid">
-						<!--begin::Container-->
-						<div class="container">
+          <!--begin::Entry-->
+          <div class="d-flex flex-column-fluid">
+            <!--begin::Container-->
+            <div class="container">
+              <!--begin::SEO tags form-->
+              <link href="<?= BASE_URL ?>assets/css/dre-dashboard.css?v=1" rel="stylesheet" type="text/css" />
+              <link href="<?= BASE_URL ?>assets/css/dre-form.css?v=1" rel="stylesheet" type="text/css" />
+              <link href="<?= BASE_URL ?>assets/css/dre-articles.css?v=1" rel="stylesheet" type="text/css" />
+              <link href="<?= BASE_URL ?>assets/css/dre-content.css?v=2" rel="stylesheet" type="text/css" />
+              <link href="<?= BASE_URL ?>assets/css/dre-settings.css?v=1" rel="stylesheet" type="text/css" />
+              <link href="<?= BASE_URL ?>assets/css/dre-ai-assist.css?v=1" rel="stylesheet" type="text/css" />
 
-							<!--begin::Card-->
-							<div class="card card-custom gutter-b">
-								<div class="card-header flex-wrap py-3">
-									<div class="card-title">
-										<h3 class="card-label">Edit Tags</h3>
-									</div>
-									<div class="card-toolbar">
-										<!--begin::Button-->
-										<a href="<?= BASE_URL ?>manage-tags.php"
-											class="btn btn-primary font-weight-bolder">
-											<span class="svg-icon svg-icon-md">
-												<!--begin::Svg Icon | path:assets/media/svg/icons/Design/Flatten.svg-->
-												<svg xmlns="http://www.w3.org/2000/svg"
-													xmlns:xlink="http://www.w3.org/1999/xlink" width="24px"
-													height="24px" viewBox="0 0 24 24" version="1.1">
-													<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-														<rect x="0" y="0" width="24" height="24"></rect>
-														<circle fill="#000000" cx="9" cy="15" r="6"></circle>
-														<path
-															d="M8.8012943,7.00241953 C9.83837775,5.20768121 11.7781543,4 14,4 C17.3137085,4 20,6.6862915 20,10 C20,12.2218457 18.7923188,14.1616223 16.9975805,15.1987057 C16.9991904,15.1326658 17,15.0664274 17,15 C17,10.581722 13.418278,7 9,7 C8.93357256,7 8.86733422,7.00080962 8.8012943,7.00241953 Z"
-															fill="#000000" opacity="0.3"></path>
-													</g>
-												</svg>
-												<!--end::Svg Icon-->
-											</span>Go Back</a>
-										<!--end::Button-->
-									</div>
-								</div>
-								<div class="card-body">
+              <div class="dre-dash dre-form-page dre-article-form dre-content-page dre-settings-form">
 
-									<?php if (count($err) > 1) { ?>
-										<ul class="err_list">
-											<?php foreach ($err as $list_err) { ?>
-												<li><?= $list_err ?></li>
-											<?php } ?>
-										</ul>
-									<?php } ?>
-									<div class=" card-custom gutter-b example example-compact">
+                <div class="dre-glass dre-glass-dark dre-hero">
+                  <div>
+                    <h1>SEO meta tags</h1>
+                    <p><?= $details ? 'Page: ' . set_e($page_name) . ' &middot; /' . set_e($details['page_slug']) : 'These tags could not be found.' ?></p>
+                  </div>
+                  <div class="dre-actions">
+                    <a href="<?= BASE_URL ?>manage-tags.php"><i class="bi bi-arrow-left"></i> Back to all pages</a>
+                    <?php if ($details): ?>
+                      <a href="<?= set_e($page_url) ?>" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> View the page</a>
+                    <?php endif; ?>
+                  </div>
+                </div>
 
+                <?php if (!$details): ?>
+                  <div class="dre-form-alert dre-form-bad" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <div><strong>These tags could not be found.</strong> <a href="<?= BASE_URL ?>manage-tags.php">Back to all pages</a></div>
+                  </div>
+                <?php endif; ?>
 
-										<!--begin::Form-->
-										<form action="" enctype="multipart/form-data" method="post" id="category-frm">
-											<div class="card-body">
+                <?php if ($errors): ?>
+                  <div class="dre-form-alert dre-form-bad" role="alert" id="setErrors" tabindex="-1">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <div>
+                      <strong>Not saved. Please fix <?= count($errors) === 1 ? 'this' : 'these ' . count($errors) . ' things' ?>:</strong>
+                      <ul>
+                        <?php foreach ($errors as $error): ?>
+                          <li><?= set_e($error) ?></li>
+                        <?php endforeach; ?>
+                      </ul>
+                    </div>
+                  </div>
+                <?php endif; ?>
 
+                <?php if ($details): ?>
+                <div class="dre-content-layout">
+                  <form action="<?= BASE_URL ?>edit-tags.php?edit=<?= base64_encode($id) ?>" enctype="multipart/form-data" method="post" id="settings-form" class="dre-form">
+                    <input type="hidden" name="csrf" value="<?= set_e($_SESSION['admin_csrf']) ?>">
+                    <input type="hidden" name="save_tags" value="1">
 
-												<div class="form-group">
-													<label for="exampleInputPassword1">Select Page
-														<span class="text-danger">*</span></label>
-													<select name="page_id" class="form-control">
-														<option value="">Select Page</option>
-														<?php
-														$query = mysqli_query($conn, "select * from tbl_pages where is_active=1");
-														while ($row = mysqli_fetch_array($query)) {
-															?>
-															<option value="<?= $row['id'] ?>"
-																<?= ($row['id'] == $details['page_id'] ? 'selected' : '') ?>>
-																<?= $row['page_name'] ?></option>
-														<?php } ?>
-													</select>
-												</div>
+                    <section class="dre-glass dre-form-section">
+                      <h2><i class="bi bi-search"></i> For search engines</h2>
+                      <label class="dre-field">
+                        <span>Meta title <b>*</b></span>
+                        <input type="text" name="title" id="setTitle" value="<?= set_e($old['title']) ?>" maxlength="255" autocomplete="off" required>
+                        <small id="setTitleNote"></small>
+                        <button type="button" class="dre-ai-btn" data-ai-task="meta_title" data-ai-target="#setTitle" data-ai-title="#setPageName" data-ai-text="#setDesc,#setKeyword" data-ai-page="A main page of a Dubai real estate brokerage website"><i class="bi bi-stars"></i> Suggest a title</button>
+                      </label>
+                      <label class="dre-field">
+                        <span>Meta description <b>*</b></span>
+                        <textarea name="description" id="setDesc" rows="4" required><?= set_e($old['description']) ?></textarea>
+                        <small id="setDescNote"></small>
+                        <button type="button" class="dre-ai-btn" data-ai-task="meta_description" data-ai-target="#setDesc" data-ai-title="#setPageName" data-ai-text="#setTitle,#setKeyword" data-ai-page="A main page of a Dubai real estate brokerage website"><i class="bi bi-stars"></i> Suggest a description</button>
+                      </label>
+                      <label class="dre-field">
+                        <span>Meta keywords</span>
+                        <input type="text" name="keyword" id="setKeyword" value="<?= set_e($old['keyword']) ?>" maxlength="255" autocomplete="off">
+                        <input type="hidden" id="setPageName" value="<?= set_e($page_name) ?>">
+                        <small>Separated by commas. Search engines give these little weight today.</small>
+                      </label>
+                    </section>
 
+                    <section class="dre-glass dre-form-section">
+                      <h2><i class="bi bi-share"></i> When the page is shared</h2>
+                      <label class="dre-field">
+                        <span>Sharing picture</span>
+                        <input type="file" name="image" id="setImage" accept="image/jpeg,image/png,image/webp,image/gif">
+                        <small>Shown when the link is posted on WhatsApp, Facebook or LinkedIn. JPG, PNG, WEBP or GIF, up to 5 MB; 1200 &times; 630 fits best.<?= $saved_image !== '' ? ' Leave empty to keep the current one.' : '' ?></small>
+                      </label>
+                    </section>
 
-												<div class="form-group">
-													<label for="exampleInputPassword1">Meta Title
-														<span class="text-danger">*</span></label>
-													<input type="text" name="meta_title"
-														value="<?= $details['meta_title'] ?>" class="form-control"
-														placeholder="Meta Title">
-												</div>
+                    <section class="dre-glass dre-form-section">
+                      <h2><i class="bi bi-send"></i> Publishing</h2>
+                      <label class="dre-toggle">
+                        <input type="checkbox" name="is_active" value="1" <?= $old['is_active'] === '1' ? 'checked' : '' ?>>
+                        <i></i>
+                        <span><strong>Use these tags on the website</strong><small>Off = the page has no title, description or sharing picture of its own.</small></span>
+                      </label>
+                    </section>
 
+                    <div class="dre-form-bar">
+                      <div class="dre-form-progress"><div id="setState">No unsaved changes</div></div>
+                      <div class="dre-form-bar-buttons">
+                        <button type="submit" class="dre-btn dre-btn-main"><i class="bi bi-check2"></i> Save changes</button>
+                      </div>
+                    </div>
+                  </form>
 
-												<div class="form-group">
-													<label for="exampleInputPassword1">Meta Keyword
-														<span class="text-danger">*</span></label>
-													<input type="text" name="meta_keyword"
-														value="<?= $details['meta_keyword'] ?>" class="form-control"
-														placeholder="Meta Keyword">
-												</div>
+                  <aside class="dre-content-side" aria-label="Preview">
+                    <div class="dre-glass dre-preview-card">
+                      <span class="dre-preview-label"><i class="bi bi-eye"></i> In a search result</span>
+                      <div class="dre-search-preview">
+                        <span><?= set_e($page_url) ?></span>
+                        <strong id="setPreviewTitle"></strong>
+                        <p id="setPreviewDesc"></p>
+                      </div>
+                      <small>A rough preview. Search engines may choose their own text.</small>
+                    </div>
+                    <div class="dre-glass dre-preview-card">
+                      <span class="dre-preview-label"><i class="bi bi-eye"></i> When shared</span>
+                      <div class="dre-share-preview">
+                        <div id="setShareImage"<?= $image_url !== '' ? ' style="background-image: url(\'' . set_e($image_url) . '\')"' : '' ?>></div>
+                        <div>
+                          <span><?= set_e(parse_url(BASE_URL_HOME, PHP_URL_HOST)) ?></span>
+                          <strong id="setShareTitle"></strong>
+                          <p id="setShareDesc"></p>
+                        </div>
+                      </div>
+                      <small id="setShareNote"><?= $image_url !== '' ? 'Current sharing picture.' : 'No sharing picture yet.' ?></small>
+                    </div>
+                  </aside>
+                </div>
+                <?php endif; ?>
+              </div>
+              <!--end::SEO tags form-->
 
+            </div>
+            <!--end::Container-->
+          </div>
+          <!--end::Entry-->
+        </div>
+        <!--end::Content-->
 
+        <?php
+        include('includes/footer-inner.php');
+        ?>
 
-												<div class="form-group">
-													<label for="exampleInputPassword1">Meta Description
-														<span class="text-danger">*</span></label>
-													</label>
-													<textarea name="meta_description" class="form-control"
-														placeholder="Meta Description" aria-hidden="true"
-														rows="10"><?= $details['meta_description'] ?></textarea>
-												</div>
+        <?php if ($details): ?>
+          <script>
+            // Where the "Suggest with AI" buttons send their requests. The key stays on the server.
+            window.DRE_AI_ASSIST = <?= json_encode(['endpoint' => BASE_URL . 'ajax/ai-assist.php', 'csrf' => $_SESSION['admin_csrf']], JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+          </script>
+          <script src="<?= BASE_URL ?>assets/js/dre-ai-assist.js?v=1"></script>
+        <?php endif; ?>
+        <script>
+          // SEO tags form: live previews, length advice, and a warning before leaving unsaved changes.
+          (function () {
+            var form = document.getElementById('settings-form');
+            if (!form) {
+              return;
+            }
+            var limits = { title: <?= TAG_TITLE_MAX ?>, descMin: <?= TAG_DESC_MIN ?>, descMax: <?= TAG_DESC_MAX ?> };
+            var dirty = false;
+            var state = document.getElementById('setState');
+            var title = document.getElementById('setTitle');
+            var desc = document.getElementById('setDesc');
+            function cut(text, length) {
+              return text.length > length ? text.slice(0, length - 1).trim() + '...' : text;
+            }
+            function advise(note, length, text, warn) {
+              note.textContent = length + ' characters. ' + text;
+              note.classList.toggle('dre-warn-text', warn);
+            }
+            function refresh() {
+              var t = title.value.trim();
+              var d = desc.value.trim();
+              advise(document.getElementById('setTitleNote'), t.length, t.length > limits.title ? 'Longer than about ' + limits.title + ': the end may be cut in search results.' : 'Up to about ' + limits.title + ' shows in full.', t.length > limits.title);
+              advise(document.getElementById('setDescNote'), d.length, d.length < limits.descMin ? 'Short: aim for ' + limits.descMin + ' to ' + limits.descMax + ', a sentence or two about the page.' : (d.length > limits.descMax ? 'Longer than ' + limits.descMax + ': the end will be cut.' : 'A good length.'), d.length < limits.descMin || d.length > limits.descMax);
+              document.getElementById('setPreviewTitle').textContent = cut(t || 'Meta title', limits.title);
+              document.getElementById('setPreviewDesc').textContent = cut(d || 'Meta description', limits.descMax);
+              document.getElementById('setShareTitle').textContent = cut(t || 'Meta title', 90);
+              document.getElementById('setShareDesc').textContent = cut(d || 'Meta description', 110);
+            }
+            function changed() {
+              dirty = true;
+              state.textContent = 'Unsaved changes';
+              state.classList.add('dre-warn-text');
+            }
+            form.addEventListener('input', function (event) { event.target.classList.remove('dre-invalid'); changed(); refresh(); });
+            form.addEventListener('change', changed);
+            refresh();
 
-												<div class="form-group">
-													<label for="exampleInputPassword1">OG Image
-														<span class="text-danger">*</span></label>
-													<input type="file" id="meta_og_img" name="meta_og_img" value=""
-														class="form-control">
-													<?php if (!empty($details['meta_og_img'])) { ?>
-														<img src="<?= BASE_URL ?>assets/media/meta/<?= $details['meta_og_img'] ?>"
-															width='50' class="mt-3">
-													<?php } ?>
-													<input type="hidden" name="meta_og_img_hidden"
-														value="<?= $details['meta_og_img'] ?>">
-												</div>
+            var image = document.getElementById('setImage');
+            var share = document.getElementById('setShareImage');
+            var note = document.getElementById('setShareNote');
+            var savedBackground = share.style.backgroundImage;
+            var savedNote = note.textContent;
+            image.addEventListener('change', function () {
+              var file = image.files[0];
+              var bad = '';
+              if (file && ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].indexOf(file.type) === -1) {
+                bad = '"' + file.name + '" is not a JPG, PNG, WEBP or GIF picture.';
+              } else if (file && file.size > 5 * 1024 * 1024) {
+                bad = '"' + file.name + '" is larger than 5 MB.';
+              }
+              image.setCustomValidity(bad);
+              image.classList.toggle('dre-invalid', bad !== '');
+              if (bad !== '') { image.reportValidity(); }
+              if (file && bad === '') {
+                share.style.backgroundImage = 'url("' + URL.createObjectURL(file) + '")';
+                note.textContent = 'New sharing picture, not saved yet.';
+              } else {
+                share.style.backgroundImage = savedBackground;
+                note.textContent = savedNote;
+              }
+            });
 
-
-
-												<div class="form-group">
-													<label for="exampleInputPassword1">Status</label>
-													<span class="switch switch-md switch-icon">
-														<label>
-															<input type="checkbox" name="is_active" value="1"
-																<?= ($details['is_active'] == 1 ? 'checked' : '') ?>>
-															<span></span>
-														</label>
-													</span>
-												</div>
-											</div>
-											<div class="card-footer">
-												<button type="submit" name="tag_submit"
-													class="btn btn-primary mr-2">Update</button>
-												<button type="reset" class="btn btn-secondary">Reset</button>
-											</div>
-										</form><!--end::Form-->
-									</div>
-
-
-
-								</div>
-							</div>
-							<!--end::Card-->
-
-						</div>
-						<!--end::Container-->
-					</div>
-					<!--end::Entry-->
-				</div>
-				<!--end::Content-->
-				<?php
-				include('includes/footer-inner.php');
-				?>
+            form.addEventListener('invalid', function (event) { event.target.classList.add('dre-invalid'); }, true);
+            form.addEventListener('submit', function () { dirty = false; });
+            window.addEventListener('beforeunload', function (event) {
+              if (dirty) { event.preventDefault(); event.returnValue = ''; }
+            });
+            var errorBox = document.getElementById('setErrors');
+            if (errorBox) { errorBox.focus(); errorBox.scrollIntoView({ block: 'start' }); }
+          })();
+        </script>

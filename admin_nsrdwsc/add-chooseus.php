@@ -1,11 +1,13 @@
-<?php 
+<?php
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
 include('db/config.php');
 include('includes/header.php');
 include ('lock2.php');
 
 
 
-$id=intval($_GET['edit']);
+$id=intval($_GET['dev_id']);
 if(isset($_POST['add_chooseus']))
 {
 
@@ -83,7 +85,9 @@ if(isset($_POST['add_chooseus']))
 			<!--begin::Page-->
 			<div class="d-flex flex-row flex-column-fluid page">
 				<!--begin::Aside-->
-				<?php include('includes/sidebar.php');?>
+				<?php 
+				include('includes/sidebar.php');
+				?>
 				<!--end::Aside-->
 				<!--begin::Wrapper-->
 				<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">

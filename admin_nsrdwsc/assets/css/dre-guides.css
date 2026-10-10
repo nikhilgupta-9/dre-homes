@@ -1,0 +1,132 @@
+/* Guides: list, guide form and its steps. Builds on dre-projects.css, dre-articles.css and dre-form.css. */
+.dre-guides .dre-proj-row {
+    grid-template-columns: minmax(230px, 1.8fr) minmax(200px, 2fr) 130px 150px 132px;
+}
+.dre-guides .dre-proj-facts a {
+    color: var(--dd-ink);
+}
+.dre-guides .dre-guide-nopage {
+    color: var(--dd-warn);
+}
+@media (max-width: 1399px) {
+    .dre-guides .dre-proj-head > div:last-child {
+        display: block;
+    }
+    .dre-guides .dre-proj-actions {
+        grid-column: auto;
+        justify-content: flex-end;
+    }
+}
+@media (max-width: 991px) {
+    .dre-guides .dre-proj-row {
+        grid-template-columns: 1fr;
+    }
+    .dre-guides .dre-proj-row > div {
+        grid-column: auto;
+    }
+    .dre-guides .dre-proj-actions {
+        justify-content: flex-start;
+    }
+}
+
+/* The steps of one guide, on its edit page */
+.dre-guide-steps {
+    display: grid;
+    gap: 10px;
+    margin: 0 0 14px;
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+}
+.dre-guide-step {
+    display: grid;
+    grid-template-columns: 30px 56px minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 12px;
+    border: 1px solid rgba(95, 87, 76, 0.12);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.6);
+    counter-increment: step;
+}
+.dre-guide-step::before {
+    content: counter(step);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(171, 152, 137, 0.25);
+    color: var(--dd-main);
+    font-weight: 700;
+    line-height: 30px;
+    text-align: center;
+}
+.dre-guide-step.is-hidden {
+    opacity: 0.65;
+}
+.dre-guide-step-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    background: #fff;
+    color: var(--dd-muted);
+    overflow: hidden;
+}
+.dre-guide-step-icon img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+.dre-guide-step strong,
+.dre-guide-step span {
+    display: block;
+    overflow-wrap: anywhere;
+}
+.dre-guide-step strong a {
+    color: var(--dd-ink);
+}
+.dre-guide-step span {
+    color: var(--dd-muted);
+    font-size: 0.85rem;
+}
+.dre-guide-step-actions {
+    display: flex;
+    gap: 4px;
+}
+.dre-guide-step-actions form {
+    display: flex;
+    gap: 4px;
+    margin: 0;
+}
+@media (max-width: 575px) {
+    .dre-guide-step {
+        grid-template-columns: 30px minmax(0, 1fr);
+    }
+    .dre-guide-step-icon {
+        display: none;
+    }
+    .dre-guide-step-actions {
+        grid-column: 1 / -1;
+    }
+}
+.dre-guide-current {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: rgba(95, 87, 76, 0.07);
+    color: var(--dd-muted);
+    font-size: 0.84rem;
+}
+.dre-guide-current img {
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
+    background: #fff;
+    object-fit: contain;
+}

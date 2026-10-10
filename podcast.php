@@ -47,76 +47,6 @@ if (isset($_GET['id']) && $_GET['id'] == 'podcast') {
 include('common/header.php');
 
 ?>
-<script>
-    // Agar URL mein '.php' extension maujood hai
-    if (window.location.pathname.includes('.php')) {
-
-        // Pure page ke HTML (UI) ko 404 design se replace kar do
-        document.addEventListener("DOMContentLoaded", function () {
-            document.body.innerHTML = `
-                <div class="wrapper">
-    <!--content-->
-    <div class="content">
-        <!--hero section-->
-        <div class="section hero-section hero-section_sin">
-            <div class="hero-section-wrap">
-                <div class="hero-section-wrap-item">
-                    <div class="container">
-                        <div class="hero-section-container">
-                            <div class="hero-section-title">
-                                <!--<h2>404 - Page Not Found</h2>-->
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-wrap bg-hero bg-parallax-wrap-gradien fs-wrapper" data-scrollax-parent="true">
-                        <div class="bg" data-bg="images/page-not-found-3.jpg"
-                             data-scrollax="properties: { translateY: '30%' }">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!--hero section end-->
-
-        <!--breadcrumbs-->
-        <div class="container">
-            <div class="breadcrumbs-list bl_flat">
-                <a href="">Home</a><span>404</span>
-                <div class="breadcrumbs-list_dec"><i class="fa-thin fa-arrow-up"></i></div>
-            </div>
-        </div>
-        <!--breadcrumbs end-->
-
-        <!--main content-->
-        <div class="main-content ms_vir_height">
-            <div class="container">
-                <div class="page-nf">
-                    <h2 style="font-size: 64px; margin-bottom: 20px;"><i class="fa fa-meh-o" aria-hidden="true"></i>Oops!</h2>
-                    <p><i class="fa fa-meh-o"></i>It might have been moved or deleted, or maybe the URL was typed incorrectly.</p>
-                   
-                </div>
-            </div>
-        </div>
-        <!--main content end-->
-    </div>
-    <!--content end-->
-</div>
-            `;
-
-            // Purani css files ko temporary disable karne ke liye taaki custom UI kharab na ho
-            document.querySelectorAll('link[rel="stylesheet"]').forEach(el => el.remove());
-        });
-    }
-</script>
-<?php
-
-if (strpos($_SERVER['REQUEST_URI'], '.php') !== false) {
-    http_response_code(404);
-    include("404.php");
-    exit();
-}
-?>
 
 <!--wrapper-->
 <div class="wrapper">
@@ -221,8 +151,7 @@ if (strpos($_SERVER['REQUEST_URI'], '.php') !== false) {
                                                 <h3><?= $hero_podcast['podcast_title'] ?></h3>
 
                                                 <div class="dre-podcast-meta">
-                                                    <span>EP #35</span>
-                                                    <span>32:45</span>
+                                                    <span>EP #<?=$hero_podcast['podcast_id']?></span>
                                                 </div>
                                             </div>
 
@@ -298,11 +227,8 @@ if (strpos($_SERVER['REQUEST_URI'], '.php') !== false) {
         </iframe>
     `;
         }
-
-
-        // if (window.location.pathname.includes('.php')) {
-        //         window.location.href = base_url + '404';
-        //     }
+        if (window.location.pathname.includes('.php')) {
+        window.location.href = base_url + '404';
+    }
     </script>
-
     <?php include 'common/footer.php'; ?>

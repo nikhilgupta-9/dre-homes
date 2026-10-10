@@ -120,9 +120,10 @@ $team_details = select_row('tbl_team_det', 'is_active=1');
                                             <div class="geodir-category-img">
                                                 <a href="<?=$redirect_url ?>"
                                                     class="geodir-category-img_item">
-                                                    <div class="bg"
-                                                        data-bg="<?= BASE_URL_IMG ?>team/<?= $team_row['team_img'] ?>">
-                                                    </div>
+                                                    <div>
+                                                                    <img
+                                                                        src="<?= BASE_URL_IMG ?>team/<?= $team_row['team_img'] ?>">
+                                                                </div>
                                                     <div class="overlay"></div>
                                                 </a>
                                             </div>

@@ -30,87 +30,7 @@ if (!empty($proj_detail) && isset($proj_detail['prj_id'])) {
     }
 }
 ?>
-<style>
-    .gallery-layout {
-        display: flex;
-    }
 
-    .left-gallery {
-        height: 500px;
-        /* Any height you want */
-        display: grid;
-        grid-template-rows: 1fr 1fr;
-        gap: 12px;
-    }
-
-    .gallery-img {
-        position: relative;
-        overflow: hidden;
-        border-radius: 18px;
-    }
-
-    .gallery-img img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
-
-    .right-gallery {
-        height: 500px;
-        /* SAME as left-gallery */
-        overflow: hidden;
-        border-radius: 18px;
-    }
-
-    .right-gallery img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
-
-    .gallery-overlay {
-        position: absolute;
-        inset: 0;
-        background: rgba(0, 0, 0, .45);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        color: #fff;
-        font-size: 20px;
-
-    }
-
-    @media(max-width:991px) {
-
-        .gallery-layout {
-            display: block;
-        }
-
-        .left-gallery,
-        .right-gallery {
-            height: auto;
-        }
-
-        .gallery-img,
-        .right-gallery {
-            aspect-ratio: 16/10;
-        }
-
-        .right-gallery {
-            margin-bottom: 12px;
-        }
-
-        .left-col {
-            order: 2;
-        }
-
-        .right-col {
-            order: 1;
-        }
-    }
-</style>
 
 
 
@@ -693,7 +613,12 @@ if (!empty($proj_detail) && isset($proj_detail['prj_id'])) {
                     <div class="limit-box"></div>
                 </div>
                 <?php
-                $prop_query = select_query("tbl_proj", "prj_id!=" . $proj_detail['prj_id'] . " and prj_type_id=7 and is_active=1 order by proj_name");
+                // Similar properties worked out by ai/cron/build_similar.php, with the old list as fallback.
+                require_once __DIR__ . '/ai/SimilarProjects.php';
+                $prop_query = SimilarProjects::forPage($proj_detail['prj_id'], 7);
+                if (!$prop_query) {
+                    $prop_query = db_query("SELECT * FROM tbl_proj WHERE prj_id != ? AND prj_type_id = 7 AND is_active = 1 ORDER BY proj_name", [(int) $proj_detail['prj_id']]);
+                }
                 $proj_count = mysqli_num_rows($prop_query);
                 if ($proj_count > 0): ?>
 

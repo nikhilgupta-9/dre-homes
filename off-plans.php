@@ -12,7 +12,7 @@ if (!empty($_GET)) {
         $searchRaw = urldecode($_GET["search_offplan"]);
         $searchTerm = mysqli_real_escape_string($conn, $searchRaw);
         $conditions[] = "proj_name LIKE '%$searchTerm%'";
-    } 
+    }
 
     if (!empty($_GET["dev_id"])) {
         $devId = (int) $_GET["dev_id"];
@@ -31,23 +31,6 @@ if (!empty($_GET)) {
             }
             $conditions[] = '(' . implode(' OR ', $commConditions) . ')';
         }
-    }
-
-    if (!empty($_GET["property_type"])) {
-
-        $propertyType = mysqli_real_escape_string(
-            $conn,
-            $_GET["property_type"]
-        );
-
-        $conditions[] = "proj_inventory_type = '$propertyType'";
-    }
-
-    if (!empty($_GET["location"])) {
-
-        $location =$_GET["location"];
-
-        $conditions[] = "proj_location LIKE '%$location%'";
     }
 
 
@@ -77,7 +60,22 @@ if (!empty($_GET)) {
             $conditions[] = "(" . implode(" OR ", $bedroomConditions) . ")";
         }
     }
+if (!empty($_GET["property_type"])) {
 
+        $propertyType = mysqli_real_escape_string(
+            $conn,
+            $_GET["property_type"]
+        );
+
+        $conditions[] = "proj_inventory_type = '$propertyType'";
+    }
+
+    if (!empty($_GET["location"])) {
+
+        $location =$_GET["location"];
+
+        $conditions[] = "proj_location LIKE '%$location%'";
+    }
     // --- Price Filter ---
     if (!empty($_GET["price_min"]) && is_numeric($_GET["price_min"])) {
         $priceMin = (int) $_GET["price_min"];
@@ -124,7 +122,7 @@ $offplan_content = select_row("tbl_offplan_content", "is_active=1");
 <!--warpper-->
 <div class="wrapper">
     <!--content-->
-    <div class="content">
+    <div class="content search-pgs">
         <!--section-->
         <div class="section hero-section hero-section_sin">
             <div class="hero-section-wrap">
@@ -415,9 +413,9 @@ $offplan_content = select_row("tbl_offplan_content", "is_active=1");
                     <!-- list-main-wrap-header-->
                     <div class="list-main-wrap-header box-list-header offplan_pos">
                         <!-- list-main-wrap-title-->
-                        <div class="list-main-wrap-title">
+                        <div class="list-main-wrap-title mt-3">
                             <h2>
-                                Results For :
+                                Results :
                                 <span class='search_offplan_name'>
                                     <?= htmlspecialchars(
                                         !empty($_GET["search_offplan"]) ? $_GET["search_offplan"] : "All"
@@ -509,7 +507,8 @@ $offplan_content = select_row("tbl_offplan_content", "is_active=1");
                                         </div>
 
                                         <div class="geodir-category-footer list-footer">
-                                            <?php
+                                            <div class="d-flex">
+                                           <?php
                                             $bedroom1 = '';
 
                                             if (!empty($row['proj_bedroom_on_card'])) {
@@ -542,13 +541,13 @@ $offplan_content = select_row("tbl_offplan_content", "is_active=1");
                                                 </div>';
                                             }
                                             ?>
-
-                                            <div class="off-p-f2">
+                                            
+                                            <div class="off-p-f2 ms-2">
                                                 <?php if (is_numeric($row["proj_price"]) && $row["proj_price"] != 0): ?>
                                                     <div class="price-row" style="display: flex; align-items: flex-start; flex-direction: column; gap: 0; font-size:1em;">
                                                         <div class="text-muted off-f-h">Starting Price: </div>
                                                         <!-- Price Output -->
-                                                        <div class="geodir-category-content_price text-muted      currency-price off-f-b ms-1" "
+                                                        <div class="geodir-category-content_price text-muted      currency-price off-f-b " "
                                                             data-price=" <?= $row["proj_price"] ?>"
                                                             data-original-currency="AED"
                                                             data-original-price="<?= $row["proj_price"] ?>">
@@ -560,9 +559,10 @@ $offplan_content = select_row("tbl_offplan_content", "is_active=1");
                                                 <?php else: ?>
                                                     <div class="geodir-category-content_price text-muted " style="font-size:1em; flex-direction: column; align-items: flex-start;">
                                                         <div class="text-muted off-f-h">Starting Price:</div>
-                                                        <div class="off-f-b ms-1" ">Call Us</div>
+                                                        <div class="off-f-b " ">Call Us</div>
                                                     </div>
                                                 <?php endif; ?>
+                                            </div>
                                             </div>
                                             <div class=" clearfix"></div>
                                                         <?php

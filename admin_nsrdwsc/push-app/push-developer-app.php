@@ -35,7 +35,7 @@ if(isset($_POST['push_to_app'])){
         // Escape data for app database
         $dev_img = mysqli_real_escape_string(
             $app_conn,
-            BASE_URL .'developers/'. $data['dev_img']
+            BASE_URL .'assets/media/developer/'. $data['dev_img']
         );
 
         $dev_homp_img = mysqli_real_escape_string(
@@ -187,7 +187,7 @@ if(isset($_POST['push_to_app'])){
                 (
                     '".$data['dev_id']."',
                     '$dev_img',
-                    '". $data['dev_img_alt']."',
+                    '".mysqli_real_escape_string($app_conn, $data['dev_img_alt'])."',
                     '$dev_homp_img',
                     '".mysqli_real_escape_string($app_conn, $data['dev_homp_img_alt'])."',
                     '$dev_innr_img',

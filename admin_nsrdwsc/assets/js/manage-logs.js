@@ -39,7 +39,7 @@ $(document).ready(function () {
     // Clear All Filters
     $('#clearFilters').on('click', function () {
         $('#actionFilter').val('');
-        $('#userFilter').val('');ƒ
+        $('#userFilter').val('');
         $('#tableFilter').val('');
 
         table.columns().search('').draw();

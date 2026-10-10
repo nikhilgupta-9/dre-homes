@@ -41,7 +41,7 @@ $comm_content = select_row('tbl_community_content', 'is_active=1');
         <div class="container">
             <!--breadcrumbs-list-->
             <div class="breadcrumbs-list bl_flat">
-                <a href="<?= BASE_URL ?>">Home</a><span>Community</span>
+                <a href="<?= BASE_URL ?>">Home</a><span>Communities</span>
                 <div class="breadcrumbs-list_dec"><i class="fa-thin fa-arrow-up"></i></div>
             </div>
             <?php
@@ -51,7 +51,7 @@ $comm_content = select_row('tbl_community_content', 'is_active=1');
             ?>
 
 <!-- featured community new section starts -->
-            <div class="boxed-container">
+            <div class="boxed-container community-pg">
             <div class="exc-carousel">
                             <h4>Featured Communities -  Live Your Best</h4>
                         </div>
@@ -98,35 +98,16 @@ $comm_content = select_row('tbl_community_content', 'is_active=1');
 
             <!--breadcrumbs-list end-->
 
-            <div class="boxed-container comm-search-box">
-                <div class="show-mob-filter"><i class="far fa-location"></i> Search Your Desired Location</div>
+            <div class="boxed-container comm-search-box dsb-box">
                 <!-- list-searh-input-wrap-->
                 <div class="list-searh-input-wrap box_list-searh-input-wrap lws_mobile lsw_mb-btn">
-                    <div class="close_mob-filter cmf"><i class="fa-regular fa-xmark"></i></div>
-                    <div class="list-searh-input-wrap-title_wrap">
-                        <div class="list-searh-input-wrap-title"><span><i class="far fa-location"></i>Search Your
-                                Desired Location</span></div>
-                        <!-- <div class="list-searh-input-radio_wrap">
-                                <div class="header-search-radio">
-                                    <input class="hidden radio-label" type="radio" name="accept-offers2"
-                                        id="sale-button2" checked="checked">
-                                    <label class="button-label" for="sale-button2">Sale</label>
-                                    <input class="hidden radio-label" type="radio" name="accept-offers2"
-                                        id="rent-button2">
-                                    <label class="button-label" for="rent-button2">Rent</label>
-                                    <input class="hidden radio-label" type="radio" name="accept-offers2"
-                                        id="comm-button2">
-                                    <label class="button-label" for="comm-button2">Commercial</label>
-                                </div>
-                            </div> -->
-                    </div>
                     <div class="custom-form">
                         <div class="row">
                             <!-- listsearch-input-item -->
                             <div class="col-lg-12">
                                 <div class="cs-intputwrap">
                                     <i class="fa-light fa-search"></i>
-                                    <input type="text" name="search_comm" placeholder="Search" value="">
+                                    <input type="text" name="search_comm" placeholder="Search Community" value="">
                                 </div>
                             </div>
                             <!-- listsearch-input-item -->
@@ -146,7 +127,7 @@ $comm_content = select_row('tbl_community_content', 'is_active=1');
                             <div class="list-main-wrap-header box-list-header" style="margin-top: 0">
                                 <!-- list-main-wrap-title-->
                                 <div class="list-main-wrap-title">
-                                    <h2>Results For : <span class="search_name"></span><strong
+                                    <h2>Results : <span class="search_name"></span><strong
                                             class="search_count"><?= $count ?></strong></h2>
                                 </div>
                                 <!-- list-main-wrap-title end-->

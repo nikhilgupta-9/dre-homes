@@ -61,10 +61,10 @@ $about_details = select_row('tbl_abt_content', 'is_active=1');
                                     <div class="col-lg-6">
                                         <div class="about-img ab_i2">
                                             <img src="<?=BASE_URL_IMG?>about/<?=$about_details['abt_content_img']?>" class="respimg" alt="">
-                                            <div class="ab_img_wideo_wrap">
-                                                <div class="video-link" id="html5-videos" data-html="#video1"><i
-                                                        class="fas fa-play"></i><span> <?=$about_details['abt_content_vdo_text']?></span></div>
-                                            </div>
+                                            <!--<div class="ab_img_wideo_wrap">-->
+                                            <!--    <div class="video-link" id="html5-videos" data-html="#video1"><i-->
+                                            <!--            class="fas fa-play"></i><span> <?=$about_details['abt_content_vdo_text']?></span></div>-->
+                                            <!--</div>-->
                                             <div style="display:none;" id="video1" class="popup_video"
                                                 data-videolink="<?=BASE_URL_IMG?>about/<?=$about_details['abt_content_video']?>">
                                                 <video class="lg-video-object lg-html5" controls preload="none">

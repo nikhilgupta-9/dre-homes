@@ -87,18 +87,27 @@ if (empty($team_detail) || $team_detail['is_active'] != 1) {
                                              alt="<?=$team_detail['team_img_alt']?>" width="100%">
                                     </div>
 
-                                    <div class="agent-preofile-footer">
-                                        <div class="agent-preofile-footer_title">Follow:</div>
+                                    <?php
+                                    if (!empty($team_detail['team_linkedinlink']) || !empty($team_detail['team_instagramlink'])) {
+                                    ?>
+                                        <div class="agent-preofile-footer">
+                                            <div class="agent-preofile-footer_title">Follow:</div>
 
-                                        <div class="agent-preofile-footer-social">
-                                            <a href="<?=$team_detail['team_linkedinlink']?>" target="_blank">
-                                                <i class="fa-brands fa-linkedin"></i>
-                                            </a>
-                                            <a href="<?=$team_detail['team_instagramlink']?>" target="_blank">
-                                                <i class="fa-brands fa-instagram"></i>
-                                            </a>
+                                            <div class="agent-preofile-footer-social">
+                                                <?php if (!empty($team_detail['team_linkedinlink'])) { ?>
+                                                    <a href="<?= htmlspecialchars($team_detail['team_linkedinlink']) ?>" target="_blank">
+                                                        <i class="fa-brands fa-linkedin"></i>
+                                                    </a>
+                                                <?php } ?>
+
+                                                <?php if (!empty($team_detail['team_instagramlink'])) { ?>
+                                                    <a href="<?= htmlspecialchars($team_detail['team_instagramlink']) ?>" target="_blank">
+                                                        <i class="fa-brands fa-instagram"></i>
+                                                    </a>
+                                                <?php } ?>
+                                            </div>
                                         </div>
-                                    </div>
+                                    <?php } ?>
 
                                 </div>
                             </div>

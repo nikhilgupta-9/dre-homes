@@ -24,7 +24,8 @@ $encoded_url = urlencode("https://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]");
             <div class="container">
                 <!--breadcrumbs-list-->
                 <div class="breadcrumbs-list bl_flat">
-                    <a href="<?=BASE_URL?>">Home</a><a href="<?=BASE_URL?>our-blogs">Blog</a><span><?=$blog_detail['blog_heading']?></span>
+                    <a href="<?=BASE_URL?>">Home</a><a href="<?=BASE_URL?>our-blogs">Blog</a>
+                    <!--<span><?=$blog_detail['blog_heading']?></span>-->
                     <div class="breadcrumbs-list_dec"><i class="fa-thin fa-arrow-up"></i></div>
                 </div>
                 <!--breadcrumbs-list end-->

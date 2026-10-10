@@ -1,0 +1,191 @@
+/* Floating dock: AI assistant, live video call, WhatsApp and the dark mode switch in
+   one draggable pill. Everything is scoped to .floating-dock. */
+.floating-dock,
+.floating-dock * {
+	box-sizing: border-box;
+}
+.floating-dock {
+	--dock-bg: rgba(255, 255, 255, 0.92);
+	--dock-border: #e4ddd6;
+	--dock-item-bg: #f5f2ef;
+	--dock-item-color: #5f574c;
+	--dock-accent: #ab9889;
+	position: fixed;
+	right: 16px;
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 9990;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	padding: 8px;
+	border: 1px solid var(--dock-border);
+	border-radius: 30px;
+	background: var(--dock-bg);
+	-webkit-backdrop-filter: blur(10px);
+	backdrop-filter: blur(10px);
+	box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+	font-family: var(--main-font, 'Giga Sans', sans-serif);
+	user-select: none;
+	-webkit-user-select: none;
+}
+/* Once dragged, js/floating-dock.js positions it with left/top. */
+.floating-dock.is-placed {
+	right: auto;
+	transform: none;
+}
+.floating-dock.is-dragging {
+	box-shadow: 0 14px 36px rgba(0, 0, 0, 0.26);
+	transition: none;
+}
+
+.floating-dock .drag-handle {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 3px;
+	width: 44px;
+	height: 22px;
+	cursor: grab;
+	touch-action: none;
+}
+.floating-dock.is-dragging .drag-handle {
+	cursor: grabbing;
+}
+.floating-dock .drag-handle span {
+	display: block;
+	width: 18px;
+	height: 2px;
+	border-radius: 2px;
+	background: var(--dock-accent);
+}
+
+.floating-dock .dock-item {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: var(--dock-item-bg);
+	color: var(--dock-item-color);
+	font-size: 18px;
+	line-height: 1;
+	text-decoration: none;
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+.floating-dock .dock-item:hover,
+.floating-dock .dock-item:focus-visible {
+	background: var(--dock-item-color);
+	color: #fff;
+	transform: scale(1.08);
+}
+.floating-dock .dock-item:focus-visible {
+	outline: 2px solid var(--dock-accent);
+	outline-offset: 2px;
+}
+.floating-dock .dock-item-whatsapp {
+	background: #25d366;
+	color: #fff;
+}
+.floating-dock .dock-item-whatsapp:hover,
+.floating-dock .dock-item-whatsapp:focus-visible {
+	background: #1da851;
+}
+.floating-dock .dock-item-video .agent-status {
+	position: absolute;
+	top: 3px;
+	right: 3px;
+	left: auto;
+	transform: none;
+	width: 10px;
+	height: 10px;
+	margin: 0;
+	border: 2px solid #fff;
+	border-radius: 50%;
+	background: #2ecc71;
+}
+
+/* Label that slides out beside the icon; flips side when the dock is on the left. */
+.floating-dock .dock-item::after {
+	content: attr(data-label);
+	position: absolute;
+	right: calc(100% + 12px);
+	top: 50%;
+	transform: translateY(-50%);
+	padding: 6px 10px;
+	border-radius: 6px;
+	background: #2e2a25;
+	color: #fff;
+	font-size: 12px;
+	font-weight: 500;
+	white-space: nowrap;
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition: opacity 0.15s ease;
+}
+.floating-dock.is-left .dock-item::after {
+	right: auto;
+	left: calc(100% + 12px);
+}
+.floating-dock:not(.is-dragging) .dock-item:hover::after,
+.floating-dock:not(.is-dragging) .dock-item:focus-visible::after {
+	opacity: 1;
+	visibility: visible;
+}
+
+/* The dock's AI button opens the chat, so the chat's own launcher is not needed. */
+.has-floating-dock .dre-ai-launcher {
+	display: none !important;
+}
+
+html[data-theme="dark"] .floating-dock {
+	--dock-bg: rgba(33, 29, 26, 0.92);
+	--dock-border: #3b3630;
+	--dock-item-bg: #322d28;
+	--dock-item-color: #e2d9d0;
+}
+html[data-theme="dark"] .floating-dock .dock-item:hover,
+html[data-theme="dark"] .floating-dock .dock-item:focus-visible {
+	background: var(--dock-accent);
+	color: #1b1815;
+}
+html[data-theme="dark"] .floating-dock .dock-item-whatsapp,
+html[data-theme="dark"] .floating-dock .dock-item-whatsapp:hover {
+	background: #25d366;
+	color: #fff;
+}
+html[data-theme="dark"] .floating-dock .dock-item-video .agent-status {
+	border-color: #211d1a;
+}
+
+@media (max-width: 767px) {
+	.floating-dock {
+		right: 8px;
+		gap: 6px;
+		padding: 6px;
+	}
+	.floating-dock .drag-handle {
+		width: 38px;
+	}
+	.floating-dock .dock-item {
+		width: 38px;
+		height: 38px;
+		font-size: 16px;
+	}
+	.floating-dock .dock-item::after {
+		display: none;
+	}
+}
+@media print {
+	.floating-dock {
+		display: none;
+	}
+}

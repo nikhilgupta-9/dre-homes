@@ -2,1066 +2,749 @@
 include('db/config.php');
 include('includes/header.php');
 include('lock2.php');
+include('includes/Logger.php');
 
-// Only super admin can view activity logs
-if ($_SESSION['login_type'] != 1) {
-    header("Location: dashboard.php");
-    exit();
+// Nothing below runs unless someone is signed in.
+if (empty($_SESSION['email_id'])) {
+	exit;
 }
 
-// Get statistics
-$stats_query = "SELECT 
-    COUNT(*) as total_logs,
-    SUM(CASE WHEN action_type = 'INSERT' THEN 1 ELSE 0 END) as inserts,
-    SUM(CASE WHEN action_type = 'UPDATE' THEN 1 ELSE 0 END) as updates,
-    SUM(CASE WHEN action_type = 'DELETE' THEN 1 ELSE 0 END) as deletes,
-    SUM(CASE WHEN action_type = 'LOGIN' THEN 1 ELSE 0 END) as logins,
-    SUM(CASE WHEN action_type = 'LOGOUT' THEN 1 ELSE 0 END) as logouts,
-    COUNT(DISTINCT username) as unique_users
-FROM tbl_activity_logs";
-$stats_result = mysqli_query($conn, $stats_query);
-$stats = mysqli_fetch_assoc($stats_result);
+$logger = new Logger($conn);
 
-// Get unique users for filter dropdown
-$users_query = mysqli_query($conn, "SELECT DISTINCT username, user_type FROM tbl_activity_logs WHERE username IS NOT NULL ORDER BY username ASC");
-
-// Get unique tables for filter dropdown
-$tables_query = mysqli_query($conn, "SELECT DISTINCT table_name FROM tbl_activity_logs WHERE table_name IS NOT NULL AND table_name != '' ORDER BY table_name ASC");
-
-// Handle bulk deletion
-if (isset($_POST['bulk_delete']) && isset($_POST['delete_ids'])) {
-    $delete_ids = array_map('intval', $_POST['delete_ids']);
-    if (!empty($delete_ids)) {
-        $ids_list = implode(',', $delete_ids);
-        $delete_query = "DELETE FROM tbl_activity_logs WHERE log_id IN ($ids_list)";
-        if (mysqli_query($conn, $delete_query)) {
-            $count = mysqli_affected_rows($conn);
-            $_SESSION['success_message'] = "$count log(s) deleted successfully!";
-        } else {
-            $_SESSION['error_message'] = "Failed to delete logs!";
-        }
-    }
-    header('Location: ' . BASE_URL . 'manage-loggs.php');
-    exit;
+if (empty($_SESSION['admin_csrf'])) {
+	$_SESSION['admin_csrf'] = bin2hex(random_bytes(16));
 }
 
-// Handle single deletion
-if (isset($_GET['delete_log'])) {
-    $log_id = intval($_GET['delete_log']);
-    $delete_query = "DELETE FROM tbl_activity_logs WHERE log_id = $log_id";
-    if (mysqli_query($conn, $delete_query)) {
-        $_SESSION['success_message'] = "Log deleted successfully!";
-    } else {
-        $_SESSION['error_message'] = "Failed to delete log!";
-    }
-    header('Location: ' . BASE_URL . 'manage-loggs.php');
-    exit;
+function set_e($text)
+{
+	return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
+}
+
+// Runs a prepared query and returns its rows (or true for a write).
+function set_query($conn, $sql, array $params = [])
+{
+	try {
+		$stmt = mysqli_prepare($conn, $sql);
+		if (!$stmt) {
+			error_log('Settings query failed: ' . mysqli_error($conn));
+			return false;
+		}
+		if ($params) {
+			$types = '';
+			foreach ($params as $param) {
+				$types .= is_int($param) ? 'i' : 's';
+			}
+			mysqli_stmt_bind_param($stmt, $types, ...$params);
+		}
+		if (!mysqli_stmt_execute($stmt)) {
+			error_log('Settings query failed: ' . mysqli_stmt_error($stmt));
+			mysqli_stmt_close($stmt);
+			return false;
+		}
+		$result = mysqli_stmt_get_result($stmt);
+		mysqli_stmt_close($stmt);
+	} catch (mysqli_sql_exception $error) {
+		// This server reports database errors as exceptions.
+		error_log('Settings query failed: ' . $error->getMessage());
+		return false;
+	}
+	if ($result === false) {
+		return true;
+	}
+	$rows = [];
+	while ($row = mysqli_fetch_assoc($result)) {
+		$rows[] = $row;
+	}
+	return $rows;
+}
+
+// Logs are for super admins only.
+$is_super_admin = (int) ($_SESSION['login_type'] ?? 0) === 1;
+
+// The three log pages share this layout. This copy shows one of them.
+$log_kind = 'activity';
+$log_kinds = [
+	'activity' => [
+		'title' => 'Activity log', 'blurb' => 'Who added, changed or deleted what in the admin panel.', 'file' => 'manage-loggs.php', 'icon' => 'bi-activity',
+		'table' => 'tbl_activity_logs', 'id' => 'log_id', 'time' => 'log_time', 'who' => 'username', 'who_label' => 'User',
+		'type' => 'action_type', 'types' => ['INSERT' => 'Added', 'UPDATE' => 'Changed', 'DELETE' => 'Deleted'], 'type_label' => 'Action',
+		'about' => 'table_name', 'search' => ['action_description', 'record_identifier', 'table_name', 'username'],
+		'one' => 'entry', 'many' => 'entries', 'can_clear' => true,
+	],
+	'login' => [
+		'title' => 'Login log', 'blurb' => 'Every sign-in to the admin panel, and every attempt that failed.', 'file' => 'manage-login-logs.php', 'icon' => 'bi-door-open',
+		'table' => 'tbl_login_logs', 'id' => 'login_log_id', 'time' => 'login_time', 'who' => 'user_email', 'who_label' => 'Email',
+		'type' => 'login_status', 'types' => ['SUCCESS' => 'Signed in', 'FAILED' => 'Failed'], 'type_label' => 'Result',
+		'about' => '', 'search' => ['user_email', 'user_ip', 'failure_reason'],
+		'one' => 'sign-in', 'many' => 'sign-ins', 'can_clear' => true,
+	],
+	'deleted' => [
+		'title' => 'Deleted data log', 'blurb' => 'A copy of every record that was deleted, kept for reference.', 'file' => 'manage-delete-logs.php', 'icon' => 'bi-trash3',
+		'table' => 'tbl_deleted_records', 'id' => 'delete_id', 'time' => 'deleted_at', 'who' => 'deleted_by_name', 'who_label' => 'Deleted by',
+		'type' => '', 'types' => [], 'type_label' => '',
+		'about' => 'original_table', 'search' => ['original_table', 'deleted_by_name', 'deleted_data'],
+		'one' => 'record', 'many' => 'records', 'can_clear' => false,
+	],
+];
+$log = $log_kinds[$log_kind];
+$t = $log['table'];
+
+// "tbl_proj_gallery" -> "Proj gallery"
+function log_table_name($table)
+{
+	return ucfirst(str_replace('_', ' ', preg_replace('/^tbl_/', '', (string) $table)));
+}
+
+// A value from a saved record, as short plain text.
+function log_value($value, $length = 140)
+{
+	if (is_array($value)) {
+		$value = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+	}
+	$text = trim(preg_replace('/\s+/', ' ', str_replace("\xC2\xA0", ' ', html_entity_decode(strip_tags((string) $value), ENT_QUOTES, 'UTF-8'))));
+	return $text === '' ? '(empty)' : mb_strimwidth($text, 0, $length, '...');
+}
+
+// "Chrome on Windows" from a browser's own description of itself.
+function log_browser($agent)
+{
+	$agent = (string) $agent;
+	if ($agent === '') {
+		return 'Unknown browser';
+	}
+	$browser = 'Browser';
+	foreach (['Edg/' => 'Edge', 'OPR/' => 'Opera', 'Chrome/' => 'Chrome', 'Firefox/' => 'Firefox', 'Safari/' => 'Safari'] as $needle => $name) {
+		if (strpos($agent, $needle) !== false) {
+			$browser = $name;
+			break;
+		}
+	}
+	$system = '';
+	foreach (['iPhone' => 'iPhone', 'iPad' => 'iPad', 'Android' => 'Android', 'Windows' => 'Windows', 'Mac OS X' => 'Mac', 'Linux' => 'Linux'] as $needle => $name) {
+		if (strpos($agent, $needle) !== false) {
+			$system = $name;
+			break;
+		}
+	}
+	return $browser . ($system !== '' ? ' on ' . $system : '');
+}
+
+// ---------------------------------------------------------------
+// Filters (all optional, all from the address bar)
+// ---------------------------------------------------------------
+$f_who = isset($_GET['who']) && is_string($_GET['who']) ? mb_substr(trim($_GET['who']), 0, 255) : '';
+$f_type = isset($_GET['type']) && is_string($_GET['type']) && isset($log['types'][$_GET['type']]) ? $_GET['type'] : '';
+$f_about = $log['about'] !== '' && isset($_GET['about']) && is_string($_GET['about']) && preg_match('/^[A-Za-z0-9_]{1,64}$/', $_GET['about']) ? $_GET['about'] : '';
+$f_from = isset($_GET['from']) && is_string($_GET['from']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['from']) && strtotime($_GET['from']) ? $_GET['from'] : '';
+$f_to = isset($_GET['to']) && is_string($_GET['to']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['to']) && strtotime($_GET['to']) ? $_GET['to'] : '';
+$f_search = isset($_GET['q']) && is_string($_GET['q']) ? trim(mb_substr($_GET['q'], 0, 100)) : '';
+$f_per_page = (int) ($_GET['per'] ?? 50);
+if (!in_array($f_per_page, [50, 100, 200], true)) {
+	$f_per_page = 50;
+}
+$f_page = max(1, (int) ($_GET['page'] ?? 1));
+
+// Address of this page with the current filters, with some of them changed.
+function log_url(array $change = [])
+{
+	global $log, $f_who, $f_type, $f_about, $f_from, $f_to, $f_search, $f_per_page, $f_page;
+	$params = array_merge([
+		'who' => $f_who, 'type' => $f_type, 'about' => $f_about, 'from' => $f_from, 'to' => $f_to, 'q' => $f_search,
+		'per' => $f_per_page === 50 ? '' : $f_per_page, 'page' => $f_page === 1 ? '' : $f_page,
+	], $change);
+	$params = array_filter($params, function ($value) {
+		return $value !== '' && $value !== null;
+	});
+	return BASE_URL . $log['file'] . ($params ? '?' . http_build_query($params) : '');
+}
+
+// ---------------------------------------------------------------
+// Changes (POST only, with a token): remove entries
+// ---------------------------------------------------------------
+$notice = '';
+if ($is_super_admin && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['log_action'])) {
+	$token_ok = is_string($_POST['csrf'] ?? null) && hash_equals($_SESSION['admin_csrf'], $_POST['csrf']);
+	$action = is_string($_POST['log_action']) ? $_POST['log_action'] : '';
+	$done = '';
+
+	if ($token_ok && $action === 'remove') {
+		$ids = array_slice(array_unique(array_filter(array_map('intval', (array) ($_POST['log_ids'] ?? [])))), 0, 500);
+		$removed = 0;
+		foreach (array_chunk($ids, 100) as $chunk) {
+			if (set_query($conn, "DELETE FROM $t WHERE {$log['id']} IN (" . implode(', ', array_fill(0, count($chunk), '?')) . ")", $chunk)) {
+				$removed += mysqli_affected_rows($conn);
+			}
+		}
+		$done = $removed > 0 ? 'removed-' . $removed : 'none';
+	} elseif ($token_ok && $action === 'clear' && $log['can_clear']) {
+		// Only whole months, and never the last 30 days.
+		$days = (int) ($_POST['older_than'] ?? 0);
+		if (in_array($days, [30, 90, 180, 365], true) && set_query($conn, "DELETE FROM $t WHERE {$log['time']} < DATE_SUB(NOW(), INTERVAL ? DAY)", [$days])) {
+			$removed = mysqli_affected_rows($conn);
+			$done = $removed > 0 ? 'removed-' . $removed : 'none';
+		}
+	}
+
+	if ($done !== '') {
+		if ($done !== 'none') {
+			// Removing entries from a log is itself written down.
+			$logger->log('DELETE', $t, 0, null, ['entries_removed' => (int) substr($done, 8), 'how' => $action === 'clear' ? 'older than ' . $days . ' days' : 'selected'], $log['title'] . ': ' . (int) substr($done, 8) . ' ' . ((int) substr($done, 8) === 1 ? $log['one'] : $log['many']) . ' removed');
+		}
+		header('Location: ' . log_url(['done' => $done, 'page' => '']));
+		exit;
+	}
+	$notice = 'Nothing was changed. Please reload the page and try again.';
+}
+
+// ---------------------------------------------------------------
+// The list
+// ---------------------------------------------------------------
+$rows = [];
+$total = 0;
+$pages = 1;
+$offset = 0;
+$stats = [];
+$who_options = [];
+$about_options = [];
+if ($is_super_admin) {
+	$where = ['1 = 1'];
+	$params = [];
+	if ($f_search !== '') {
+		$like = '%' . addcslashes($f_search, '%_\\') . '%';
+		$parts = [];
+		foreach ($log['search'] as $column) {
+			$parts[] = "a.$column LIKE ?";
+			$params[] = $like;
+		}
+		$where[] = '(' . implode(' OR ', $parts) . ')';
+	}
+	if ($f_who !== '') {
+		$where[] = "a.{$log['who']} = ?";
+		$params[] = $f_who;
+	}
+	if ($f_type !== '') {
+		$where[] = "a.{$log['type']} = ?";
+		$params[] = $f_type;
+	}
+	if ($f_about !== '') {
+		$where[] = "a.{$log['about']} = ?";
+		$params[] = $f_about;
+	}
+	if ($f_from !== '') {
+		$where[] = "a.{$log['time']} >= ?";
+		$params[] = $f_from . ' 00:00:00';
+	}
+	if ($f_to !== '') {
+		$where[] = "a.{$log['time']} <= ?";
+		$params[] = $f_to . ' 23:59:59';
+	}
+	$where_sql = 'WHERE ' . implode(' AND ', $where);
+
+	$counted = set_query($conn, "SELECT COUNT(*) AS n FROM $t AS a $where_sql", $params);
+	$total = $counted ? (int) $counted[0]['n'] : 0;
+	$pages = max(1, (int) ceil($total / $f_per_page));
+	$f_page = min($f_page, $pages);
+	$offset = ($f_page - 1) * $f_per_page;
+	$rows = set_query($conn, "SELECT a.* FROM $t AS a $where_sql ORDER BY a.{$log['time']} DESC, a.{$log['id']} DESC LIMIT ?, ?", array_merge($params, [$offset, $f_per_page])) ?: [];
+
+	$who_options = array_column(set_query($conn, "SELECT DISTINCT {$log['who']} AS w FROM $t WHERE {$log['who']} IS NOT NULL AND {$log['who']} <> '' ORDER BY w LIMIT 200") ?: [], 'w');
+	if ($log['about'] !== '') {
+		$about_options = array_column(set_query($conn, "SELECT DISTINCT {$log['about']} AS w FROM $t WHERE {$log['about']} IS NOT NULL AND {$log['about']} <> '' ORDER BY w LIMIT 200") ?: [], 'w');
+	}
+
+	// Numbers at the top: [number, label]
+	if ($log_kind === 'activity') {
+		$s = set_query($conn, "SELECT COUNT(*) AS total, SUM(log_time >= CURDATE()) AS today, SUM(log_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)) AS week, SUM(action_type = 'DELETE') AS deletes FROM tbl_activity_logs");
+		$s = $s ? $s[0] : [];
+		$stats = [[(int) ($s['today'] ?? 0), 'Today'], [(int) ($s['week'] ?? 0), 'Last 7 days'], [(int) ($s['deletes'] ?? 0), 'Deletions'], [(int) ($s['total'] ?? 0), 'In all']];
+	} elseif ($log_kind === 'login') {
+		$s = set_query($conn, "SELECT COUNT(*) AS total, SUM(login_status = 'SUCCESS' AND login_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)) AS week, SUM(login_status = 'FAILED' AND login_time >= DATE_SUB(NOW(), INTERVAL 24 HOUR)) AS failed_day, SUM(login_status = 'FAILED') AS failed FROM tbl_login_logs");
+		$s = $s ? $s[0] : [];
+		$stats = [[(int) ($s['week'] ?? 0), 'Sign-ins in 7 days'], [(int) ($s['failed_day'] ?? 0), 'Failed in 24 hours'], [(int) ($s['failed'] ?? 0), 'Failed in all'], [(int) ($s['total'] ?? 0), 'In all']];
+	} else {
+		$s = set_query($conn, "SELECT COUNT(*) AS total, SUM(deleted_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) AS month, COUNT(DISTINCT original_table) AS tables FROM tbl_deleted_records");
+		$s = $s ? $s[0] : [];
+		$stats = [[(int) ($s['total'] ?? 0), 'Kept copies'], [(int) ($s['month'] ?? 0), 'Deleted in 30 days'], [(int) ($s['tables'] ?? 0), 'Kinds of record']];
+	}
+}
+
+$filters_on = $f_search !== '' || $f_who !== '' || $f_type !== '' || $f_about !== '' || $f_from !== '' || $f_to !== '';
+
+$done = is_string($_GET['done'] ?? null) ? $_GET['done'] : '';
+if (preg_match('/^removed-(\d+)$/', $done, $match)) {
+	$notice = (int) $match[1] . ' ' . ((int) $match[1] === 1 ? $log['one'] . ' was' : $log['many'] . ' were') . ' removed from the log.';
+} elseif ($done === 'none') {
+	$notice = 'Nothing was removed.';
 }
 ?>
-
 <!--begin::Body-->
 
 <body id="kt_body"
-    class="header-fixed header-mobile-fixed subheader-enabled subheader-fixed aside-enabled aside-fixed aside-minimize-hoverable page-loading">
-    <!--begin::Header Mobile-->
-    <div id="kt_header_mobile" class="header-mobile align-items-center header-mobile-fixed">
-        <a href="index.html">
-            <img alt="Logo" src="<?= BASE_URL ?>assets/media/logos/logo-light.png" />
-        </a>
-        <div class="d-flex align-items-center">
-            <button class="btn p-0 burger-icon burger-icon-left" id="kt_aside_mobile_toggle">
-                <span></span>
-            </button>
-            <button class="btn p-0 burger-icon ml-4" id="kt_header_mobile_toggle">
-                <span></span>
-            </button>
-            <button class="btn btn-hover-text-primary p-0 ml-2" id="kt_header_mobile_topbar_toggle">
-                <span class="svg-icon svg-icon-xl">
-                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px"
-                        height="24px" viewBox="0 0 24 24" version="1.1">
-                        <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                            <polygon points="0 0 24 0 24 24 0 24" />
-                            <path
-                                d="M12,11 C9.790861,11 8,9.209139 8,7 C8,4.790861 9.790861,3 12,3 C14.209139,3 16,4.790861 16,7 C16,9.209139 14.209139,11 12,11 Z"
-                                fill="#000000" fill-rule="nonzero" opacity="0.3" />
-                            <path
-                                d="M3.00065168,20.1992055 C3.38825852,15.4265159 7.26191235,13 11.9833413,13 C16.7712164,13 20.7048837,15.2931929 20.9979143,20.2 C21.0095879,20.3954741 20.9979143,21 20.2466999,21 C16.541124,21 11.0347247,21 3.72750223,21 C3.47671215,21 2.97953825,20.45918 3.00065168,20.1992055 Z"
-                                fill="#000000" fill-rule="nonzero" />
-                        </g>
-                    </svg>
-                </span>
-            </button>
-        </div>
-    </div>
-    <!--end::Header Mobile-->
+	class="header-fixed header-mobile-fixed subheader-enabled subheader-fixed aside-enabled aside-fixed aside-minimize-hoverable page-loading">
+	<!--begin::Main-->
+	<!--begin::Header Mobile-->
+	<div id="kt_header_mobile" class="header-mobile align-items-center header-mobile-fixed">
+		<!--begin::Logo-->
+		<a href="index.html">
+			<img alt="Logo" src="<?= BASE_URL ?>assets/media/logos/logo-light.png" />
+		</a>
+		<!--end::Logo-->
+		<!--begin::Toolbar-->
+		<div class="d-flex align-items-center">
+			<!--begin::Aside Mobile Toggle-->
+			<button class="btn p-0 burger-icon burger-icon-left" id="kt_aside_mobile_toggle">
+				<span></span>
+			</button>
+			<!--end::Aside Mobile Toggle-->
+			<!--begin::Header Menu Mobile Toggle-->
+			<button class="btn p-0 burger-icon ml-4" id="kt_header_mobile_toggle">
+				<span></span>
+			</button>
+			<!--end::Header Menu Mobile Toggle-->
+			<!--begin::Topbar Mobile Toggle-->
+			<button class="btn btn-hover-text-primary p-0 ml-2" id="kt_header_mobile_topbar_toggle">
+				<span class="svg-icon svg-icon-xl">
+					<!--begin::Svg Icon | path:<?= BASE_URL ?>assets/media/svg/icons/General/User.svg-->
+					<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px"
+						height="24px" viewBox="0 0 24 24" version="1.1">
+						<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+							<polygon points="0 0 24 0 24 24 0 24" />
+							<path
+								d="M12,11 C9.790861,11 8,9.209139 8,7 C8,4.790861 9.790861,3 12,3 C14.209139,3 16,4.790861 16,7 C16,9.209139 14.209139,11 12,11 Z"
+								fill="#000000" fill-rule="nonzero" opacity="0.3" />
+							<path
+								d="M3.00065168,20.1992055 C3.38825852,15.4265159 7.26191235,13 11.9833413,13 C16.7712164,13 20.7048837,15.2931929 20.9979143,20.2 C21.0095879,20.3954741 20.9979143,21 20.2466999,21 C16.541124,21 11.0347247,21 3.72750223,21 C3.47671215,21 2.97953825,20.45918 3.00065168,20.1992055 Z"
+								fill="#000000" fill-rule="nonzero" />
+						</g>
+					</svg>
+					<!--end::Svg Icon-->
+				</span>
+			</button>
+			<!--end::Topbar Mobile Toggle-->
+		</div>
+		<!--end::Toolbar-->
+	</div>
+	<!--end::Header Mobile-->
+	<div class="d-flex flex-column flex-root">
+		<!--begin::Page-->
+		<div class="d-flex flex-row flex-column-fluid page">
+			<!--begin::Aside-->
+			<?php include('includes/sidebar.php'); ?>
+			<!--end::Aside-->
+			<!--begin::Wrapper-->
+			<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+				<!--begin::Header-->
+				<div id="kt_header" class="header header-fixed">
+					<!--begin::Container-->
+					<div class="container-fluid d-flex align-items-stretch justify-content-between">
+						<!--begin::Header Menu Wrapper-->
+						<div class="header-menu-wrapper header-menu-wrapper-left" id="kt_header_menu_wrapper">
+							<!--begin::Header Menu-->
+							<div id="kt_header_menu" class="header-menu header-menu-mobile header-menu-layout-default">
 
-    <div class="d-flex flex-column flex-root">
-        <div class="d-flex flex-row flex-column-fluid page">
-            <?php include('includes/sidebar.php'); ?>
+							</div>
+							<!--end::Header Menu-->
+						</div>
+						<!--end::Header Menu Wrapper-->
+						<!--begin::Topbar-->
+						<div class="topbar">
 
-            <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
-                <div id="kt_header" class="header header-fixed">
-                    <div class="container-fluid d-flex align-items-stretch justify-content-between">
-                        <div class="header-menu-wrapper header-menu-wrapper-left" id="kt_header_menu_wrapper">
-                            <div id="kt_header_menu" class="header-menu header-menu-mobile header-menu-layout-default">
-                            </div>
-                        </div>
-                        <div class="topbar">
-                            <div class="topbar-item">
-                                <div class="btn btn-icon btn-icon-mobile w-auto btn-clean d-flex align-items-center btn-lg px-2"
-                                    id="kt_quick_user_toggle">
-                                    <span
-                                        class="text-muted font-weight-bold font-size-base d-none d-md-inline mr-1">Hi,</span>
-                                    <span
-                                        class="text-dark-50 font-weight-bolder font-size-base d-none d-md-inline mr-3"><?= htmlspecialchars($_SESSION['username']) ?></span>
-                                    <span class="symbol symbol-lg-35 symbol-25 symbol-light-success">
-                                        <span
-                                            class="symbol-label font-size-h5 font-weight-bold"><?= substr($_SESSION['username'], 0, 1) ?></span>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+							<!--begin::User-->
+							<div class="topbar-item">
+								<div class="btn btn-icon btn-icon-mobile w-auto btn-clean d-flex align-items-center btn-lg px-2"
+									id="kt_quick_user_toggle">
+									<span
+										class="text-muted font-weight-bold font-size-base d-none d-md-inline mr-1">Hi,</span>
+									<span
+										class="text-dark-50 font-weight-bolder font-size-base d-none d-md-inline mr-3"><?= $_SESSION['username'] ?></span>
+									<span class="symbol symbol-lg-35 symbol-25 symbol-light-success">
+										<span
+											class="symbol-label font-size-h5 font-weight-bold"><?= substr($_SESSION['username'], 0, 1) ?></span>
+									</span>
+								</div>
+							</div>
+							<!--end::User-->
+						</div>
+						<!--end::Topbar-->
+					</div>
+					<!--end::Container-->
+				</div>
+				<!--end::Header-->
 
-                <div class="d-flex flex-column flex-column-fluid" id="kt_content">
-                    <div class="d-flex flex-column-fluid">
-                        <div class="container">
 
-                            <!-- Display Messages -->
-                            <?php if (isset($_SESSION['success_message'])): ?>
-                                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                    <i class="fa fa-check-circle"></i> <?= $_SESSION['success_message'] ?>
-                                    <button type="button" class="close" data-dismiss="alert">&times;</button>
-                                </div>
-                                <?php unset($_SESSION['success_message']); ?>
-                            <?php endif; ?>
+				<!--begin::Content-->
+				<div class="content d-flex flex-column flex-column-fluid dre-dash-content" id="kt_content">
+					<!--begin::Entry-->
+					<div class="d-flex flex-column-fluid">
+						<!--begin::Container-->
+						<div class="container">
+							<!--begin::Log-->
+							<link href="<?= BASE_URL ?>assets/css/dre-dashboard.css?v=1" rel="stylesheet" type="text/css" />
+							<link href="<?= BASE_URL ?>assets/css/dre-leads.css?v=1" rel="stylesheet" type="text/css" />
+							<link href="<?= BASE_URL ?>assets/css/dre-projects.css?v=1" rel="stylesheet" type="text/css" />
+							<link href="<?= BASE_URL ?>assets/css/dre-logs.css?v=1" rel="stylesheet" type="text/css" />
 
-                            <?php if (isset($_SESSION['error_message'])): ?>
-                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                    <i class="fa fa-exclamation-triangle"></i> <?= $_SESSION['error_message'] ?>
-                                    <button type="button" class="close" data-dismiss="alert">&times;</button>
-                                </div>
-                                <?php unset($_SESSION['error_message']); ?>
-                            <?php endif; ?>
+							<div class="dre-dash dre-leads dre-projects dre-logs">
 
-                            <!-- Statistics Cards -->
-                            <div class="row mb-5">
-                                <div class="col-md-2 col-sm-6 mb-3">
-                                    <div class="card text-center bg-primary text-white">
-                                        <div class="card-body p-3">
-                                            <h6 class="mb-1">Total Logs</h6>
-                                            <h3 class="mb-0"><?= number_format($stats['total_logs']) ?></h3>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-2 col-sm-6 mb-3">
-                                    <div class="card text-center bg-primary text-white">
-                                        <div class="card-body p-3">
-                                            <h6 class="mb-1">Inserts</h6>
-                                            <h3 class="mb-0"><?= number_format($stats['inserts']) ?></h3>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-2 col-sm-6 mb-3">
-                                    <div class="card text-center bg-primary text-white">
-                                        <div class="card-body p-3">
-                                            <h6 class="mb-1">Updates</h6>
-                                            <h3 class="mb-0"><?= number_format($stats['updates']) ?></h3>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-2 col-sm-6 mb-3">
-                                    <div class="card text-center bg-primary text-white">
-                                        <div class="card-body p-3">
-                                            <h6 class="mb-1">Deletes</h6>
-                                            <h3 class="mb-0"><?= number_format($stats['deletes']) ?></h3>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-2 col-sm-6 mb-3">
-                                    <div class="card text-center bg-primary text-white">
-                                        <div class="card-body p-3">
-                                            <h6 class="mb-1">Logins/Logouts</h6>
-                                            <h3 class="mb-0"><?= number_format($stats['logins'] + $stats['logouts']) ?>
-                                            </h3>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-2 col-sm-6 mb-3">
-                                    <div class="card text-center bg-primary text-white">
-                                        <div class="card-body p-3">
-                                            <h6 class="mb-1">Unique Users</h6>
-                                            <h3 class="mb-0"><?= number_format($stats['unique_users']) ?></h3>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+								<div class="dre-glass dre-glass-dark dre-hero dre-leads-hero">
+									<div>
+										<h1><?= set_e($log['title']) ?></h1>
+										<p><?= set_e($log['blurb']) ?></p>
+									</div>
+									<?php if ($is_super_admin): ?>
+										<div class="dre-leads-stats">
+											<?php foreach ($stats as $stat): ?>
+												<div><strong><?= number_format($stat[0]) ?></strong><span><?= set_e($stat[1]) ?></span></div>
+											<?php endforeach; ?>
+										</div>
+									<?php endif; ?>
+								</div>
 
-                            <!-- Activity Logs Table Card -->
-                            <div class="card card-custom gutter-b">
-                                <div class="card-header flex-wrap py-3">
-                                    <div class="card-title">
-                                        <h3 class="card-label">
-                                            <i class="fa fa-list-alt text-primary"></i> Activity Logs
-                                        </h3>
-                                    </div>
-                                    <div class="card-toolbar">
-                                        <div class="dropdown dropdown-inline mr-2">
-                                            <button type="button"
-                                                class="btn btn-light-primary font-weight-bolder dropdown-toggle"
-                                                data-toggle="dropdown">
-                                                <i class="bi bi-download text-light"></i> Export
-                                            </button>
-                                            <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">
-                                                <ul class="navi flex-column navi-hover py-2">
-                                                    <li class="navi-item">
-                                                        <a href="#" class="navi-link" id="exportCSV">
-                                                            <i class="bi bi-filetype-csv mr-2"></i> CSV File
-                                                        </a>
-                                                    </li>
-                                                    <li class="navi-item">
-                                                        <a href="#" class="navi-link" id="exportExcel">
-                                                            <i class="bi bi-filetype-xlsx mr-2"></i> Excel File
-                                                        </a>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                        <button type="button" class="btn btn-light-primary font-weight-bolder mr-2"
-                                            onclick="window.location.reload();">
-                                            <i class="bi bi-arrow-clockwise text-light"></i> Refresh
-                                        </button>
-                                        <button type="button" class="btn btn-danger font-weight-bolder"
-                                            id="clearLogsBtn">
-                                            <i class="bi bi-trash"></i> Clear Old Logs
-                                        </button>
-                                    </div>
-                                </div>
+								<!-- The three logs -->
+								<nav class="dre-leads-tabs" aria-label="Logs">
+									<?php foreach ($log_kinds as $key => $other): ?>
+										<a href="<?= BASE_URL . $other['file'] ?>" class="<?= $key === $log_kind ? 'is-on' : '' ?>" <?= $key === $log_kind ? 'aria-current="page"' : '' ?>><i class="bi <?= set_e($other['icon']) ?>"></i> <?= set_e($other['title']) ?></a>
+									<?php endforeach; ?>
+								</nav>
 
-                                <div class="card-body pb-0">
-                                    <!-- Filter Controls -->
-                                    <div class="row mb-4">
-                                        <div class="col-md-2">
-                                            <label class="form-label">Filter by Action:</label>
-                                            <select id="actionFilter" class="form-control">
-                                                <option value="">All Actions</option>
-                                                <option value="INSERT">INSERT</option>
-                                                <option value="UPDATE">UPDATE</option>
-                                                <option value="DELETE">DELETE</option>
-                                                <option value="LOGIN">LOGIN</option>
-                                                <option value="LOGOUT">LOGOUT</option>
-                                                <option value="EXPORT">EXPORT</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label class="form-label">Filter by User:</label>
-                                            <select id="userFilter" class="form-control">
-                                                <option value="">All Users</option>
-                                                <?php
-                                                mysqli_data_seek($users_query, 0);
-                                                while ($user = mysqli_fetch_assoc($users_query)) {
-                                                    $user_name = htmlspecialchars($user['username']);
-                                                    ?>
-                                                    <option value="<?= $user_name ?>"><?= $user_name ?></option>
-                                                    <?php
-                                                }
-                                                ?>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label class="form-label">Filter by Table:</label>
-                                            <select id="tableFilter" class="form-control">
-                                                <option value="">All Tables</option>
-                                                <?php
-                                                mysqli_data_seek($tables_query, 0);
-                                                while ($table = mysqli_fetch_assoc($tables_query)) {
-                                                    $table_name = htmlspecialchars($table['table_name']);
-                                                    ?>
-                                                    <option value="<?= $table_name ?>"><?= $table_name ?></option>
-                                                    <?php
-                                                }
-                                                ?>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label class="form-label">Start Date:</label>
-                                            <input type="date" id="startDate" class="form-control">
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label class="form-label">End Date:</label>
-                                            <input type="date" id="endDate" class="form-control">
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label class="form-label">&nbsp;</label>
-                                            <button id="resetFilters" class="btn btn-secondary w-100">Reset
-                                                Filters</button>
-                                        </div>
-                                    </div>
-                                </div>
+								<?php if (!$is_super_admin): ?>
+									<div class="dre-leads-notice" role="alert"><i class="bi bi-shield-lock"></i> Only a super admin can see the logs.</div>
+								<?php else: ?>
 
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table id="activity_logs_table" class="table table-bordered dataTable"
-                                            style="width:100%">
-                                            <thead>
-                                                <tr>
-                                                    <th width="3%"><input type="checkbox" id="selectAll"></th>
-                                                    <th width="5%">ID</th>
-                                                    <th width="12%">User</th>
-                                                    <th width="8%">Action</th>
-                                                    <th width="12%">Table</th>
-                                                    <th width="8%">Record ID</th>
-                                                    <th width="10%">IP Address</th>
-                                                    <th width="12%">Time</th>
-                                                    <th width="10%">Actions</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <?php
-                                                $key = 1;
-                                                $query = mysqli_query($conn, "SELECT * FROM tbl_activity_logs ORDER BY log_id DESC LIMIT 1000");
-                                                while ($row = mysqli_fetch_array($query)):
-                                                    ?>
-                                                    <tr data-action="<?= htmlspecialchars($row['action_type']) ?>"
-                                                        data-user="<?= htmlspecialchars($row['username'] ?? '') ?>"
-                                                        data-table="<?= htmlspecialchars($row['table_name'] ?? '') ?>"
-                                                        data-time="<?= $row['log_time'] ?>">
-                                                        <td class="text-center">
-                                                            <input type="checkbox" class="logCheckbox"
-                                                                value="<?= $row['log_id'] ?>">
-                                                        </td>
-                                                        <td><?= $key++ ?></td>
-                                                        <td>
-                                                            <strong><?= htmlspecialchars($row['username'] ?? 'Unknown') ?></strong>
-                                                            <br>
-                                                            <small
-                                                                class="text-muted"><?= htmlspecialchars($row['user_type'] ?? '-') ?></small>
-                                                        </td>
-                                                        <td>
-                                                            <?php
-                                                            $badge_class = '';
-                                                            switch ($row['action_type']) {
-                                                                case 'INSERT':
-                                                                    $badge_class = 'success';
-                                                                    break;
-                                                                case 'UPDATE':
-                                                                    $badge_class = 'warning';
-                                                                    break;
-                                                                case 'DELETE':
-                                                                    $badge_class = 'danger';
-                                                                    break;
-                                                                case 'LOGIN':
-                                                                    $badge_class = 'primary';
-                                                                    break;
-                                                                case 'LOGOUT':
-                                                                    $badge_class = 'secondary';
-                                                                    break;
-                                                                default:
-                                                                    $badge_class = 'info';
-                                                            }
-                                                            ?>
-                                                            <span class="badge badge-<?= $badge_class ?> px-3 py-2">
-                                                                <?= $row['action_type'] ?>
-                                                            </span>
-                                                        </td>
-                                                        <td><code><?= htmlspecialchars($row['table_name'] ?? '-') ?></code>
-                                                        </td>
-                                                        <td><?= $row['record_id'] ?? '-' ?></td>
-                                                        <td><code><?= htmlspecialchars($row['user_ip'] ?? '-') ?></code>
-                                                        </td>
-                                                        <td>
-                                                            <span
-                                                                class="text-info"><?= date('d-m-Y H:i:s', strtotime($row['log_time'])) ?></span>
-                                                        </td>
-                                                        <td>
-                                                            <div class="btn-group btn-group-sm">
-                                                                <button type="button" class="btn btn-primary view-log"
-                                                                    data-log-id="<?= $row['log_id'] ?>">
-                                                                    <i class="fa fa-eye"></i>
-                                                                </button>
-                                                                <button type="button" class="btn btn-danger delete-log"
-                                                                    data-log-id="<?= $row['log_id'] ?>">
-                                                                    <i class="fa fa-trash"></i>
-                                                                </button>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                <?php endwhile; ?>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+								<?php if ($notice !== ''): ?>
+									<div class="dre-leads-notice" role="status" id="logNotice"><i class="bi bi-info-circle"></i> <?= set_e($notice) ?></div>
+								<?php endif; ?>
 
-                <?php include('includes/footer-inner.php'); ?>
+								<!-- Search and filters -->
+								<form method="get" action="<?= BASE_URL . $log['file'] ?>" class="dre-glass dre-leads-filter dre-proj-filter">
+									<label class="dre-leads-search">
+										<span>Search</span>
+										<i class="bi bi-search"></i>
+										<input type="search" name="q" value="<?= set_e($f_search) ?>" placeholder="<?= $log_kind === 'login' ? 'Email, IP address or reason' : ($log_kind === 'deleted' ? 'Kind of record, name or text in the record' : 'What was done, name of the record or user') ?>" autocomplete="off">
+									</label>
+									<label>
+										<span><?= set_e($log['who_label']) ?></span>
+										<select name="who">
+											<option value="">Anyone</option>
+											<?php foreach ($who_options as $option): ?>
+												<option value="<?= set_e($option) ?>" <?= $f_who === (string) $option ? 'selected' : '' ?>><?= set_e($option) ?></option>
+											<?php endforeach; ?>
+										</select>
+									</label>
+									<?php if ($log['types']): ?>
+										<label>
+											<span><?= set_e($log['type_label']) ?></span>
+											<select name="type">
+												<option value="">Any</option>
+												<?php foreach ($log['types'] as $key => $label): ?>
+													<option value="<?= set_e($key) ?>" <?= $f_type === $key ? 'selected' : '' ?>><?= set_e($label) ?></option>
+												<?php endforeach; ?>
+											</select>
+										</label>
+									<?php endif; ?>
+									<?php if ($log['about'] !== ''): ?>
+										<label>
+											<span>Kind of record</span>
+											<select name="about">
+												<option value="">Any</option>
+												<?php foreach ($about_options as $option): ?>
+													<option value="<?= set_e($option) ?>" <?= $f_about === (string) $option ? 'selected' : '' ?>><?= set_e(log_table_name($option)) ?></option>
+												<?php endforeach; ?>
+											</select>
+										</label>
+									<?php endif; ?>
+									<label>
+										<span>From</span>
+										<input type="date" name="from" value="<?= set_e($f_from) ?>">
+									</label>
+									<label>
+										<span>To</span>
+										<input type="date" name="to" value="<?= set_e($f_to) ?>">
+									</label>
+									<label>
+										<span>Per page</span>
+										<select name="per">
+											<?php foreach ([50, 100, 200] as $option): ?>
+												<option value="<?= $option ?>" <?= $f_per_page === $option ? 'selected' : '' ?>><?= $option ?></option>
+											<?php endforeach; ?>
+										</select>
+									</label>
+									<div class="dre-leads-filter-buttons">
+										<button type="submit" class="dre-btn dre-btn-main"><i class="bi bi-funnel"></i> Apply</button>
+										<?php if ($filters_on): ?>
+											<a class="dre-btn" href="<?= BASE_URL . $log['file'] ?>">Clear</a>
+										<?php endif; ?>
+									</div>
+								</form>
 
-                <!-- Bulk Actions Bar -->
-                <div id="bulkActionsBar" class="fixed-bottom mb-3" style="display: none; z-index: 1000;">
-                    <div class="container">
-                        <div class="alert alert-danger d-flex justify-content-between align-items-center mb-0 shadow">
-                            <div>
-                                <i class="fa fa-exclamation-triangle"></i>
-                                <strong><span id="selectedCount">0</span></strong> log(s) selected
-                            </div>
-                            <div>
-                                <button class="btn btn-sm btn-danger" id="confirmBulkDelete">
-                                    <i class="fa fa-trash"></i> Delete Selected
-                                </button>
-                                <button class="btn btn-sm btn-secondary ml-2" id="clearSelection">
-                                    <i class="fa fa-times"></i> Clear
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+								<!-- The form the ticked entries belong to -->
+								<form method="post" action="<?= set_e(log_url()) ?>" id="logBulkForm">
+									<input type="hidden" name="csrf" value="<?= set_e($_SESSION['admin_csrf']) ?>">
+									<input type="hidden" name="log_action" value="remove">
+								</form>
 
-                <!-- View Log Modal -->
-                <div class="modal fade" id="viewLogModal" tabindex="-1" role="dialog"
-                    aria-labelledby="viewLogModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-xl" role="document">
-                        <div class="modal-content" style="background-color: #f8f8f8f1;">
-                            <div class="modal-header bg-primary text-white">
-                                <h5 class="modal-title text-light" id="viewLogModalLabel">
-                                    <i class="fa fa-history"></i> Log Details
-                                </h5>
-                                <button type="button" class="btn btn-pill btn-secondary pl-3 p-1" data-dismiss="modal">
-                                    <i class="fa fa-times"></i> 
-                                </button>
-                            </div>
-                            <div class="modal-body" id="logModalBody">
-                                <div class="text-center p-5">
-                                    <i class="fa fa-spinner fa-spin fa-2x"></i>
-                                    <p class="mt-2">Loading log details...</p>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                                    <i class="fa fa-times"></i> Close
-                                </button>
-                                <button type="button" class="btn btn-primary" onclick="window.print();">
-                                    <i class="fa fa-print"></i> Print
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+								<div class="dre-glass dre-leads-list">
+									<div class="dre-h">
+										<h3>
+											<?= number_format($total) ?> <?= set_e($total === 1 ? $log['one'] : $log['many']) ?>
+											<small>
+												<?php if ($total > 0): ?>
+													Showing <?= number_format($offset + 1) ?>&ndash;<?= number_format($offset + count($rows)) ?><?= $filters_on ? ' &middot; filtered' : '' ?>
+												<?php else: ?>
+													Nothing matches<?= $filters_on ? ' these filters' : '' ?>
+												<?php endif; ?>
+											</small>
+										</h3>
+										<?php if ($rows): ?>
+											<label class="dre-proj-all"><input type="checkbox" id="logSelectAll"> Select all on this page</label>
+										<?php endif; ?>
+									</div>
 
-                <!-- Clear Logs Modal -->
-                <div class="modal fade" id="clearLogsModal" tabindex="-1">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Clear Activity Logs</h5>
-                                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                            </div>
-                            <div class="modal-body">
-                                <p>Are you sure you want to delete activity logs?</p>
-                                <p class="text-danger"><strong>Warning:</strong> This action cannot be undone!</p>
-                                <div class="form-group">
-                                    <label>Delete logs older than (days):</label>
-                                    <select id="deleteDays" class="form-control">
-                                        <option value="7">Older than 7 days</option>
-                                        <option value="30">Older than 30 days</option>
-                                        <option value="90">Older than 90 days</option>
-                                        <option value="180">Older than 180 days</option>
-                                        <option value="365">Older than 365 days</option>
-                                        <option value="all">All logs</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                                <button type="button" class="btn btn-danger" id="confirmClearLogs">Delete Logs</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+									<?php if (!$rows): ?>
+										<div class="dre-empty">
+											<i class="bi <?= set_e($log['icon']) ?>" style="font-size: 2rem;"></i><br>
+											Nothing to show.
+											<?php if ($filters_on): ?>
+												<a href="<?= BASE_URL . $log['file'] ?>">Show everything</a>
+											<?php endif; ?>
+										</div>
+									<?php else: ?>
+										<div class="dre-log-list">
+											<?php
+											$last_day = '';
+											foreach ($rows as $row):
+												$id = (int) $row[$log['id']];
+												$time = strtotime((string) $row[$log['time']]);
+												$day = $time ? date('Y-m-d', $time) : '';
+												if ($day !== $last_day):
+													$last_day = $day;
+											?>
+												<div class="dre-log-day"><?= $time ? ($day === date('Y-m-d') ? 'Today' : ($day === date('Y-m-d', strtotime('-1 day')) ? 'Yesterday' : date('l, d F Y', $time))) : 'No date' ?></div>
+											<?php endif; ?>
 
-                <script>
-                    $(document).ready(function () {
-                        // Initialize DataTable
-                        var table = $('#activity_logs_table').DataTable({
-                            "pageLength": 25,
-                            "language": {
-                                "search": "Search:",
-                                "lengthMenu": "Show _MENU_ entries",
-                                "info": "Showing _START_ to _END_ of _TOTAL_ entries",
-                                "paginate": {
-                                    "first": "First",
-                                    "last": "Last",
-                                    "next": "Next",
-                                    "previous": "Previous"
-                                }
-                            },
-                            "columnDefs": [
-                                { "orderable": false, "targets": [0, 8] },
-                                { "width": "3%", "targets": 0 },
-                                { "width": "5%", "targets": 1 },
-                                { "width": "12%", "targets": 2 },
-                                { "width": "8%", "targets": 3 },
-                                { "width": "12%", "targets": 4 },
-                                { "width": "8%", "targets": 5 },
-                                { "width": "10%", "targets": 6 },
-                                { "width": "12%", "targets": 7 },
-                                { "width": "10%", "targets": 8 }
-                            ]
-                        });
+											<?php if ($log_kind === 'activity'):
+												$changes = json_decode((string) $row['changed_fields'], true);
+												$changes = is_array($changes) ? $changes : [];
+												$tone = ['INSERT' => 'good', 'UPDATE' => 'plain', 'DELETE' => 'bad'][$row['action_type']] ?? 'plain';
+												$name = trim((string) $row['record_identifier']);
+											?>
+												<div class="dre-log-row">
+													<input type="checkbox" name="log_ids[]" value="<?= $id ?>" form="logBulkForm" class="dre-proj-box" aria-label="Select entry <?= $id ?>">
+													<span class="dre-log-time"><?= $time ? date('H:i', $time) : '' ?></span>
+													<span class="dre-log-dot dre-log-<?= $tone ?>" aria-hidden="true"><i class="bi <?= ['INSERT' => 'bi-plus-lg', 'UPDATE' => 'bi-pencil', 'DELETE' => 'bi-trash3'][$row['action_type']] ?? 'bi-dot' ?>"></i></span>
+													<div class="dre-log-body">
+														<strong><?= set_e(trim((string) $row['username']) !== '' ? $row['username'] : 'Someone') ?></strong>
+														<?= set_e(strtolower($log['types'][$row['action_type']] ?? 'changed')) ?>
+														<?= $name !== '' ? '&ldquo;' . set_e(mb_strimwidth($name, 0, 70, '...')) . '&rdquo;' : 'record ' . (int) $row['record_id'] ?>
+														<span class="dre-pill"><?= set_e(log_table_name($row['table_name'])) ?></span>
+														<?php if (trim((string) $row['action_description']) !== ''): ?>
+															<small><?= set_e(mb_strimwidth((string) $row['action_description'], 0, 140, '...')) ?></small>
+														<?php endif; ?>
+														<details>
+															<summary><?= $changes ? count($changes) . (count($changes) === 1 ? ' detail changed' : ' details changed') : 'More' ?></summary>
+															<?php if ($changes): ?>
+																<dl class="dre-log-changes">
+																	<?php foreach (array_slice($changes, 0, 15, true) as $field => $change): ?>
+																		<dt><?= set_e($field) ?></dt>
+																		<dd><del><?= set_e(log_value(is_array($change) ? ($change['old'] ?? '') : '')) ?></del> <i class="bi bi-arrow-right"></i> <ins><?= set_e(log_value(is_array($change) ? ($change['new'] ?? '') : $change)) ?></ins></dd>
+																	<?php endforeach; ?>
+																</dl>
+																<?php if (count($changes) > 15): ?><small>and <?= count($changes) - 15 ?> more.</small><?php endif; ?>
+															<?php endif; ?>
+															<small>Record number <?= (int) $row['record_id'] ?> &middot; from <?= set_e($row['user_ip'] ?: 'an unknown address') ?> &middot; <?= set_e(log_browser($row['user_agent'])) ?></small>
+														</details>
+													</div>
+												</div>
 
-                        // Custom filter function
-                        $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
-                            var action = $('#actionFilter').val();
-                            var user = $('#userFilter').val();
-                            var tableName = $('#tableFilter').val();
-                            var startDate = $('#startDate').val();
-                            var endDate = $('#endDate').val();
+											<?php elseif ($log_kind === 'login'):
+												$ok = $row['login_status'] === 'SUCCESS';
+												$minutes = $row['session_duration'] !== null ? (int) round((int) $row['session_duration'] / 60) : null;
+											?>
+												<div class="dre-log-row">
+													<input type="checkbox" name="log_ids[]" value="<?= $id ?>" form="logBulkForm" class="dre-proj-box" aria-label="Select sign-in <?= $id ?>">
+													<span class="dre-log-time"><?= $time ? date('H:i', $time) : '' ?></span>
+													<span class="dre-log-dot dre-log-<?= $ok ? 'good' : 'bad' ?>" aria-hidden="true"><i class="bi <?= $ok ? 'bi-check-lg' : 'bi-x-lg' ?>"></i></span>
+													<div class="dre-log-body">
+														<strong><?= set_e(trim((string) $row['user_email']) !== '' ? $row['user_email'] : 'No email given') ?></strong>
+														<?= $ok ? 'signed in' : 'could not sign in' ?>
+														<?php if (!$ok && trim((string) $row['failure_reason']) !== ''): ?>
+															<span class="dre-pill dre-pill-bad"><?= set_e($row['failure_reason']) ?></span>
+														<?php endif; ?>
+														<small>
+															From <?= set_e($row['user_ip'] ?: 'an unknown address') ?> &middot; <?= set_e(log_browser($row['user_agent'])) ?>
+															<?php if ($ok): ?>
+																&middot; <?= $row['logout_time'] ? 'signed out ' . date('H:i', strtotime($row['logout_time'])) . ($minutes !== null ? ' after ' . ($minutes < 1 ? 'less than a minute' : $minutes . ($minutes === 1 ? ' minute' : ' minutes')) : '') : 'no sign-out recorded' ?>
+															<?php endif; ?>
+														</small>
+													</div>
+												</div>
 
-                            var row = table.row(dataIndex).node();
-                            var rowAction = $(row).data('action');
-                            var rowUser = $(row).data('user');
-                            var rowTable = $(row).data('table');
-                            var rowTime = $(row).data('time');
+											<?php else:
+												$data = json_decode((string) $row['deleted_data'], true);
+												$data = is_array($data) ? $data : [];
+												// The first value that reads like a name: "..._name", "..._heading" or "..._title".
+												$name = '';
+												foreach ($data as $key => $value) {
+													if (is_scalar($value) && preg_match('/(name|heading|title)$/', (string) $key) && trim((string) $value) !== '') {
+														$name = log_value($value, 70);
+														break;
+													}
+												}
+											?>
+												<div class="dre-log-row">
+													<input type="checkbox" name="log_ids[]" value="<?= $id ?>" form="logBulkForm" class="dre-proj-box" aria-label="Select record <?= $id ?>">
+													<span class="dre-log-time"><?= $time ? date('H:i', $time) : '' ?></span>
+													<span class="dre-log-dot dre-log-bad" aria-hidden="true"><i class="bi bi-trash3"></i></span>
+													<div class="dre-log-body">
+														<strong><?= set_e(trim((string) $row['deleted_by_name']) !== '' ? $row['deleted_by_name'] : 'Someone') ?></strong>
+														deleted <?= $name !== '' ? '&ldquo;' . set_e($name) . '&rdquo;' : 'record ' . (int) $row['record_id'] ?>
+														<span class="dre-pill"><?= set_e(log_table_name($row['original_table'])) ?></span>
+														<details>
+															<summary>What was in it (<?= count($data) ?> <?= count($data) === 1 ? 'detail' : 'details' ?>)</summary>
+															<dl class="dre-log-changes">
+																<?php foreach ($data as $field => $value):
+																	if (log_value($value) === '(empty)') {
+																		continue;
+																	}
+																?>
+																	<dt><?= set_e($field) ?></dt>
+																	<dd><?= set_e(log_value($value, 220)) ?></dd>
+																<?php endforeach; ?>
+															</dl>
+															<small>Record number <?= (int) $row['record_id'] ?> &middot; from <?= set_e($row['ip_address'] ?: 'an unknown address') ?>. Empty details are left out. Pictures and files of a deleted record are not kept.</small>
+														</details>
+													</div>
+												</div>
+											<?php endif; ?>
+											<?php endforeach; ?>
+										</div>
 
-                            if (action !== '' && rowAction !== action) return false;
-                            if (user !== '' && rowUser !== user) return false;
-                            if (tableName !== '' && rowTable !== tableName) return false;
-                            if (startDate !== '' && rowTime < startDate) return false;
-                            if (endDate !== '' && rowTime > endDate + ' 23:59:59') return false;
+										<?php if ($pages > 1): ?>
+											<nav class="dre-leads-pages" aria-label="Pages">
+												<?php if ($f_page > 1): ?>
+													<a href="<?= set_e(log_url(['page' => $f_page - 1])) ?>" aria-label="Previous page"><i class="bi bi-chevron-left"></i></a>
+												<?php endif; ?>
+												<?php
+												$shown = [];
+												foreach ([1, 2, $f_page - 1, $f_page, $f_page + 1, $pages - 1, $pages] as $number) {
+													if ($number >= 1 && $number <= $pages) {
+														$shown[$number] = true;
+													}
+												}
+												ksort($shown);
+												$previous = 0;
+												foreach (array_keys($shown) as $number):
+													if ($number > $previous + 1): ?><span>&hellip;</span><?php endif; ?>
+													<a href="<?= set_e(log_url(['page' => $number])) ?>" class="<?= $number === $f_page ? 'is-on' : '' ?>" <?= $number === $f_page ? 'aria-current="page"' : '' ?>><?= $number ?></a>
+												<?php $previous = $number;
+												endforeach; ?>
+												<?php if ($f_page < $pages): ?>
+													<a href="<?= set_e(log_url(['page' => $f_page + 1])) ?>" aria-label="Next page"><i class="bi bi-chevron-right"></i></a>
+												<?php endif; ?>
+											</nav>
+										<?php endif; ?>
+									<?php endif; ?>
+								</div>
 
-                            return true;
-                        });
+								<?php if ($log['can_clear']): ?>
+									<!-- Tidy up: remove old entries -->
+									<form method="post" action="<?= BASE_URL . $log['file'] ?>" class="dre-glass dre-log-clear" id="logClearForm">
+										<input type="hidden" name="csrf" value="<?= set_e($_SESSION['admin_csrf']) ?>">
+										<input type="hidden" name="log_action" value="clear">
+										<div>
+											<strong><i class="bi bi-archive"></i> Tidy up</strong>
+											<span>Remove old <?= set_e($log['many']) ?> to keep the log short. The last 30 days always stay.</span>
+										</div>
+										<label>
+											<span class="sr-only">Remove entries older than</span>
+											<select name="older_than">
+												<option value="365">Older than a year</option>
+												<option value="180">Older than 6 months</option>
+												<option value="90">Older than 3 months</option>
+												<option value="30">Older than 30 days</option>
+											</select>
+										</label>
+										<button type="submit" class="dre-btn"><i class="bi bi-trash3"></i> Remove</button>
+									</form>
+								<?php endif; ?>
 
-                        // Filter events
-                        $('#actionFilter, #userFilter, #tableFilter, #startDate, #endDate').on('change', function () {
-                            table.draw();
-                        });
+								<!-- Appears when at least one entry is ticked -->
+								<div class="dre-proj-bulk" id="logBulkBar" hidden>
+									<strong><span id="logBulkCount">0</span> selected</strong>
+									<div>
+										<button type="submit" form="logBulkForm" class="dre-btn dre-btn-main" id="logBulkRemove"><i class="bi bi-trash3"></i> Remove from the log</button>
+										<button type="button" class="dre-btn" id="logBulkClear">Clear</button>
+									</div>
+								</div>
+								<?php endif; ?>
+							</div>
 
-                        $('#resetFilters').on('click', function () {
-                            $('#actionFilter').val('');
-                            $('#userFilter').val('');
-                            $('#tableFilter').val('');
-                            $('#startDate').val('');
-                            $('#endDate').val('');
-                            table.draw();
-                        });
+							<script>
+								// Selection bar and confirmations for the log.
+								(function () {
+									var bar = document.getElementById('logBulkBar');
+									if (!bar) {
+										return;
+									}
+									var many = <?= json_encode($log['many']) ?>;
+									var boxes = Array.prototype.slice.call(document.querySelectorAll('.dre-log-list .dre-proj-box'));
+									var all = document.getElementById('logSelectAll');
+									var count = document.getElementById('logBulkCount');
+									function refresh() {
+										var picked = boxes.filter(function (box) { return box.checked; }).length;
+										count.textContent = picked;
+										bar.hidden = picked === 0;
+										if (all) {
+											all.checked = picked > 0 && picked === boxes.length;
+											all.indeterminate = picked > 0 && picked < boxes.length;
+										}
+									}
+									boxes.forEach(function (box) { box.addEventListener('change', refresh); });
+									if (all) {
+										all.addEventListener('change', function () {
+											boxes.forEach(function (box) { box.checked = all.checked; });
+											refresh();
+										});
+									}
+									document.getElementById('logBulkClear').addEventListener('click', function () {
+										boxes.forEach(function (box) { box.checked = false; });
+										refresh();
+									});
+									document.getElementById('logBulkForm').addEventListener('submit', function (event) {
+										if (!window.confirm('Remove the selected ' + many + ' from the log? This cannot be undone.')) {
+											event.preventDefault();
+										}
+									});
+									var clearForm = document.getElementById('logClearForm');
+									if (clearForm) {
+										clearForm.addEventListener('submit', function (event) {
+											var choice = clearForm.querySelector('select');
+											if (!window.confirm('Remove all ' + many + ' ' + choice.options[choice.selectedIndex].text.toLowerCase() + '? This cannot be undone.')) {
+												event.preventDefault();
+											}
+										});
+									}
+									refresh();
+									var notice = document.getElementById('logNotice');
+									if (notice) {
+										setTimeout(function () { notice.style.display = 'none'; }, 8000);
+									}
+								})();
+							</script>
+							<!--end::Log-->
 
-                        // Select All functionality
-                        $('#selectAll').on('change', function () {
-                            var isChecked = $(this).prop('checked');
-                            $('.logCheckbox').prop('checked', isChecked);
-                            updateBulkActionsBar();
-                        });
+						</div>
+						<!--end::Container-->
+					</div>
+					<!--end::Entry-->
+				</div>
+				<!--end::Content-->
 
-                        $(document).on('change', '.logCheckbox', function () {
-                            updateBulkActionsBar();
-                            var allChecked = $('.logCheckbox:checked').length === $('.logCheckbox').length;
-                            $('#selectAll').prop('checked', allChecked);
-                        });
+				<?php
+				include('includes/footer-inner.php');
+				?>
 
-                        function updateBulkActionsBar() {
-                            var selected = $('.logCheckbox:checked').length;
-                            $('#selectedCount').text(selected);
-                            if (selected > 0) {
-                                $('#bulkActionsBar').fadeIn();
-                            } else {
-                                $('#bulkActionsBar').fadeOut();
-                            }
-                        }
 
-                        // Helper Functions
-                        function escapeHtml(text) {
-                            if (!text) return '';
-                            return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-                        }
-
-                        function formatDate(dateString) {
-                            if (!dateString) return '-';
-                            var date = new Date(dateString);
-                            return date.toLocaleString('en-GB', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                second: '2-digit'
-                            });
-                        }
-
-                        function formatJSON(data) {
-                            if (!data || data === 'null' || data === '') return 'No data';
-                            try {
-                                var parsed = typeof data === 'string' ? JSON.parse(data) : data;
-                                return JSON.stringify(parsed, null, 2);
-                            } catch (e) {
-                                return data;
-                            }
-                        }
-
-                        function generateDataTable(data) {
-                            if (!data || typeof data !== 'object' || Object.keys(data).length === 0) {
-                                return '<div class="text-muted text-center">No data available</div>';
-                            }
-
-                            var html = '<table class="table table-sm table-bordered mb-0">' +
-                                '<thead class="thead-light"><tr><th width="35%">Field</th><th width="65%">Value</th></tr></thead>' +
-                                '<tbody>';
-
-                            for (var key in data) {
-                                if (data.hasOwnProperty(key)) {
-                                    var value = data[key];
-                                    if (typeof value === 'object') {
-                                        value = JSON.stringify(value);
-                                    }
-                                    html += '<tr>' +
-                                        '<td><strong>' + key.replace(/_/g, ' ').toUpperCase() + '</strong></td>' +
-                                        '<td>' + (value || '<em class="text-muted">empty</em>') + '</td>' +
-                                        '</tr>';
-                                }
-                            }
-                            html += '</tbody></table>';
-                            return html;
-                        }
-
-                        // Generate Log Details HTML
-                        function generateLogDetailsHTML(log) {
-                            var badgeClass = '';
-                            switch (log.action_type) {
-                                case 'INSERT': badgeClass = 'success'; break;
-                                case 'UPDATE': badgeClass = 'warning'; break;
-                                case 'DELETE': badgeClass = 'danger'; break;
-                                case 'LOGIN': badgeClass = 'primary'; break;
-                                case 'LOGOUT': badgeClass = 'secondary'; break;
-                                default: badgeClass = 'info';
-                            }
-
-                            var actionIcon = '';
-                            switch (log.action_type) {
-                                case 'INSERT': actionIcon = 'plus'; break;
-                                case 'UPDATE': actionIcon = 'edit'; break;
-                                case 'DELETE': actionIcon = 'trash'; break;
-                                case 'LOGIN': actionIcon = 'sign-in'; break;
-                                case 'LOGOUT': actionIcon = 'sign-out'; break;
-                                default: actionIcon = 'info-circle';
-                            }
-
-                            // Parse old and new data
-                            var oldData = null;
-                            var newData = null;
-
-                            try {
-                                if (log.old_data && log.old_data !== 'null') {
-                                    oldData = typeof log.old_data === 'string' ? JSON.parse(log.old_data) : log.old_data;
-                                }
-                            } catch (e) { oldData = null; }
-
-                            try {
-                                if (log.new_data && log.new_data !== 'null') {
-                                    newData = typeof log.new_data === 'string' ? JSON.parse(log.new_data) : log.new_data;
-                                }
-                            } catch (e) { newData = null; }
-
-                            var oldDataHtml = oldData ? generateDataTable(oldData) : '<div class="text-muted text-center">No old data available</div>';
-                            var newDataHtml = newData ? generateDataTable(newData) : '<div class="text-muted text-center">No new data available</div>';
-
-                            // Parse changed fields
-                            var changedFieldsHtml = '';
-                            if (log.changed_fields && log.changed_fields !== 'null') {
-                                try {
-                                    var changedFields = typeof log.changed_fields === 'string' ? JSON.parse(log.changed_fields) : log.changed_fields;
-                                    if (Object.keys(changedFields).length > 0) {
-                                        changedFieldsHtml = '<div class="card mt-3 border-0 shadow-sm">' +
-                                            '<div class="card-header bg-info text-white">' +
-                                            '<strong><i class="fa fa-exchange"></i> Changed Fields Summary</strong>' +
-                                            '</div>' +
-                                            '<div class="card-body">' +
-                                            '<div class="table-responsive">' +
-                                            '<table class="table table-bordered">' +
-                                            '<thead class="thead-light"><tr><th>Field</th><th>Old Value</th><th>New Value</th></tr></thead>' +
-                                            '<tbody>';
-                                        for (var field in changedFields) {
-                                            changedFieldsHtml += '<tr class="table-warning">' +
-                                                '<td><strong>' + field.replace(/_/g, ' ').toUpperCase() + '</strong></td>' +
-                                                '<td class="text-danger">' + (changedFields[field].old || '<em class="text-muted">empty</em>') + '</td>' +
-                                                '<td class="text-success">' + (changedFields[field].new || '<em class="text-muted">empty</em>') + '</td>' +
-                                                '</tr>';
-                                        }
-                                        changedFieldsHtml += '</tbody></table></div></div></div>';
-                                    }
-                                } catch (e) {
-                                    changedFieldsHtml = '<div class="card mt-3"><div class="card-body"><pre>' + escapeHtml(log.changed_fields) + '</pre></div></div>';
-                                }
-                            }
-
-                            return `
-            <div class="row mb-3">
-                <div class="col-md-3">
-                    <div class="card">
-                        <div class="card-body py-2">
-                            <small class="text-muted text-uppercase">Log ID</small>
-                            <h6 class="mb-0">#${log.log_id}</h6>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body py-2">
-                            <small class="text-muted text-uppercase">User</small>
-                            <h6 class="mb-0">${escapeHtml(log.username) || '-'}</h6>
-                            <small>${escapeHtml(log.user_type) || '-'}</small>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card  border-0 shadow-sm">
-                        <div class="card-body py-2">
-                            <small class="text-muted text-uppercase">Action Type</small>
-                            <h6 class="mb-0">
-                                <span class="badge badge-${badgeClass} px-3 py-2">
-                                    <i class="fa fa-${actionIcon}"></i> ${log.action_type}
-                                </span>
-                            </h6>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card  border-0 shadow-sm">
-                        <div class="card-body py-2">
-                            <small class="text-muted text-uppercase">Log Time</small>
-                            <h6 class="mb-0">${formatDate(log.log_time)}</h6>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="row mb-3">
-                <div class="col-md-4">
-                    <div class="card  border-0 shadow-sm">
-                        <div class="card-body py-2">
-                            <small class="text-muted text-uppercase">Table Name</small>
-                            <h6 class="mb-0"><code>${escapeHtml(log.table_name) || '-'}</code></h6>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card  border-0 shadow-sm">
-                        <div class="card-body py-2">
-                            <small class="text-muted text-uppercase">Record ID</small>
-                            <h6 class="mb-0"><span class="badge badge-secondary">#${log.record_id || '-'}</span></h6>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card  border-0 shadow-sm">
-                        <div class="card-body py-2">
-                            <small class="text-muted text-uppercase">Record Identifier</small>
-                            <h6 class="mb-0"><code>${escapeHtml(log.record_identifier) || '-'}</code></h6>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="row mb-3">
-                <div class="col-md-4">
-                    <div class="card  border-0 shadow-sm">
-                        <div class="card-body py-2">
-                            <small class="text-muted text-uppercase">IP Address</small>
-                            <h6 class="mb-0"><code>${escapeHtml(log.user_ip) || '-'}</code></h6>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card  border-0 shadow-sm">
-                        <div class="card-body py-2">
-                            <small class="text-muted text-uppercase">HTTP Method</small>
-                            <h6 class="mb-0"><code>${log.http_method || '-'}</code></h6>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card  border-0 shadow-sm">
-                        <div class="card-body py-2">
-                            <small class="text-muted text-uppercase">User Agent</small>
-                            <h6 class="mb-0"><small>${escapeHtml(String(log.user_agent).substring(0, 50))}...</small></h6>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card mb-3 border-0 shadow-sm">
-                <div class="card-header ">
-                    <strong><i class="fa fa-info-circle"></i> Action Description</strong>
-                </div>
-                <div class="card-body">
-                    <p class="mb-0">${escapeHtml(log.action_description) || '-'}</p>
-                </div>
-            </div>
-            
-            <div class="card mb-3 border-0 shadow-sm">
-                <div class="card-header ">
-                    <strong><i class="fa fa-link"></i> Request URL</strong>
-                </div>
-                <div class="card-body">
-                    <small class="text-break">${escapeHtml(log.request_url) || '-'}</small>
-                </div>
-            </div>
-            
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-header bg-warning">
-                            <strong><i class="fa fa-database"></i> Old Data</strong>
-                        </div>
-                        <div class="card-body" style="max-height: 400px; overflow: auto;">
-                            ${oldDataHtml}
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-header bg-success text-white">
-                            <strong><i class="fa fa-database"></i> New Data</strong>
-                        </div>
-                        <div class="card-body" style="max-height: 400px; overflow: auto;">
-                            ${newDataHtml}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            ${changedFieldsHtml}
-        `;
-                        }
-
-                        // View log button click handler
-                        $(document).on('click', '.view-log', function (e) {
-                            e.preventDefault();
-                            var logId = $(this).data('log-id');
-
-                            if (!logId) {
-                                Swal.fire('Error', 'Invalid log ID', 'error');
-                                return;
-                            }
-
-                            $('#logModalBody').html('<div class="text-center p-5"><i class="fa fa-spinner fa-spin fa-2x"></i><br><p class="mt-2">Loading log details...</p></div>');
-                            $('#viewLogModal').modal('show');
-
-                            $.ajax({
-                                url: '<?= BASE_URL ?>ajax/get-log-details.php',
-                                type: 'POST',
-                                dataType: 'json',
-                                data: { log_id: logId },
-                                success: function (response) {
-                                    if (response.error) {
-                                        $('#logModalBody').html('<div class="text-center p-5 text-danger"><i class="fa fa-exclamation-triangle fa-2x"></i><br><p class="mt-2">' + response.error + '</p></div>');
-                                        return;
-                                    }
-                                    var html = generateLogDetailsHTML(response);
-                                    $('#logModalBody').html(html);
-                                },
-                                error: function (xhr, status, error) {
-                                    console.error('AJAX Error:', error);
-                                    $('#logModalBody').html('<div class="text-center p-5 text-danger"><i class="fa fa-exclamation-triangle fa-2x"></i><br><p class="mt-2">Failed to load log details. Please try again.</p><br><small>' + error + '</small></div>');
-                                }
-                            });
-                        });
-
-                        // Single delete
-                        $(document).on('click', '.delete-log', function () {
-                            var logId = $(this).data('log-id');
-                            var $btn = $(this);
-
-                            Swal.fire({
-                                title: 'Delete Log',
-                                text: 'Are you sure you want to delete this log?',
-                                icon: 'warning',
-                                showCancelButton: true,
-                                confirmButtonColor: '#d33',
-                                cancelButtonColor: '#3085d6',
-                                confirmButtonText: 'Yes, delete!',
-                                cancelButtonText: 'Cancel'
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
-                                    window.location.href = '<?= BASE_URL ?>manage-loggs.php?delete_log=' + logId;
-                                }
-                            });
-                        });
-
-                        // Bulk delete button
-                        $('#bulkDeleteBtn').on('click', function () {
-                            var selected = $('.logCheckbox:checked').length;
-                            if (selected === 0) {
-                                Swal.fire('No Selection', 'Please select logs to delete', 'warning');
-                                return;
-                            }
-                            $('#confirmBulkDelete').click();
-                        });
-
-                        // Confirm bulk delete
-                        $('#confirmBulkDelete').on('click', function () {
-                            var selectedIds = [];
-                            $('.logCheckbox:checked').each(function () {
-                                selectedIds.push($(this).val());
-                            });
-
-                            if (selectedIds.length === 0) return;
-
-                            Swal.fire({
-                                title: 'Bulk Delete',
-                                html: `Are you sure you want to delete <strong>${selectedIds.length}</strong> logs? This action cannot be undone!`,
-                                icon: 'warning',
-                                showCancelButton: true,
-                                confirmButtonColor: '#d33',
-                                cancelButtonColor: '#3085d6',
-                                confirmButtonText: 'Yes, delete all!',
-                                cancelButtonText: 'Cancel'
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    var form = $('<form method="post"></form>');
-                                    form.append('<input type="hidden" name="bulk_delete" value="1">');
-                                    $.each(selectedIds, function (i, id) {
-                                        form.append('<input type="hidden" name="delete_ids[]" value="' + id + '">');
-                                    });
-                                    $('body').append(form);
-                                    form.submit();
-                                }
-                            });
-                        });
-
-                        // Clear selection
-                        $('#clearSelection').on('click', function () {
-                            $('.logCheckbox').prop('checked', false);
-                            $('#selectAll').prop('checked', false);
-                            updateBulkActionsBar();
-                        });
-
-                        // Clear logs modal
-                        $('#clearLogsBtn').on('click', function () {
-                            $('#clearLogsModal').modal('show');
-                        });
-
-                        $('#confirmClearLogs').on('click', function () {
-                            var days = $('#deleteDays').val();
-                            var $btn = $(this);
-                            $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Processing...');
-
-                            $.ajax({
-                                url: '<?= BASE_URL ?>ajax/clear-activity-logs.php',
-                                type: 'POST',
-                                dataType: 'json',
-                                data: { days: days },
-                                success: function (response) {
-                                    if (response.status === 'success') {
-                                        Swal.fire('Success', response.message, 'success');
-                                        setTimeout(function () { location.reload(); }, 1500);
-                                    } else {
-                                        Swal.fire('Error', response.message, 'error');
-                                    }
-                                },
-                                error: function () {
-                                    Swal.fire('Error', 'Failed to clear logs', 'error');
-                                },
-                                complete: function () {
-                                    $btn.prop('disabled', false).html('Delete Logs');
-                                    $('#clearLogsModal').modal('hide');
-                                }
-                            });
-                        });
-
-                        // Export functions
-                        $('#exportCSV').on('click', function (e) {
-                            e.preventDefault();
-                            exportTableToCSV('activity_logs.csv');
-                        });
-
-                        $('#exportExcel').on('click', function (e) {
-                            e.preventDefault();
-                            exportTableToExcel('activity_logs.xls');
-                        });
-
-                        function exportTableToCSV(filename) {
-                            var csv = [];
-                            var rows = document.querySelectorAll('#activity_logs_table thead tr, #activity_logs_table tbody tr');
-                            for (var i = 0; i < rows.length; i++) {
-                                var row = [], cols = rows[i].querySelectorAll('td, th');
-                                for (var j = 0; j < cols.length; j++) {
-                                    var text = cols[j].innerText.replace(/,/g, ';');
-                                    row.push('"' + text + '"');
-                                }
-                                csv.push(row.join(','));
-                            }
-                            var csvFile = new Blob(["\uFEFF" + csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
-                            var downloadLink = document.createElement('a');
-                            downloadLink.href = URL.createObjectURL(csvFile);
-                            downloadLink.download = filename;
-                            document.body.appendChild(downloadLink);
-                            downloadLink.click();
-                            document.body.removeChild(downloadLink);
-                            Swal.fire('Success', 'Export completed!', 'success');
-                        }
-
-                        function exportTableToExcel(filename) {
-                            var table = document.getElementById('activity_logs_table');
-                            var html = table.cloneNode(true);
-                            $(html).find('.view-log, .delete-log').remove();
-                            var url = 'data:application/vnd.ms-excel,' + encodeURIComponent(html.outerHTML);
-                            var downloadLink = document.createElement('a');
-                            downloadLink.href = url;
-                            downloadLink.download = filename;
-                            document.body.appendChild(downloadLink);
-                            downloadLink.click();
-                            document.body.removeChild(downloadLink);
-                            Swal.fire('Success', 'Export completed!', 'success');
-                        }
-                    });
-                </script>
-
-                <style>
-                    .dataTables_wrapper .dataTables_length,
-                    .dataTables_wrapper .dataTables_filter {
-                        margin-bottom: 15px;
-                    }
-
-                    .table td {
-                        vertical-align: middle;
-                    }
-
-                    code {
-                        background: #f4f4f4;
-                        padding: 2px 5px;
-                        border-radius: 3px;
-                        font-size: 11px;
-                    }
-
-                    .badge {
-                        font-size: 11px;
-                        font-weight: 500;
-                        padding: 6px 12px;
-                    }
-
-                    .table-responsive {
-                        overflow-x: auto;
-                    }
-
-                    #bulkActionsBar {
-                        position: fixed;
-                        bottom: 20px;
-                        left: 0;
-                        right: 0;
-                        z-index: 1000;
-                    }
-
-                    pre {
-                        white-space: pre-wrap;
-                        word-wrap: break-word;
-                        font-size: 12px;
-                    }
-
-                    .modal-xl {
-                        max-width: 1200px;
-                    }
-                </style>
-</body>
+<?php
+// Don't add extra closing tags
+?>

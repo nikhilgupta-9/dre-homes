@@ -226,14 +226,15 @@ if ($count > 0) {
                 </div>
 
                 <div class="geodir-category-footer list-footer">
+                <div class="d-flex">
                     
                          '. $bedroom1.'
                         
 
-                    <div class="off-p-f2">
+                    <div class="off-p-f2 ms-2">
                      ' . $price_html . '
                     </div>
-
+                    </div>
                     <div class="clearfix"></div>
 
                     <div class="list-contact-icon off-p-f3">

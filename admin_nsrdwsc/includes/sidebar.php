@@ -1,1007 +1,324 @@
-<div class="aside aside-left aside-fixed d-flex flex-column flex-row-auto" id="kt_aside">
+<?php
+// ---------------------------------------------------------------
+// Admin menu. To add, move or rename an entry, edit the list below:
+// the HTML is built from it further down.
+//
+//   section => list of entries
+//   entry   => [label, icon, link, pages]            a single link
+//           or [label, icon, [children], extra pages] a group that opens
+//   child   => [label, link, pages]
+//
+// "pages" are the files on which the entry is shown as the current one
+// (for example the add and edit screens that belong to a list).
+// 'only' => 1 or 2 shows an entry to that login type only.
+// ---------------------------------------------------------------
+$dre_current_page = basename($_SERVER['PHP_SELF']);
+$dre_login_type = (int) ($_SESSION['login_type'] ?? 0);
+$dre_edit = '?edit=' . base64_encode(1);
+$dre_listing_extras = ['manage-gallery.php', 'add-gallery.php', 'edit-gallery.php', 'manage-faq.php', 'add-faq.php', 'edit-faq.php', 'manage-payplan.php', 'add-payplan.php', 'edit-payplan.php'];
+
+$dre_menu = [
+	'Overview' => [
+		['Dashboard', 'bi-speedometer2', 'dashboard.php', ['dashboard.php']],
+		['Leads', 'bi-person-lines-fill', 'manage-leads.php', ['manage-leads.php', 'edit-leads.php'], 'only' => 1],
+		['Quiz Enquiries', 'bi-patch-question', 'manage-quiz.php', ['manage-quiz.php']],
+	],
+
+	'Properties' => [
+		['Off-plan Projects', 'bi-buildings', 'manage-project.php', array_merge(['manage-project.php', 'add-project.php', 'edit-project.php'], $dre_listing_extras)],
+		['Import from GenieMap', 'bi-geo-alt', 'import-geniemap.php', ['import-geniemap.php']],
+		['Properties for Sale', 'bi-house-door', 'manage-buy-project.php', array_merge(['manage-buy-project.php', 'add-buy-project.php', 'edit-buy-project.php'], $dre_listing_extras)],
+		['Properties for Rent', 'bi-key', 'manage-rent-project.php', array_merge(['manage-rent-project.php', 'edit-rent-project.php'], $dre_listing_extras)],
+		['Pending Work', 'bi-hourglass-split', 'manage-pending-work-project.php', ['manage-pending-work-project.php']],
+		['Developers', 'bi-building', [
+			['All Developers', 'manage-developer.php', ['manage-developer.php', 'add-developer.php', 'edit-developer.php']],
+			['Page Content', 'edit-developer-content.php' . $dre_edit, ['edit-developer-content.php']],
+		], ['manage-chooseus.php', 'edit-chooseus.php']],
+		['Communities', 'bi-geo-alt', [
+			['All Communities', 'manage-community.php', ['manage-community.php', 'add-community.php', 'edit-community.php']],
+			['Page Content', 'edit-community-content.php' . $dre_edit, ['edit-community-content.php']],
+		], ['manage-comm-loc.php', 'add-comm-loc.php', 'edit-comm-loc.php', 'manage-comm-map.php', 'add-comm-map.php', 'edit-comm-map.php']],
+		['Listing Page Content', 'bi-layout-text-window', [
+			['Off-plan Page', 'edit-offplan-content.php' . $dre_edit, ['edit-offplan-content.php']],
+			['Buy Page', 'edit-buyproperty-content.php' . $dre_edit, ['edit-buyproperty-content.php']],
+			['Rent Page', 'edit-rentproperty-content.php' . $dre_edit, ['edit-rentproperty-content.php']],
+			['Ready to Move In Page', 'edit-readytomovein-content.php' . $dre_edit, ['edit-readytomovein-content.php']],
+			['International Page', 'edit-international-content.php' . $dre_edit, ['edit-international-content.php']],
+		]],
+	],
+
+	'Content' => [
+		['Blog', 'bi-journal-text', [
+			['All Posts', 'manage-blog.php', ['manage-blog.php', 'add-blog.php', 'edit-blog.php']],
+			['Page Content', 'edit-blog-content.php' . $dre_edit, ['edit-blog-content.php']],
+		]],
+		['Company News', 'bi-newspaper', [
+			['All News', 'manage-company-news.php', ['manage-company-news.php', 'add-company-news.php', 'edit-company-news.php']],
+			['Page Content', 'edit-company-news-content.php' . $dre_edit, ['edit-company-news-content.php']],
+		]],
+		['Guides', 'bi-compass', [
+			['All Guides', 'manage-guide.php', ['manage-guide.php']],
+			['Add Guide', 'add-guide.php', ['add-guide.php']],
+		], ['manage-guide-image.php', 'add-guide-image.php', 'edit-guide-image.php']],
+		['Podcast', 'bi-mic', 'manage-podcast.php', ['manage-podcast.php']],
+		['Media Gallery', 'bi-images', [
+			['All Media', 'manage-media.php', ['manage-media.php', 'add-media.php', 'edit-media.php']],
+			['Page Content', 'edit-media-content.php' . $dre_edit, ['edit-media-content.php']],
+		]],
+		['Testimonials', 'bi-chat-quote', [
+			['All Testimonials', 'manage-testimonial.php', ['manage-testimonial.php', 'add-testimonial.php', 'edit-testimonial.php']],
+			['Page Content', 'edit-testimonial-content.php' . $dre_edit, ['edit-testimonial-content.php']],
+		]],
+		['Google Rating', 'bi-google', 'edit-google-rating.php' . $dre_edit, ['edit-google-rating.php'], 'only' => 2],
+		['Awards', 'bi-trophy', [
+			['All Awards', 'manage-awards.php', ['manage-awards.php', 'add-awards.php', 'edit-awards.php']],
+			['Page Content', 'edit-awards-content.php' . $dre_edit, ['edit-awards-content.php']],
+		]],
+	],
+
+	'Website Pages' => [
+		['Home Page', 'bi-house', [
+			['Hero Section', 'manage-hero-section.php', ['manage-hero-section.php', 'edit-hero-section.php']],
+			['Homepage Links', 'manage-homepage-links.php', ['manage-homepage-links.php', 'add-homepage-links.php', 'edit-homepage-links.php']],
+			['Instagram', 'manage-instagram-content.php', ['manage-instagram-content.php']],
+		]],
+		['About Us', 'bi-info-circle', [
+			['Page Content', 'edit-about-content.php' . $dre_edit, ['manage-about-content.php', 'edit-about-content.php']],
+			['Counters', 'manage-about-counter.php', ['manage-about-counter.php', 'add-about-counter.php', 'edit-about-counter.php']],
+			['Points', 'manage-about-service.php', ['manage-about-service.php', 'add-about-service.php', 'edit-about-service.php']],
+		], ['add-about-slider.php', 'edit-about-slider.php', 'edit-about-service-image.php', 'edit-about-details.php', 'edit-mission-vision.php']],
+		['Leadership Messages', 'bi-envelope-open', [
+			['Message from CEO', 'edit-message-from-ceo.php' . $dre_edit, ['edit-message-from-ceo.php']],
+			['Message from CLO', 'edit-message-from-clo.php' . $dre_edit, ['edit-message-from-clo.php']],
+			['Message from MD', 'edit-message-from-md.php' . $dre_edit, ['edit-message-from-md.php']],
+		]],
+		['Team', 'bi-people', [
+			['Team Members', 'manage-team.php', ['manage-team.php', 'add-team.php', 'edit-team.php']],
+			['Arrange Order', 'arrange-team.php', ['arrange-team.php']],
+			['Categories', 'manage-team-category.php', ['manage-team-category.php', 'add-team-category.php', 'edit-team-category.php']],
+			['Designations', 'manage-team-designation.php', ['manage-team-designation.php', 'add-team-designation.php', 'edit-team-designation.php']],
+			['Page Content', 'edit-team-details.php' . $dre_edit, ['edit-team-details.php']],
+		]],
+		['Brand Video', 'bi-camera-reels', 'edit-brand-video-content.php' . $dre_edit, ['edit-brand-video-content.php']],
+		['Privacy Policy', 'bi-shield-lock', 'edit-privacy-policy-content.php' . $dre_edit, ['edit-privacy-policy-content.php']],
+	],
+
+	'Services & Tools' => [
+		['Services', 'bi-briefcase', [
+			['All Services', 'manage-service-section.php', ['manage-service-section.php', 'edit-service-section.php']],
+			['Add Service', 'add-service-section.php', ['add-service-section.php']],
+		]],
+		['Golden Visa', 'bi-gem', [
+			['Page Content', 'edit-golden-visa-content.php' . $dre_edit, ['edit-golden-visa-content.php']],
+			['Visa Benefits', 'manage-services.php', ['manage-services.php', 'add-services.php', 'edit-services.php']],
+			['Facilities', 'manage-facilities.php', ['manage-facilities.php', 'add-facilities.php', 'edit-facilities.php']],
+		]],
+		['Mortgage', 'bi-calculator', [
+			['Page Content', 'edit-mortgage-content.php' . $dre_edit, ['edit-mortgage-content.php']],
+			['Banks', 'manage-bank.php', ['manage-bank.php', 'add-bank.php', 'edit-bank.php']],
+			['Advisor Steps', 'manage-advisor.php', ['manage-advisor.php', 'add-advisor.php', 'edit-advisor.php']],
+			['Calculator Types', 'manage-taxes.php', ['manage-taxes.php', 'add-taxes.php', 'edit-taxes.php']],
+		]],
+		['Book Valuation', 'bi-clipboard-check', [
+			['Valuation Items', 'manage-book-valuation.php', ['manage-book-valuation.php', 'add-book-valuation.php', 'edit-book-valuation.php']],
+			['Page Content', 'edit-book-valuation-content.php' . $dre_edit, ['edit-book-valuation-content.php']],
+		]],
+		['Property Quiz Setup', 'bi-ui-checks', [
+			['Units', 'manage-units.php', ['manage-units.php', 'add-units.php', 'edit-units.php']],
+			['Price Ranges', 'manage-price.php', ['manage-price.php', 'add-price.php', 'edit-price.php']],
+			['Construction Types', 'manage-construction.php', ['manage-construction.php', 'add-construction.php', 'edit-construction.php']],
+			['Purchase Options', 'manage-purchase.php', ['manage-purchase.php', 'add-purchase.php', 'edit-purchase.php']],
+		]],
+	],
+
+	'Careers' => [
+		['Job Applications', 'bi-file-earmark-person', 'manage-resume.php', ['manage-resume.php']],
+		['Open Positions', 'bi-person-workspace', 'manage-position.php', ['manage-position.php', 'add-position.php', 'edit-position.php']],
+		['Careers Page', 'bi-layout-text-sidebar', [
+			['Page Content', 'edit-career-content.php' . $dre_edit, ['edit-career-content.php']],
+			['Awards', 'manage-career-awards.php', ['manage-career-awards.php', 'add-career-awards.php', 'edit-career-awards.php']],
+			['Focus Areas', 'manage-focus-area.php', ['manage-focus-area.php', 'add-focus-area.php', 'edit-focus-area.php']],
+			['Gallery', 'manage-career-gallery.php', ['manage-career-gallery.php', 'add-career-gallery.php', 'edit-career-gallery.php']],
+		]],
+	],
+
+	'Settings' => [
+		['SEO Meta Tags', 'bi-tags', 'manage-tags.php', ['manage-tags.php', 'edit-tags.php']],
+		['Header & Footer', 'bi-window-desktop', [
+			['Header Info', 'edit-header-info.php' . $dre_edit, ['edit-header-info.php']],
+			['Footer Info', 'edit-footer-info.php' . $dre_edit, ['edit-footer-info.php']],
+		]],
+		['Users', 'bi-person-gear', [
+			['All Users', 'manage-user.php', ['manage-user.php', 'edit-user.php']],
+			['Add User', 'add-user.php', ['add-user.php']],
+		], 'only' => 1],
+		['Logs', 'bi-clock-history', [
+			['Activity Log', 'manage-loggs.php', ['manage-loggs.php']],
+			['Login Log', 'manage-login-logs.php', ['manage-login-logs.php']],
+			['Deleted Data Log', 'manage-delete-logs.php', ['manage-delete-logs.php']],
+		], 'only' => 1],
+	],
+];
+?>
+<div class="aside aside-left aside-fixed d-flex flex-column flex-row-auto dre-aside" id="kt_aside">
 	<!--begin::Brand-->
 	<div class="brand flex-column-auto" id="kt_brand">
 		<!--begin::Logo-->
 		<a href="<?= BASE_URL ?>dashboard.php" class="brand-logo">
-			<img alt="Logo" src="<?= BASE_URL ?>assets/media/logos/logo-small.png" />
+			<img alt="DRE Homes" src="<?= BASE_URL ?>assets/media/logos/logo-small.png" />
+			<span class="dre-brand-text">Admin</span>
 		</a>
 		<!--end::Logo-->
 		<!--begin::Toggle-->
-		<button class="brand-toggle btn btn-sm px-0" id="kt_aside_toggle">
-			<span class="svg-icon svg-icon svg-icon-xl">
-				<!--begin::Svg Icon | path:<?= BASE_URL ?>assets/media/svg/icons/Navigation/Angle-double-left.svg-->
-				<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
-					<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-						<polygon points="0 0 24 0 24 24 0 24" />
-						<path d="M5.29288961,6.70710318 C4.90236532,6.31657888 4.90236532,5.68341391 5.29288961,5.29288961 C5.68341391,4.90236532 6.31657888,4.90236532 6.70710318,5.29288961 L12.7071032,11.2928896 C13.0856821,11.6714686 13.0989277,12.281055 12.7371505,12.675721 L7.23715054,18.675721 C6.86395813,19.08284 6.23139076,19.1103429 5.82427177,18.7371505 C5.41715278,18.3639581 5.38964985,17.7313908 5.76284226,17.3242718 L10.6158586,12.0300721 L5.29288961,6.70710318 Z" fill="#000000" fill-rule="nonzero" transform="translate(8.999997, 11.999999) scale(-1, 1) translate(-8.999997, -11.999999)" />
-						<path d="M10.7071009,15.7071068 C10.3165766,16.0976311 9.68341162,16.0976311 9.29288733,15.7071068 C8.90236304,15.3165825 8.90236304,14.6834175 9.29288733,14.2928932 L15.2928873,8.29289322 C15.6714663,7.91431428 16.2810527,7.90106866 16.6757187,8.26284586 L22.6757187,13.7628459 C23.0828377,14.1360383 23.1103407,14.7686056 22.7371482,15.1757246 C22.3639558,15.5828436 21.7313885,15.6103465 21.3242695,15.2371541 L16.0300699,10.3841378 L10.7071009,15.7071068 Z" fill="#000000" fill-rule="nonzero" opacity="0.3" transform="translate(15.999997, 11.999999) scale(-1, 1) rotate(-270.000000) translate(-15.999997, -11.999999)" />
-					</g>
-				</svg>
-				<!--end::Svg Icon-->
-			</span>
+		<button class="brand-toggle btn btn-sm px-0" id="kt_aside_toggle" aria-label="Collapse or expand the menu">
+			<i class="bi bi-chevron-double-left"></i>
 		</button>
 		<!--end::Toolbar-->
 	</div>
 	<!--end::Brand-->
+
+	<div class="dre-menu-search">
+		<i class="bi bi-search"></i>
+		<input type="text" id="dreMenuSearch" placeholder="Search menu..." autocomplete="off" aria-label="Search the menu">
+	</div>
+
 	<!--begin::Aside Menu-->
 	<div class="aside-menu-wrapper flex-column-fluid" id="kt_aside_menu_wrapper">
 		<!--begin::Menu Container-->
-		<div id="kt_aside_menu" class="aside-menu my-4" data-menu-vertical="1" data-menu-scroll="1" data-menu-dropdown-timeout="500">
+		<div id="kt_aside_menu" class="aside-menu my-2" data-menu-vertical="1" data-menu-scroll="1" data-menu-dropdown-timeout="500">
 			<!--begin::Menu Nav-->
 			<ul class="menu-nav">
-				<li class="menu-item p-2">
-					<form action="" method="post">
-						<div class="input-group ">
-							<span class="input-group-text bg-light border-0">
-								<i class="bi bi-search"></i>
-							</span>
-							<input
-								type="text"
-								class="form-control border-0 bg-light"
-								placeholder="Search Menu..."
-								value="<?= htmlspecialchars($search ?? '') ?>"
-								id="menuSearch"
-								name="search_menu">
-						</div>
-					</form>
-				</li>
-				<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'dashboard.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-					<a href="<?= BASE_URL ?>dashboard.php" class="menu-link">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-speedometer2 fs-2"></i>
-						</span>
-						<span class="menu-text">Dashboard</span>
-					</a>
-				</li>
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'manage-project.php' || basename($_SERVER['PHP_SELF']) == 'manage-buy-project.php' || basename($_SERVER['PHP_SELF']) == 'add-buy-project.php' || basename($_SERVER['PHP_SELF']) == 'edit-buy-project.php'  || basename($_SERVER['PHP_SELF']) == 'manage-rent-project.php' || basename($_SERVER['PHP_SELF']) == 'add-project.php' || basename($_SERVER['PHP_SELF']) == 'edit-project.php' || basename($_SERVER['PHP_SELF']) == 'manage-gallery.php' || basename($_SERVER['PHP_SELF']) == 'add-gallery.php' || basename($_SERVER['PHP_SELF']) == 'edit-gallery.php' || basename($_SERVER['PHP_SELF']) == 'edit-buyproperty-content.php'  || basename($_SERVER['PHP_SELF']) == 'edit-rentproperty-content.php' || basename($_SERVER['PHP_SELF']) == 'edit-readytomovein-content.php' || basename($_SERVER['PHP_SELF']) == 'edit-offplan-content.php' || basename($_SERVER['PHP_SELF']) == 'manage-faq.php' || basename($_SERVER['PHP_SELF']) == 'add-faq.php' || basename($_SERVER['PHP_SELF']) == 'edit-faq.php' || basename($_SERVER['PHP_SELF']) == 'edit-international-content.php'  || basename($_SERVER['PHP_SELF']) == 'manage-payplan.php' || basename($_SERVER['PHP_SELF']) == 'add-payplan.php' || basename($_SERVER['PHP_SELF']) == 'edit-payplan.php' || basename($_SERVER['PHP_SELF']) == 'manage-pending-work-project.php' || basename($_SERVER['PHP_SELF']) == 'edit-rent-project.php' ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-kanban fs-2"></i>
-						</span>
-						<span class="menu-text">Projects</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-pending-work-project.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-pending-work-project.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Pending Work</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-buyproperty-content.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-buyproperty-content.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Buy Property Content</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-rentproperty-content.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-rentproperty-content.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Rent Property Content</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-readytomovein-content.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-readytomovein-content.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Ready to Move In Content</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-offplan-content.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-offplan-content.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Offplan In Content</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-international-content.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-international-content.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">International Content</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-project.php' || basename($_SERVER['PHP_SELF']) == 'add-project.php' || basename($_SERVER['PHP_SELF']) == 'edit-project.php' || basename($_SERVER['PHP_SELF']) == 'manage-gallery.php' || basename($_SERVER['PHP_SELF']) == 'add-gallery.php' || basename($_SERVER['PHP_SELF']) == 'edit-gallery.php' || basename($_SERVER['PHP_SELF']) == 'manage-faq.php' || basename($_SERVER['PHP_SELF']) == 'add-faq.php' || basename($_SERVER['PHP_SELF']) == 'edit-faq.php' || basename($_SERVER['PHP_SELF']) == 'manage-payplan.php' || basename($_SERVER['PHP_SELF']) == 'add-payplan.php' || basename($_SERVER['PHP_SELF']) == 'edit-payplan.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-project.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Manage Offplan Project</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-buy-project.php' || basename($_SERVER['PHP_SELF']) == 'add-buy-project.php' || basename($_SERVER['PHP_SELF']) == 'edit-buy-project.php' || basename($_SERVER['PHP_SELF']) == 'manage-gallery.php' || basename($_SERVER['PHP_SELF']) == 'add-gallery.php' || basename($_SERVER['PHP_SELF']) == 'edit-gallery.php' || basename($_SERVER['PHP_SELF']) == 'manage-faq.php' || basename($_SERVER['PHP_SELF']) == 'add-faq.php' || basename($_SERVER['PHP_SELF']) == 'edit-faq.php' || basename($_SERVER['PHP_SELF']) == 'manage-payplan.php' || basename($_SERVER['PHP_SELF']) == 'add-payplan.php' || basename($_SERVER['PHP_SELF']) == 'edit-payplan.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-buy-project.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Manage Buy Project</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-rent-project.php' || basename($_SERVER['PHP_SELF']) == 'manage-gallery.php' || basename($_SERVER['PHP_SELF']) == 'add-gallery.php' || basename($_SERVER['PHP_SELF']) == 'edit-gallery.php' || basename($_SERVER['PHP_SELF']) == 'manage-faq.php' || basename($_SERVER['PHP_SELF']) == 'add-faq.php' || basename($_SERVER['PHP_SELF']) == 'edit-faq.php' || basename($_SERVER['PHP_SELF']) == 'manage-payplan.php' || basename($_SERVER['PHP_SELF']) == 'add-payplan.php' || basename($_SERVER['PHP_SELF']) == 'edit-payplan.php' || basename($_SERVER['PHP_SELF']) == 'edit-rent-project.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-rent-project.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Manage Rent Project</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'edit-team-details.php' || basename($_SERVER['PHP_SELF']) == 'manage-team-category.php' || basename($_SERVER['PHP_SELF']) == 'add-team-category.php' || basename($_SERVER['PHP_SELF']) == 'edit-team-category.php' || basename($_SERVER['PHP_SELF']) == 'manage-team.php' || basename($_SERVER['PHP_SELF']) == 'add-team.php' || basename($_SERVER['PHP_SELF']) == 'edit-team.php' || basename($_SERVER['PHP_SELF']) == 'manage-team-designation.php' || basename($_SERVER['PHP_SELF']) == 'edit-team-designation.php' || basename($_SERVER['PHP_SELF']) == 'add-team-designation.php'   ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-people fs-2"></i>
-						</span>
-						<span class="menu-text">Team</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-team-details.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-team-details.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Team Details</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-team-category.php' || basename($_SERVER['PHP_SELF']) == 'add-team-category.php' || basename($_SERVER['PHP_SELF']) == 'edit-team-category.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-team-category.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Team Category</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-team-designation.php' || basename($_SERVER['PHP_SELF']) == 'add-team-designation.php' || basename($_SERVER['PHP_SELF']) == 'edit-team-designation.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-team-designation.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Team Designation</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-team.php' || basename($_SERVER['PHP_SELF']) == 'add-team.php' || basename($_SERVER['PHP_SELF']) == 'edit-team.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-team.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Team</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'edit-blog-content.php' || basename($_SERVER['PHP_SELF']) == 'manage-blog.php' || basename($_SERVER['PHP_SELF']) == 'add-blog.php' || basename($_SERVER['PHP_SELF']) == 'edit-blog.php'  ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-journal-bookmark fs-2"></i>
-						</span>
-						<span class="menu-text">Blog</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-blog-content.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-blog-content.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Content</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-blog.php' || basename($_SERVER['PHP_SELF']) == 'add-blog.php'  || basename($_SERVER['PHP_SELF']) == 'edit-blog.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-blog.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Manage</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-
-				<?php if ($_SESSION['login_type'] == 1): ?>
-					<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'add-user.php' || basename($_SERVER['PHP_SELF']) == 'manage-user.php' || basename($_SERVER['PHP_SELF']) == 'edit-user.php' ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-						<a href="javascript:;" class="menu-link menu-toggle">
-							<span class="svg-icon menu-icon">
-								<i class="bi bi-people fs-2"></i>
-							</span>
-							<span class="menu-text">User</span>
-							<i class="menu-arrow"></i>
-						</a>
-						<div class="menu-submenu">
-							<i class="menu-arrow"></i>
-							<ul class="menu-subnav">
-								<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'add-user.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-									<a href="<?= BASE_URL ?>add-user.php" class="menu-link">
-										<i class="menu-bullet menu-bullet-line">
-											<span></span>
-										</i>
-										<span class="menu-text">Add</span>
-									</a>
-								</li>
-								<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-user.php' || basename($_SERVER['PHP_SELF']) == 'edit-user.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-									<a href="<?= BASE_URL ?>manage-user.php" class="menu-link">
-										<i class="menu-bullet menu-bullet-line">
-											<span></span>
-										</i>
-										<span class="menu-text">Manage</span>
-									</a>
-								</li>
-							</ul>
-						</div>
-					</li>
-				<?php endif; ?>
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'add-about-slider.php' || basename($_SERVER['PHP_SELF']) == 'edit-about-slider.php' || basename($_SERVER['PHP_SELF']) == 'manage-about-content.php' || basename($_SERVER['PHP_SELF']) == 'add-about-content.php' || basename($_SERVER['PHP_SELF']) == 'edit-about-content.php' || basename($_SERVER['PHP_SELF']) == 'manage-about-service.php' || basename($_SERVER['PHP_SELF']) == 'add-about-service.php' || basename($_SERVER['PHP_SELF']) == 'edit-about-service.php' || basename($_SERVER['PHP_SELF']) == 'manage-about-counter.php' || basename($_SERVER['PHP_SELF']) == 'add-about-counter.php' || basename($_SERVER['PHP_SELF']) == 'edit-about-counter.php' || basename($_SERVER['PHP_SELF']) == 'edit-about-service-image.php' || basename($_SERVER['PHP_SELF']) == 'edit-about-details.php' || basename($_SERVER['PHP_SELF']) == 'edit-mission-vision.php'  ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-building fs-2"></i>
-						</span>
-						<span class="menu-text">About Us</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-about-content.php' || basename($_SERVER['PHP_SELF']) == 'add-about-content.php' || basename($_SERVER['PHP_SELF']) == 'edit-about-content.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-about-content.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Content</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-about-counter.php' || basename($_SERVER['PHP_SELF']) == 'add-about-counter.php' || basename($_SERVER['PHP_SELF']) == 'edit-about-counter.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-about-counter.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Counter</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-about-service.php' || basename($_SERVER['PHP_SELF']) == 'add-about-service.php' || basename($_SERVER['PHP_SELF']) == 'edit-about-service.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-about-service.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Service</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-				
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'edit-media-content.php' || basename($_SERVER['PHP_SELF']) == 'manage-media.php' || basename($_SERVER['PHP_SELF']) == 'add-media.php' || basename($_SERVER['PHP_SELF']) == 'edit-media.php'  ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-images fs-2"></i>
-						</span>
-						<span class="menu-text">Media</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-media-content.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-media-content.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Content</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-media.php' || basename($_SERVER['PHP_SELF']) == 'add-media.php'  || basename($_SERVER['PHP_SELF']) == 'edit-media.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-media.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Manage</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'edit-company-news-content.php' || basename($_SERVER['PHP_SELF']) == 'manage-company-news.php' || basename($_SERVER['PHP_SELF']) == 'add-company-news.php' || basename($_SERVER['PHP_SELF']) == 'edit-company-news.php'  ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-newspaper fs-2"></i>
-						</span>
-						<span class="menu-text">Company News</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-company-news-content.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-company-news-content.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Content Company News</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-company-news.php' || basename($_SERVER['PHP_SELF']) == 'add-company-news.php'  || basename($_SERVER['PHP_SELF']) == 'edit-company-news.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-company-news.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Manage Company News</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'edit-testimonial-content.php' || basename($_SERVER['PHP_SELF']) == 'manage-testimonial.php' || basename($_SERVER['PHP_SELF']) == 'add-testimonial.php' || basename($_SERVER['PHP_SELF']) == 'edit-testimonial.php'  ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-chat-quote fs-2"></i>
-						</span>
-						<span class="menu-text">Testimonial</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-testimonial-content.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-testimonial-content.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Content</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-testimonial.php' || basename($_SERVER['PHP_SELF']) == 'add-testimonial.php'  || basename($_SERVER['PHP_SELF']) == 'edit-testimonial.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-testimonial.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Manage</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'edit-awards-content.php' || basename($_SERVER['PHP_SELF']) == 'manage-awards.php' || basename($_SERVER['PHP_SELF']) == 'add-awards.php' || basename($_SERVER['PHP_SELF']) == 'edit-awards.php'  ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-trophy fs-2"></i>
-						</span>
-						<span class="menu-text">Awards</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-awards-content.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-awards-content.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Content</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-awards.php' || basename($_SERVER['PHP_SELF']) == 'add-awards.php'  || basename($_SERVER['PHP_SELF']) == 'edit-awards.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-awards.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Manage</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'edit-mortgage-content.php' || basename($_SERVER['PHP_SELF']) == 'manage-advisor.php' || basename($_SERVER['PHP_SELF']) == 'add-advisor.php' || basename($_SERVER['PHP_SELF']) == 'edit-advisor.php' || basename($_SERVER['PHP_SELF']) == 'manage-taxes.php' || basename($_SERVER['PHP_SELF']) == 'add-taxes.php' || basename($_SERVER['PHP_SELF']) == 'edit-taxes.php' || basename($_SERVER['PHP_SELF']) == 'manage-bank.php' || basename($_SERVER['PHP_SELF']) == 'add-bank.php' || basename($_SERVER['PHP_SELF']) == 'edit-bank.php' ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-calculator fs-2"></i>
-						</span>
-						<span class="menu-text">Mortgage Calculator</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-mortgage-content.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-mortgage-content.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Content</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-bank.php' || basename($_SERVER['PHP_SELF']) == 'add-bank.php'  || basename($_SERVER['PHP_SELF']) == 'edit-bank.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-bank.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Manage Bank</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'edit-golden-visa-content.php' || basename($_SERVER['PHP_SELF']) == 'manage-facilities.php' || basename($_SERVER['PHP_SELF']) == 'add-facilities.php' || basename($_SERVER['PHP_SELF']) == 'edit-facilities.php' || basename($_SERVER['PHP_SELF']) == 'manage-services.php' || basename($_SERVER['PHP_SELF']) == 'add-services.php' || basename($_SERVER['PHP_SELF']) == 'edit-services.php'  ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-gem fs-2"></i>
-						</span>
-						<span class="menu-text">Golden Visa</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-golden-visa-content.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-golden-visa-content.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Content</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-services.php' || basename($_SERVER['PHP_SELF']) == 'add-services.php'  || basename($_SERVER['PHP_SELF']) == 'edit-services.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-services.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Services</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'edit-career-content.php' || basename($_SERVER['PHP_SELF']) == 'manage-position.php' || basename($_SERVER['PHP_SELF']) == 'add-position.php' || basename($_SERVER['PHP_SELF']) == 'edit-position.php' || basename($_SERVER['PHP_SELF']) == 'manage-career-awards.php' || basename($_SERVER['PHP_SELF']) == 'add-career-awards.php' || basename($_SERVER['PHP_SELF']) == 'edit-career-awards.php' || basename($_SERVER['PHP_SELF']) == 'manage-resume.php' || basename($_SERVER['PHP_SELF']) == 'manage-focus-area.php' || basename($_SERVER['PHP_SELF']) == 'add-focus-area.php' || basename($_SERVER['PHP_SELF']) == 'edit-focus-area.php' || basename($_SERVER['PHP_SELF']) == 'manage-career-gallery.php' || basename($_SERVER['PHP_SELF']) == 'add-career-gallery.php' || basename($_SERVER['PHP_SELF']) == 'edit-career-gallery.php'  ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-briefcase fs-2"></i>
-						</span>
-						<span class="menu-text">Career</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-career-content.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-career-content.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Content</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-position.php' || basename($_SERVER['PHP_SELF']) == 'add-position.php'  || basename($_SERVER['PHP_SELF']) == 'edit-position.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-position.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Position</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-career-awards.php' || basename($_SERVER['PHP_SELF']) == 'add-career-awards.php'  || basename($_SERVER['PHP_SELF']) == 'edit-career-awards.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-career-awards.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Awards</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-focus-area.php' || basename($_SERVER['PHP_SELF']) == 'add-focus-area.php'  || basename($_SERVER['PHP_SELF']) == 'edit-focus-area.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-focus-area.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Focus Areas</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-career-gallery.php' || basename($_SERVER['PHP_SELF']) == 'add-career-gallery.php'  || basename($_SERVER['PHP_SELF']) == 'edit-career-gallery.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-career-gallery.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Gallery</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-resume.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-resume.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Resume</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'edit-message-from-clo.php' || basename($_SERVER['PHP_SELF']) == 'edit-message-from-ceo.php' || basename($_SERVER['PHP_SELF']) == 'edit-message-from-md.php'   ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-envelope fs-2"></i>
-						</span>
-						<span class="menu-text">Messages</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-message-from-ceo.php'   ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-message-from-ceo.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Message from CEO</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-message-from-clo.php'   ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-message-from-clo.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Message from CLO</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-message-from-md.php'   ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-message-from-md.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Message from MD</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-				
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'edit-developer-content.php' || basename($_SERVER['PHP_SELF']) == 'manage-developer.php' || basename($_SERVER['PHP_SELF']) == 'add-developer.php' || basename($_SERVER['PHP_SELF']) == 'edit-developer.php' || basename($_SERVER['PHP_SELF']) == 'manage-chooseus.php' || basename($_SERVER['PHP_SELF']) == 'edit-chooseus.php' || basename($_SERVER['PHP_SELF']) == 'edit-chooseus.php'  ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-building fs-2"></i>
-						</span>
-						<span class="menu-text">Developer</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-developer-content.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-developer-content.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Content</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-developer.php' || basename($_SERVER['PHP_SELF']) == 'add-developer.php'  || basename($_SERVER['PHP_SELF']) == 'edit-developer.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-developer.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Manage</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'edit-community-content.php' || basename($_SERVER['PHP_SELF']) == 'manage-community.php' || basename($_SERVER['PHP_SELF']) == 'add-community.php' || basename($_SERVER['PHP_SELF']) == 'edit-community.php' || basename($_SERVER['PHP_SELF']) == 'manage-comm-loc.php' || basename($_SERVER['PHP_SELF']) == 'add-comm-loc.php' || basename($_SERVER['PHP_SELF']) == 'edit-comm-loc.php' || basename($_SERVER['PHP_SELF']) == 'manage-comm-map.php' || basename($_SERVER['PHP_SELF']) == 'add-comm-map.php' || basename($_SERVER['PHP_SELF']) == 'edit-comm-map.php' ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-people fs-2"></i>
-						</span>
-						<span class="menu-text">Community</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-community-content.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-community-content.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Content</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-community.php' || basename($_SERVER['PHP_SELF']) == 'add-community.php'  || basename($_SERVER['PHP_SELF']) == 'edit-community.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-community.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Manage</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'manage-homepage-links.php' || basename($_SERVER['PHP_SELF']) == 'add-homepage-links.php' || basename($_SERVER['PHP_SELF']) == 'edit-homepage-links.php'  ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-link-45deg fs-2"></i>
-						</span>
-						<span class="menu-text">Home Page Content</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-homepage-links.php' || basename($_SERVER['PHP_SELF']) == 'add-homepage-links.php'  || basename($_SERVER['PHP_SELF']) == 'edit-homepage-links.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-homepage-links.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Homepage Links</span>
-								</a>
-							</li>
-
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-instagram-content.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-instagram-content.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Home Page Instagram</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-				
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'manage-service-section.php' || basename($_SERVER['PHP_SELF']) == 'add-service-section.php' ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-gear fs-2"></i>
-						</span>
-						<span class="menu-text">Services</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'add-service-section.php'   ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>add-service-section.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Add</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-service-section.php'   ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-service-section.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Manage</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'manage-guide.php' || basename($_SERVER['PHP_SELF']) == 'add-guide.php' || basename($_SERVER['PHP_SELF']) == 'manage-guide-image.php' || basename($_SERVER['PHP_SELF']) == 'add-guide-image.php' || basename($_SERVER['PHP_SELF']) == 'edit-guide-image.php' ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-journal-bookmark-fill fs-2"></i>
-						</span>
-						<span class="menu-text">Guide</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'add-guide.php'   ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>add-guide.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Add</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-guide.php'   ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-guide.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Manage</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'edit-book-valuation-content.php' || basename($_SERVER['PHP_SELF']) == 'manage-book-valuation.php' || basename($_SERVER['PHP_SELF']) == 'add-book-valuation.php' || basename($_SERVER['PHP_SELF']) == 'edit-book-valuation.php'  ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-book fs-2"></i>
-						</span>
-						<span class="menu-text">Book Valuation</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-book-valuation-content.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-book-valuation-content.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Content</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-book-valuation.php' || basename($_SERVER['PHP_SELF']) == 'add-book-valuation.php'  || basename($_SERVER['PHP_SELF']) == 'edit-book-valuation.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-book-valuation.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Manage</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'edit-brand-video-content.php'   ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-camera-reels fs-2"></i>
-						</span>
-						<span class="menu-text">Brand Video</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-brand-video-content.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-brand-video-content.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Content</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-				<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-podcast.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-					<a href="<?= BASE_URL ?>manage-podcast.php" class="menu-link">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-earbuds"></i>
-						</span>
-						<span class="menu-text">Podcast</span>
-					</a>
-				</li>
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'manage-units.php' || basename($_SERVER['PHP_SELF']) == 'add-units.php' || basename($_SERVER['PHP_SELF']) == 'edit-units.php' || basename($_SERVER['PHP_SELF']) == 'manage-price.php' || basename($_SERVER['PHP_SELF']) == 'add-price.php' || basename($_SERVER['PHP_SELF']) == 'edit-price.php' || basename($_SERVER['PHP_SELF']) == 'manage-construction.php' || basename($_SERVER['PHP_SELF']) == 'add-construction.php' || basename($_SERVER['PHP_SELF']) == 'edit-construction.php' || basename($_SERVER['PHP_SELF']) == 'manage-purchase.php' || basename($_SERVER['PHP_SELF']) == 'add-purchase.php' || basename($_SERVER['PHP_SELF']) == 'edit-purchase.php'  ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-question-circle fs-2"></i>
-						</span>
-						<span class="menu-text">Quiz</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-units.php' || basename($_SERVER['PHP_SELF']) == 'add-units.php' || basename($_SERVER['PHP_SELF']) == 'edit-units.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-units.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Units</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-price.php' || basename($_SERVER['PHP_SELF']) == 'add-price.php' || basename($_SERVER['PHP_SELF']) == 'edit-price.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-price.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Price Range</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-construction.php' || basename($_SERVER['PHP_SELF']) == 'add-construction.php' || basename($_SERVER['PHP_SELF']) == 'edit-construction.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-construction.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Construction Type</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-purchase.php' || basename($_SERVER['PHP_SELF']) == 'add-purchase.php' || basename($_SERVER['PHP_SELF']) == 'edit-purchase.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-purchase.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Purchase</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'edit-header-info.php' || basename($_SERVER['PHP_SELF']) == 'edit-footer-info.php'   ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-info-circle fs-2"></i>
-						</span>
-						<span class="menu-text">Info</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-header-info.php'   ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-header-info.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Header Info</span>
-								</a>
-							</li>
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-footer-info.php'   ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>edit-footer-info.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Footer Info</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-				<li class="menu-item menu-item-submenu <?= (basename($_SERVER['PHP_SELF']) == 'manage-quiz.php' || basename($_SERVER['PHP_SELF']) == 'manage-quiz.php'   ? 'menu-item-open' : ' ') ?>" aria-haspopup="true" data-menu-toggle="hover">
-					<a href="javascript:;" class="menu-link menu-toggle">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-envelope-paper fs-2"></i>
-						</span>
-						<span class="menu-text">Enquiry</span>
-						<i class="menu-arrow"></i>
-					</a>
-					<div class="menu-submenu">
-						<i class="menu-arrow"></i>
-						<ul class="menu-subnav">
-							<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-quiz.php'   ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-								<a href="<?= BASE_URL ?>manage-quiz.php" class="menu-link">
-									<i class="menu-bullet menu-bullet-line">
-										<span></span>
-									</i>
-									<span class="menu-text">Quiz</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-				<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-privacy-policy-content.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-					<a href="<?= BASE_URL ?>edit-privacy-policy-content.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-shield-lock fs-2"></i>
-						</span>
-						<span class="menu-text">Privacy Policy</span>
-					</a>
-				</li>
-
-				<?php
-				if ($_SESSION['login_type'] == 2) {
+				<?php foreach ($dre_menu as $dre_section => $dre_entries):
+					// Leave out entries this login type may not see, and sections that end up empty.
+					$dre_visible = [];
+					foreach ($dre_entries as $dre_entry) {
+						if (!isset($dre_entry['only']) || $dre_entry['only'] === $dre_login_type) {
+							$dre_visible[] = $dre_entry;
+						}
+					}
+					if (!$dre_visible) {
+						continue;
+					}
 				?>
-					<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'edit-google-rating.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-						<a href="<?= BASE_URL ?>edit-google-rating.php?edit=<?= base64_encode(1) ?>" class="menu-link">
-							<span class="svg-icon menu-icon">
-								<i class="bi bi-google fs-2"></i>
-							</span>
-							<span class="menu-text">Google Rating</span>
-						</a>
+					<li class="menu-section">
+						<h4 class="menu-text"><?= htmlspecialchars($dre_section) ?></h4>
+						<i class="menu-icon bi bi-three-dots"></i>
 					</li>
-				<?php } ?>
-
-				<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-tags.php' || basename($_SERVER['PHP_SELF']) == 'edit-tags.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-					<a href="<?= BASE_URL ?>manage-tags.php" class="menu-link">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-tags fs-2"></i>
-						</span>
-						<span class="menu-text">Meta Tags</span>
-					</a>
-				</li>
-
-				<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-hero-section.php' || basename($_SERVER['PHP_SELF']) == 'edit-hero-section.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-					<a href="<?= BASE_URL ?>manage-hero-section.php" class="menu-link">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-tags fs-2"></i>
-						</span>
-						<span class="menu-text">Hero Section</span>
-					</a>
-				</li>
-
-				<?php
-				if ($_SESSION['login_type'] == 1) {
-				?>
-				<li class="menu-item <?= (basename($_SERVER['PHP_SELF']) == 'manage-leads.php' || basename($_SERVER['PHP_SELF']) == 'edit-leads.php'  ? 'menu-item-active' : ' ') ?>" aria-haspopup="true">
-					<a href="<?= BASE_URL ?>manage-leads.php" class="menu-link">
-						<span class="svg-icon menu-icon">
-							<i class="bi bi-award"></i>
-						</span>
-						<span class="menu-text">Leads</span>
-					</a>
-				</li>
-
-					<?php
-					$current_page = basename($_SERVER['PHP_SELF']);
-					$log_pages = ['manage-loggs.php', 'manage-login-logs.php', 'manage-delete-logs.php'];
-					$is_log_open = in_array($current_page, $log_pages);
+					<?php foreach ($dre_visible as $dre_entry):
+						if (is_array($dre_entry[2])):
+							// A group: open when the current page belongs to one of its children.
+							$dre_open = in_array($dre_current_page, $dre_entry[3] ?? [], true);
+							foreach ($dre_entry[2] as $dre_child) {
+								if (in_array($dre_current_page, $dre_child[2], true)) {
+									$dre_open = true;
+								}
+							}
 					?>
-
-					<li class="menu-item menu-item-submenu <?= $is_log_open ? 'menu-item-open' : '' ?>" data-menu-toggle="hover">
-						<a href="javascript:;" class="menu-link menu-toggle">
-							<span class="svg-icon menu-icon">
-								<i class="bi bi-file-text fs-2"></i>
-							</span>
-							<span class="menu-text">Logs</span>
-							<i class="menu-arrow"></i>
-						</a>
-						<div class="menu-submenu">
-							<ul class="menu-subnav">
-								<li class="menu-item <?= ($current_page == 'manage-loggs.php' ? 'menu-item-active' : '') ?>">
-									<a href="<?= BASE_URL ?>manage-loggs.php" class="menu-link">
-										<i class="menu-bullet menu-bullet-line"><span></span></i>
-										<span class="menu-text">Activity Logs</span>
-									</a>
-								</li>
-								<li class="menu-item <?= ($current_page == 'manage-login-logs.php' ? 'menu-item-active' : '') ?>">
-									<a href="<?= BASE_URL ?>manage-login-logs.php" class="menu-link">
-										<i class="menu-bullet menu-bullet-line"><span></span></i>
-										<span class="menu-text">Login Logs</span>
-									</a>
-								</li>
-								<li class="menu-item <?= ($current_page == 'manage-delete-logs.php' ? 'menu-item-active' : '') ?>">
-									<a href="<?= BASE_URL ?>manage-delete-logs.php" class="menu-link">
-										<i class="menu-bullet menu-bullet-line"><span></span></i>
-										<span class="menu-text">Delete Data Logs</span>
-									</a>
-								</li>
-							</ul>
-						</div>
-					</li>
-				<?php } ?>
-
+							<li class="menu-item menu-item-submenu <?= $dre_open ? 'menu-item-open menu-item-here' : '' ?>" aria-haspopup="true" data-menu-toggle="hover">
+								<a href="javascript:;" class="menu-link menu-toggle">
+									<span class="svg-icon menu-icon"><i class="bi <?= $dre_entry[1] ?>"></i></span>
+									<span class="menu-text"><?= htmlspecialchars($dre_entry[0]) ?></span>
+									<i class="menu-arrow"></i>
+								</a>
+								<div class="menu-submenu">
+									<i class="menu-arrow"></i>
+									<ul class="menu-subnav">
+										<?php foreach ($dre_entry[2] as $dre_child): ?>
+											<li class="menu-item <?= in_array($dre_current_page, $dre_child[2], true) ? 'menu-item-active' : '' ?>" aria-haspopup="true">
+												<a href="<?= BASE_URL . $dre_child[1] ?>" class="menu-link">
+													<i class="menu-bullet menu-bullet-dot"><span></span></i>
+													<span class="menu-text"><?= htmlspecialchars($dre_child[0]) ?></span>
+												</a>
+											</li>
+										<?php endforeach; ?>
+									</ul>
+								</div>
+							</li>
+						<?php else: ?>
+							<li class="menu-item <?= in_array($dre_current_page, $dre_entry[3], true) ? 'menu-item-active' : '' ?>" aria-haspopup="true">
+								<a href="<?= BASE_URL . $dre_entry[2] ?>" class="menu-link">
+									<span class="svg-icon menu-icon"><i class="bi <?= $dre_entry[1] ?>"></i></span>
+									<span class="menu-text"><?= htmlspecialchars($dre_entry[0]) ?></span>
+								</a>
+							</li>
+						<?php endif; ?>
+					<?php endforeach; ?>
+				<?php endforeach; ?>
+				<li class="dre-menu-empty" style="display: none;">Nothing in the menu matches.</li>
 			</ul>
 			<!--end::Menu Nav-->
 		</div>
 		<!--end::Menu Container-->
 	</div>
 	<!--end::Aside Menu-->
+
+	<div class="dre-aside-foot">
+		<a href="<?= BASE_URL_HOME ?>" target="_blank" rel="noopener" title="Open the website"><i class="bi bi-box-arrow-up-right"></i><span>View website</span></a>
+		<a href="<?= BASE_URL ?>logout.php" title="Sign out"><i class="bi bi-box-arrow-right"></i><span>Sign out</span></a>
+	</div>
 </div>
+<script>
+	// Menu search: shows matching entries, opens the groups they are in, hides empty sections.
+	(function () {
+		var input = document.getElementById('dreMenuSearch');
+		var nav = document.querySelector('#kt_aside_menu .menu-nav');
+		if (!input || !nav) {
+			return;
+		}
+		var opened = null;
+
+		input.addEventListener('input', function () {
+			var query = input.value.trim().toLowerCase();
+			var topItems = nav.querySelectorAll(':scope > li.menu-item');
+
+			// Remember which groups were open before the first keystroke, to restore them afterwards.
+			if (opened === null) {
+				opened = [];
+				topItems.forEach(function (item) {
+					if (item.classList.contains('menu-item-open')) {
+						opened.push(item);
+					}
+				});
+			}
+
+			var found = 0;
+			topItems.forEach(function (item) {
+				var label = item.querySelector(':scope > a .menu-text').textContent.toLowerCase();
+				var children = item.querySelectorAll('.menu-subnav > li.menu-item');
+				var ownMatch = query === '' || label.indexOf(query) !== -1;
+				var childMatch = false;
+
+				children.forEach(function (child) {
+					var match = ownMatch || child.textContent.toLowerCase().indexOf(query) !== -1;
+					child.style.display = match ? '' : 'none';
+					childMatch = childMatch || match;
+				});
+
+				var show = ownMatch || childMatch;
+				item.style.display = show ? '' : 'none';
+				if (children.length) {
+					item.classList.toggle('menu-item-open', query === '' ? opened.indexOf(item) !== -1 : show);
+				}
+				found += show ? 1 : 0;
+			});
+
+			// A section title stays only while something under it is visible.
+			nav.querySelectorAll(':scope > li.menu-section').forEach(function (section) {
+				var visible = false;
+				var next = section.nextElementSibling;
+				while (next && !next.classList.contains('menu-section')) {
+					if (next.classList.contains('menu-item') && next.style.display !== 'none') {
+						visible = true;
+					}
+					next = next.nextElementSibling;
+				}
+				section.style.display = visible ? '' : 'none';
+			});
+
+			nav.querySelector('.dre-menu-empty').style.display = found === 0 ? '' : 'none';
+			if (query === '') {
+				opened = null;
+			}
+		});
+	})();
+</script>

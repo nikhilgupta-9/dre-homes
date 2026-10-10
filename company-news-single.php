@@ -45,7 +45,8 @@ $news_content=select_row('tbl_company_news_content','is_active=1');
             <div class="container">
                 <!--breadcrumbs-list-->
                 <div class="breadcrumbs-list bl_flat">
-                    <a href="<?=BASE_URL?>">Home</a><a href="<?=BASE_URL?>company-news">Company News</a><span><?=$news_detail['news_heading']?></span>
+                    <a href="<?=BASE_URL?>">Home</a><a href="<?=BASE_URL?>company-news">Company News</a>
+                    <!--<span><?=$news_detail['news_heading']?></span>-->
                     <div class="breadcrumbs-list_dec"><i class="fa-thin fa-arrow-up"></i></div>
                 </div>
                 <!--breadcrumbs-list end-->

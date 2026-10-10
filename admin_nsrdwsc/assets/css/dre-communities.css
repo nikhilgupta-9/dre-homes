@@ -1,0 +1,74 @@
+/* Communities list and form. Builds on dre-projects.css, dre-developers.css and dre-form.css. */
+.dre-communities .dre-comm-content a {
+    display: block;
+    color: var(--dd-ink);
+    font-size: 0.88rem;
+    text-decoration: none;
+}
+.dre-communities .dre-comm-content a + a {
+    margin-top: 3px;
+}
+.dre-communities .dre-comm-content a:hover {
+    text-decoration: underline;
+}
+.dre-communities .dre-comm-content a i {
+    margin-right: 6px;
+    color: var(--dd-accent);
+}
+.dre-communities .dre-comm-content a.is-empty {
+    color: var(--dd-muted);
+}
+
+/* Nearby places: rows that are edited in place */
+.dre-nearby-row {
+    display: grid;
+    grid-template-columns: 34px minmax(140px, 1fr) minmax(160px, 1.6fr) minmax(110px, 0.9fr) 40px;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.dre-nearby-row > i {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgba(171, 152, 137, 0.2);
+    color: var(--dd-main);
+    font-size: 1rem;
+    line-height: 34px;
+    text-align: center;
+}
+.dre-nearby-row.is-removed {
+    display: none;
+}
+.dre-highlight-row {
+    display: grid;
+    grid-template-columns: minmax(160px, 1fr) minmax(200px, 2fr) 40px;
+    gap: 10px;
+    align-items: start;
+    margin-bottom: 8px;
+}
+@media (max-width: 767px) {
+    .dre-nearby-row {
+        grid-template-columns: 34px minmax(0, 1fr) 40px;
+    }
+    .dre-nearby-row > select {
+        grid-column: 2;
+    }
+    .dre-nearby-row > input {
+        grid-column: 2;
+    }
+    .dre-nearby-row > button {
+        grid-column: 3;
+        grid-row: 1;
+    }
+    .dre-highlight-row {
+        grid-template-columns: minmax(0, 1fr) 40px;
+    }
+    .dre-highlight-row > textarea {
+        grid-column: 1;
+    }
+    .dre-highlight-row > button {
+        grid-column: 2;
+        grid-row: 1;
+    }
+}

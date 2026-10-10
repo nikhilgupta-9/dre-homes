@@ -128,6 +128,35 @@ function initRenstate() {
             }
         });
     }
+    if ($(".links-carousel").length > 0) {
+
+    var ms2 = new Swiper(".links-carousel .swiper-container", {
+        loop: true,
+        grabCursor: true,
+        autoHeight: false,
+        centeredSlides: false,
+
+        slidesPerView: 1,
+        spaceBetween: 20,
+
+        speed: 3000,
+
+        mousewheel: false,
+
+        autoplay: {
+            delay: 2500,
+            disableOnInteraction: false,
+        },
+
+        navigation: {
+            nextEl: '.cc-button-next',
+            prevEl: '.cc-button-prev',
+        },
+
+
+    });
+
+}
 
 //     if ($(".awards-carousel").length > 0) {
 
@@ -192,63 +221,92 @@ function initRenstate() {
         
 //     }
     
-    if ($(".city-carousel").length > 0) {
+//     if ($(".city-carousel").length > 0) {
 
-    var ms2 = new Swiper(".city-carousel .swiper-container", {
+//     var ms2 = new Swiper(".city-carousel .swiper-container", {
 
-        loop: true,
-        grabCursor: true,
-        autoHeight: false,
-        centeredSlides: false,
+//         loop: true,
+//         grabCursor: true,
+//         autoHeight: false,
+//         centeredSlides: false,
 
-        slidesPerView: 2,
-        spaceBetween: 20,
+//         spaceBetween: 20,
 
-        speed: 1400,
-        parallax: true,
+//         speed: 1400,
+//         parallax: true,
 
-        observer: true,
-        observeParents: true,
-        observeSlideChildren: true,
+//         observer: true,
+//         observeParents: true,
+//         observeSlideChildren: true,
 
-        updateOnWindowResize: true,
-        resizeObserver: true,
+//         updateOnWindowResize: true,
+//         resizeObserver: true,
 
-        preloadImages: false,
-        lazy: true,
+//         preloadImages: false,
+//         lazy: true,
 
-        navigation: {
-            nextEl: '.csc-button-next',
-            prevEl: '.csc-button-prev',
-        },
+//         navigation: {
+//             nextEl: '.csc-button-next',
+//             prevEl: '.csc-button-prev',
+//         },
 
-        pagination: {
-            el: '.city-pag-init',
-            clickable: true,
-        },
+//         pagination: {
+//             el: '.city-pag-init',
+//             clickable: true,
+//         },
 
-        breakpoints: {
+//         breakpoints: {
 
-            0: {
-                slidesPerView: 1,
-                spaceBetween: 0,
+//             0: {
+//                 slidesPerView: 1,
+//                 spaceBetween: 0,
+//             },
+
+//             768: {
+//                 slidesPerView: 1,
+//                 spaceBetween: 0,
+//             },
+
+//             1064: {
+//                 slidesPerView: 2,
+//                 spaceBetween: 20,
+//             }
+
+//         }
+
+//     });
+
+// }
+if ($(".city-carousel").length > 0) {
+        var ms2 = new Swiper(".city-carousel .swiper-container", {
+            loop: true,
+            grabCursor: true,
+            autoHeight: false,
+            centeredSlides: false,
+            slidesPerView: 2,
+            spaceBetween: 20,
+            speed: 1400,
+            parallax: true,
+            navigation: {
+                nextEl: '.csc-button-next',
+                prevEl: '.csc-button-prev',
             },
-
-            768: {
-                slidesPerView: 1,
-                spaceBetween: 0,
+            pagination: {
+                el: '.city-pag-init',
+                clickable: true,
             },
-
-            1064: {
-                slidesPerView: 2,
-                spaceBetween: 20,
+            breakpoints: {
+                1064: {
+                    slidesPerView: 2,
+                    spaceBetween: 10,
+                },
+                768: {
+                    slidesPerView: 1,
+                    spaceBetween: 0,
+                },
             }
-
-        }
-
-    });
-
-}
+        });
+    }
     if ($(".synk-slider").length > 0) {
         var j2thumnails = new Swiper(".synk-slider-thumbnails .swiper-container", {
             preloadImages: false,
@@ -423,10 +481,11 @@ function initRenstate() {
         spaceBetween: 5,
 
         speed: 1400,
-        autoplay: {
-            delay: 3000,
-            disableOnInteraction: false,
-        },
+        // autoplay: {
+        //     delay: 3000,
+        //     disableOnInteraction: false,
+        // },
+        autoplay:false,
 
         observer: true,
         observeParents: true,
@@ -827,7 +886,12 @@ function initRenstate() {
         mobMenuInit();
     });
     //  forms ------------------		
-    $('.chosen-select').niceSelect();
+    $('.chosen-select').niceSelect({
+    searchable: false
+});
+if ($(window).width() < 992) {
+    $('.nice-select-search').prop('disabled', true);
+}
     // date picker------------------
     $('input[name="datepicker-here"]').daterangepicker({
         autoUpdateInput: false,
@@ -1250,3 +1314,19 @@ $(document).ready(function () {
 
     updateHeaderStyle();
 });
+
+const cards = document.querySelectorAll(".skeleton-card");
+
+setTimeout(() => {
+    cards.forEach(card => {
+        card.classList.remove("is-loading");
+    });
+}, 2000);
+
+const cards2 = document.querySelectorAll(".dre-podcast-skeleton-card-thumb");
+
+setTimeout(() => {
+    cards2.forEach(card => {
+        card.classList.remove("is-loading");
+    });
+}, 2000);

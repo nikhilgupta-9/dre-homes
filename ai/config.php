@@ -48,6 +48,12 @@ return [
     'chat_per_conversation_per_minute' => 6,
     'chat_max_leads_per_conversation' => 1,
     'chat_max_leads_per_ip_per_day' => 5,
+    // Who gets an email when the chat saves a lead.
+    // "ai_lead_notify_email" in the secrets file (one address, or several separated by commas) replaces this list.
+    // How the email is sent: through the SMTP account in the secrets file ("smtp_host" ...) when one is filled in,
+    // otherwise with PHP's mail(), which only works on a server with a mail system (not on a local Mac).
+    // The same inboxes as the enquiry form on the property pages (ajax/offplan_frm.php), plus the owner's own address.
+    'chat_lead_notify_emails' => ['leads@drehomes.ae', 'internal-leads@drehomes.ae', 'iamnikhilgupta9@gmail.com'],
 
     // Daily ceiling for all chat traffic together. When either is reached the chatbot
     // answers with the "contact us" message and stops calling the provider until midnight.

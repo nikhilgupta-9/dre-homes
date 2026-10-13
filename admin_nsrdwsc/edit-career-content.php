@@ -114,6 +114,12 @@ $fields = [
   'descp' => ['career_cont_descp', 0], 'award_heading' => ['career_award_heading', 255],
   'keyfocus_heading' => ['career_keyfocus_heading', 255], 'resume_heading' => ['career_resume_heading', 255],
 ];
+// The heading and short line of "Build Your Future With Us" (db/migrations/008_career_intro_heading.sql).
+$has_intro = $details && array_key_exists('career_intro_heading', $details) && array_key_exists('career_intro_text', $details);
+if ($has_intro) {
+  $fields['intro_heading'] = ['career_intro_heading', 255];
+  $fields['intro_text'] = ['career_intro_text', 600];
+}
 $errors = [];
 $old = ['is_active' => $details && $details['is_active'] === '1' ? '1' : ''];
 foreach ($fields as $name => $spec) {
@@ -190,10 +196,11 @@ if ($details && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['s
 
   if (!$errors) {
     $old_data = $logger->getOldRecordData('tbl_career_content', $id);
+    $intro_sql = $has_intro ? 'career_intro_heading = ?, career_intro_text = ?, ' : '';
     $saved = set_query(
       $conn,
-      "UPDATE tbl_career_content SET career_cont_img = ?, career_cont_descp = ?, career_award_heading = ?, career_cont_video = ?, career_keyfocus_heading = ?, career_resume_heading = ?, is_active = ?, tstp = NOW() WHERE career_cont_id = ?",
-      [$image, $old['descp'], $old['award_heading'], $video, $old['keyfocus_heading'], $old['resume_heading'], $old['is_active'] === '1' ? '1' : '2', $id]
+      "UPDATE tbl_career_content SET $intro_sql career_cont_img = ?, career_cont_descp = ?, career_award_heading = ?, career_cont_video = ?, career_keyfocus_heading = ?, career_resume_heading = ?, is_active = ?, tstp = NOW() WHERE career_cont_id = ?",
+      array_merge($has_intro ? [$old['intro_heading'], $old['intro_text']] : [], [$image, $old['descp'], $old['award_heading'], $video, $old['keyfocus_heading'], $old['resume_heading'], $old['is_active'] === '1' ? '1' : '2', $id])
     );
     if (!$saved) {
       foreach ($to_move as $move) {
@@ -383,10 +390,28 @@ foreach ([['tbl_position', 'open positions', 'manage-position.php', 'bi-person-w
                         <input type="file" name="image" id="careerImage" accept="image/jpeg,image/png,image/webp,image/gif">
                         <small>JPG, PNG, WEBP or GIF, up to 5 MB. A wide picture works best (about 1920 &times; 600). Leave empty to keep the current one.</small>
                       </label>
+                    </section>
+
+                    <section class="dre-glass dre-form-section" id="sec-intro">
+                      <h2><i class="bi bi-people"></i> Build Your Future With Us</h2>
+                      <p class="dre-form-note">The part under the banner, above the open positions.</p>
+                      <?php if ($has_intro): ?>
+                        <label class="dre-field">
+                          <span>Heading</span>
+                          <input type="text" name="intro_heading" value="<?= set_e($old['intro_heading']) ?>" maxlength="255" autocomplete="off" placeholder="Build Your Future With Us">
+                          <small>Empty = &ldquo;Build Your Future With Us&rdquo;.</small>
+                        </label>
+                        <label class="dre-field">
+                          <span>Short line under the heading</span>
+                          <textarea name="intro_text" rows="2" maxlength="600" placeholder="At DRE, we empower ambitious minds with opportunities to grow, lead, and make an impact in Dubai&rsquo;s evolving real estate landscape."><?= set_e($old['intro_text']) ?></textarea>
+                        </label>
+                      <?php else: ?>
+                        <div class="dre-form-alert" role="status"><i class="bi bi-info-circle"></i><div>The heading and the short line can be edited here after <code>db/migrations/008_career_intro_heading.sql</code> has been run on this database. The text below is already editable.</div></div>
+                      <?php endif; ?>
                       <div class="dre-field">
-                        <label for="kt-tinymce-2"><span>Introduction</span></label>
+                        <label for="kt-tinymce-2"><span>Text</span></label>
                         <textarea name="descp" class="tinymce-editor" id="kt-tinymce-2" rows="10"><?= set_e($old['descp']) ?></textarea>
-                        <small>Kept for the page, but the Careers page does not show this text at the moment.</small>
+                        <small>Shown on the Careers page under the heading. Colours and fonts copied in with the text are not used on the page, so it matches the rest of the site.</small>
                       </div>
                     </section>
 

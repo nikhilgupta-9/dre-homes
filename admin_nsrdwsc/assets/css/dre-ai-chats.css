@@ -1,0 +1,250 @@
+/* AI chats page: a list of chats on the left, the open chat on the right.
+   Builds on dre-dashboard.css and dre-leads.css. */
+.dre-chats-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+}
+.dre-chats .dre-chats-list,
+.dre-chats .dre-chats-panel {
+    height: auto;
+    min-width: 0;
+}
+
+/* The list */
+.dre-chats-items {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.dre-chats .dre-chats-items a {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 10px;
+    border-radius: 14px;
+    border: 1px solid transparent;
+    color: var(--dd-ink);
+    transition: background 0.15s ease;
+}
+.dre-chats .dre-chats-items a:hover {
+    background: rgba(255, 255, 255, 0.6);
+    text-decoration: none;
+}
+.dre-chats .dre-chats-items a.is-on {
+    background: rgba(255, 255, 255, 0.85);
+    border-color: rgba(95, 87, 76, 0.2);
+    box-shadow: 0 4px 14px rgba(73, 62, 50, 0.1);
+}
+.dre-chats-items li + li {
+    border-top: 1px solid rgba(95, 87, 76, 0.08);
+}
+.dre-chats-item-main {
+    flex: 1;
+    min-width: 0;
+}
+.dre-chats-item-main strong {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-weight: 600;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+.dre-chats-item-main span {
+    display: block;
+    margin-top: 3px;
+    color: var(--dd-muted);
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.dre-chats-item-side {
+    flex: none;
+    text-align: right;
+    color: var(--dd-muted);
+    font-size: 0.76rem;
+    white-space: nowrap;
+}
+.dre-chats-item-side em {
+    margin-top: 4px;
+    font-style: normal;
+}
+
+/* The open chat */
+.dre-chats-back {
+    display: none;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+.dre-chats-delete {
+    flex: none;
+}
+.dre-chats-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 10px;
+    margin: 0 0 14px;
+}
+.dre-chats-facts > div,
+.dre-chats-lead {
+    min-width: 0;
+    padding: 10px 14px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+}
+.dre-chats-facts dt,
+.dre-chats-lead dt {
+    color: var(--dd-muted);
+    font-size: 0.78rem;
+    font-weight: 500;
+}
+.dre-chats-facts dd,
+.dre-chats-lead dd {
+    margin: 1px 0 0;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+.dre-chats-lead {
+    margin-bottom: 14px;
+    border-color: rgba(63, 143, 107, 0.4);
+}
+.dre-chats-lead > strong {
+    color: #2c7353;
+}
+.dre-chats-lead dl {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px 16px;
+    margin: 8px 0;
+}
+.dre-chats-lead > a {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.dre-chat-thread {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 70vh;
+    padding: 16px;
+    overflow-y: auto;
+    border-radius: 16px;
+    background: rgba(95, 87, 76, 0.06);
+    border: 1px solid rgba(95, 87, 76, 0.1);
+}
+.dre-chat-msg {
+    display: flex;
+    flex-direction: column;
+    max-width: 82%;
+}
+.dre-chat-msg > span {
+    margin-top: 4px;
+    color: var(--dd-muted);
+    font-size: 0.74rem;
+}
+.dre-chat-user {
+    align-self: flex-end;
+    align-items: flex-end;
+}
+.dre-chat-ai {
+    align-self: flex-start;
+    align-items: flex-start;
+}
+.dre-chat-bubble {
+    padding: 10px 14px;
+    border-radius: 16px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+.dre-chat-user .dre-chat-bubble {
+    border-bottom-right-radius: 5px;
+    background: linear-gradient(135deg, var(--dd-main), #7d7062);
+    color: #fff;
+}
+.dre-chat-ai .dre-chat-bubble {
+    border-bottom-left-radius: 5px;
+    background: #fff;
+    border: 1px solid rgba(95, 87, 76, 0.12);
+    color: var(--dd-ink);
+}
+.dre-chat-bubble p {
+    margin: 0 0 8px;
+}
+.dre-chat-bubble ul {
+    margin: 0 0 8px;
+    padding-left: 18px;
+}
+.dre-chat-bubble > :last-child {
+    margin-bottom: 0;
+}
+.dre-chats .dre-chat-ai .dre-chat-bubble a {
+    color: #1a5fa8;
+    text-decoration: underline;
+}
+/* What the assistant looked up before it answered */
+.dre-chat-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-self: flex-start;
+    max-width: 100%;
+}
+.dre-chat-steps span {
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px dashed rgba(95, 87, 76, 0.25);
+    color: var(--dd-muted);
+    font-size: 0.76rem;
+    overflow-wrap: anywhere;
+}
+.dre-chats-note {
+    margin: 16px 4px 0;
+    color: var(--dd-muted);
+    font-size: 0.82rem;
+}
+.dre-chats .dre-empty i {
+    font-size: 1.6rem;
+    color: var(--dd-accent);
+}
+
+/* The numbers at the top: five of them fit on wide screens only. */
+@media (max-width: 1199px) {
+    .dre-chats-layout {
+        grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+    }
+}
+/* Small screens show one thing at a time: the list, or the chat that was picked. */
+@media (max-width: 991px) {
+    .dre-chats-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .dre-chats .dre-chats-panel {
+        display: none;
+    }
+    .dre-chats.has-open .dre-chats-panel {
+        display: block;
+    }
+    .dre-chats.has-open .dre-chats-list,
+    .dre-chats.has-open .dre-leads-filter {
+        display: none;
+    }
+    .dre-chats.has-open .dre-chats-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .dre-chat-thread {
+        max-height: none;
+        padding: 12px;
+    }
+    .dre-chat-msg {
+        max-width: 92%;
+    }
+}

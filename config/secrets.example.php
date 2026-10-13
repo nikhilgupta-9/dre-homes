@@ -30,6 +30,15 @@ return [
 	// Where chat leads are emailed. Empty = saved to the enquiry table only.
 	'ai_lead_notify_email' => '',
 
+	// SMTP account the AI chat's lead emails are sent through. Empty smtp_host = PHP's mail() is used,
+	// which works on the live server but not on a local Mac. For Gmail: smtp.gmail.com, port 587,
+	// your Gmail address as user and from, and an App Password (Google account > Security > App passwords).
+	'smtp_host' => '',
+	'smtp_port' => 587,
+	'smtp_user' => '',
+	'smtp_pass' => '',
+	'smtp_from' => '',
+
 	'gemini_api_key'    => '',
 	'voyage_api_key'    => '',
 

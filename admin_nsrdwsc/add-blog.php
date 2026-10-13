@@ -80,6 +80,39 @@ function artf_slug($text)
 const ARTF_IMAGE = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp'];
 const ARTF_IMAGE_MAX = 5 * 1024 * 1024;
 
+// What a file really is, told from its first bytes: "image/jpeg", "image/png", "image/gif",
+// "image/webp" or "application/pdf". Anything else comes back as "" and is refused.
+// PHP's fileinfo extension does this when the server has it. The live server has it switched
+// off, and there asking fileinfo stops the page, so the bytes are read here instead.
+function artf_file_kind($path)
+{
+  if (class_exists('finfo')) {
+    return (string) (new finfo(FILEINFO_MIME_TYPE))->file($path);
+  }
+  $handle = is_file($path) ? @fopen($path, 'rb') : false;
+  if (!$handle) {
+    return '';
+  }
+  $start = (string) fread($handle, 16);
+  fclose($handle);
+  if (strncmp($start, "\xFF\xD8\xFF", 3) === 0) {
+    return 'image/jpeg';
+  }
+  if (strncmp($start, "\x89PNG\r\n\x1A\n", 8) === 0) {
+    return 'image/png';
+  }
+  if (strncmp($start, 'GIF87a', 6) === 0 || strncmp($start, 'GIF89a', 6) === 0) {
+    return 'image/gif';
+  }
+  if (strncmp($start, 'RIFF', 4) === 0 && substr($start, 8, 4) === 'WEBP') {
+    return 'image/webp';
+  }
+  if (strncmp($start, '%PDF-', 5) === 0) {
+    return 'application/pdf';
+  }
+  return '';
+}
+
 // Checks one uploaded picture. Returns [extension, error]; extension is '' when no file was chosen.
 function artf_check_upload($file, $label)
 {
@@ -93,8 +126,7 @@ function artf_check_upload($file, $label)
     return ['', "$label could not be uploaded. Please try again."];
   }
   $extension = strtolower(pathinfo((string) $file['name'], PATHINFO_EXTENSION));
-  $finfo = new finfo(FILEINFO_MIME_TYPE);
-  $real_extension = array_search($finfo->file($file['tmp_name']), ['jpg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp'], true);
+  $real_extension = array_search(artf_file_kind($file['tmp_name']), ['jpg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp'], true);
   if (!isset(ARTF_IMAGE[$extension]) || $real_extension === false) {
     return ['', "$label must be one of: JPG, PNG, GIF, WEBP."];
   }

@@ -458,11 +458,15 @@ include('common/header.php');
                                                                 class="map-item"><i class="fas fa-map-marker-alt"></i>
                                                                 <?= $row['proj_location'] ?></a>
                                                         </div>
+                                                        <?php
+                                                        if($row['proj_pplan_cont']){
+                                                        ?>
                                                         <ul class="list-single-opt_header_cat">
                                                                 <li><a href="javascript:void(0)" class="cat-opt">
                                                                         <?= $row['proj_pplan_cont'] ?></a>
                                                                 </li>
                                                         </ul>
+                                                        <?php } ?>
                                                     </div>
                                                     <div class="geodir-category-content prop-gcc">
                                                         <h3><a

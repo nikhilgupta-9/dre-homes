@@ -443,7 +443,11 @@ if (empty($_SESSION['email_id'])) {
 										<div class="dre-glass">
 											<div class="dre-h">
 												<h3>AI assistant<small>Website chat, last 7 days</small></h3>
-												<span class="dre-pill dre-pill-ai"><i class="fa-solid fa-wand-magic-sparkles"></i> AI</span>
+												<?php if ((int) ($_SESSION['login_type'] ?? 0) === 1): ?>
+													<a href="<?= BASE_URL ?>manage-ai-chats.php">Read the chats <i class="fa-solid fa-arrow-right"></i></a>
+												<?php else: ?>
+													<span class="dre-pill dre-pill-ai"><i class="fa-solid fa-wand-magic-sparkles"></i> AI</span>
+												<?php endif; ?>
 											</div>
 											<?php if ($ai === null): ?>
 												<div class="dre-empty">The AI tables are not installed on this database yet.</div>

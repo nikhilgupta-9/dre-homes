@@ -499,3 +499,156 @@
         display: none;
     }
 }
+
+/* A "How to edit" button next to a field label, and the pop-up it opens. */
+.dre-field > label.dre-guide-label {
+    display: inline-block;
+    margin-right: 10px;
+}
+.dre-guide-open {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    vertical-align: middle;
+}
+.dre-form-page .dre-guide-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(95, 87, 76, 0.2);
+    color: var(--dd-main);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.dre-form-page .dre-guide-btn:hover {
+    background: #fff;
+}
+.dre-guide-flag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    background: rgba(192, 138, 46, 0.14);
+    color: #8a5a12;
+    font-size: 0.74rem;
+    font-weight: 600;
+}
+.dre-guide-dialog {
+    width: min(640px, calc(100vw - 32px));
+    max-height: min(80vh, 720px);
+    padding: 0;
+    border: 0;
+    border-radius: 18px;
+    background: #fbf8f5;
+    color: #2f2a25;
+    box-shadow: 0 24px 60px rgba(47, 42, 37, 0.35);
+}
+.dre-guide-dialog::backdrop {
+    background: rgba(47, 42, 37, 0.45);
+}
+.dre-guide-head {
+    position: sticky;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 18px;
+    background: #fbf8f5;
+    border-bottom: 1px solid rgba(95, 87, 76, 0.14);
+}
+.dre-guide-head strong {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+}
+.dre-guide-head strong i {
+    color: #ab9889;
+}
+.dre-guide-close {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 10px;
+    background: rgba(95, 87, 76, 0.1);
+    color: #5f574c;
+    cursor: pointer;
+}
+.dre-guide-close:hover {
+    background: rgba(95, 87, 76, 0.2);
+}
+.dre-guide-dialog .dre-field-guide-body {
+    padding: 4px 18px 18px;
+    overflow-y: auto;
+}
+.dre-field-guide-body {
+    font-size: 0.88rem;
+    line-height: 1.55;
+}
+.dre-field-guide-body h4 {
+    margin: 14px 0 6px;
+    color: #2f2a25;
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+.dre-field-guide-body ul {
+    margin: 0;
+    padding-left: 18px;
+}
+.dre-field-guide-body li + li {
+    margin-top: 3px;
+}
+.dre-field-guide-body p {
+    margin: 10px 0 6px;
+}
+.dre-field-guide-body b {
+    color: #2f2a25;
+    font-weight: 600;
+}
+.dre-field-guide-body a {
+    color: #5f574c;
+    font-weight: 600;
+}
+.dre-field-guide-body kbd {
+    padding: 1px 5px;
+    border-radius: 5px;
+    background: rgba(95, 87, 76, 0.12);
+    color: #2f2a25;
+    font-size: 0.8rem;
+    box-shadow: none;
+}
+.dre-field-guide-body code {
+    color: #9c3f38;
+    background: rgba(95, 87, 76, 0.08);
+    border-radius: 4px;
+    padding: 0 4px;
+}
+.dre-field-guide-code {
+    margin: 8px 0 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #2f2a25;
+    color: #f3ede6;
+    font-size: 0.8rem;
+    white-space: pre-wrap;
+}
+.dre-field-guide-warn {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(192, 138, 46, 0.12);
+    border: 1px solid rgba(192, 138, 46, 0.35);
+}
+.dre-field-guide-warn > i {
+    color: #a8701a;
+    font-size: 1.1rem;
+}

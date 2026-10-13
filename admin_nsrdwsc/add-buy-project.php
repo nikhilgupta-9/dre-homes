@@ -67,6 +67,39 @@ const ADDP_DOCUMENT = ['pdf' => 'application/pdf'] + ADDP_IMAGE;
 const ADDP_IMAGE_MAX = 5 * 1024 * 1024;
 const ADDP_DOCUMENT_MAX = 30 * 1024 * 1024;
 
+// What a file really is, told from its first bytes: "image/jpeg", "image/png", "image/gif",
+// "image/webp" or "application/pdf". Anything else comes back as "" and is refused.
+// PHP's fileinfo extension does this when the server has it. The live server has it switched
+// off, and there asking fileinfo stops the page, so the bytes are read here instead.
+function addp_file_kind($path)
+{
+  if (class_exists('finfo')) {
+    return (string) (new finfo(FILEINFO_MIME_TYPE))->file($path);
+  }
+  $handle = is_file($path) ? @fopen($path, 'rb') : false;
+  if (!$handle) {
+    return '';
+  }
+  $start = (string) fread($handle, 16);
+  fclose($handle);
+  if (strncmp($start, "\xFF\xD8\xFF", 3) === 0) {
+    return 'image/jpeg';
+  }
+  if (strncmp($start, "\x89PNG\r\n\x1A\n", 8) === 0) {
+    return 'image/png';
+  }
+  if (strncmp($start, 'GIF87a', 6) === 0 || strncmp($start, 'GIF89a', 6) === 0) {
+    return 'image/gif';
+  }
+  if (strncmp($start, 'RIFF', 4) === 0 && substr($start, 8, 4) === 'WEBP') {
+    return 'image/webp';
+  }
+  if (strncmp($start, '%PDF-', 5) === 0) {
+    return 'application/pdf';
+  }
+  return '';
+}
+
 // Checks one uploaded file. Returns [extension, error]; extension is '' when no file was chosen.
 function addp_check_upload($name, $tmp_name, $error, $size, array $allowed, $max_bytes, $label)
 {
@@ -80,8 +113,7 @@ function addp_check_upload($name, $tmp_name, $error, $size, array $allowed, $max
     return ['', "$label could not be uploaded. Please try again."];
   }
   $extension = strtolower(pathinfo((string) $name, PATHINFO_EXTENSION));
-  $finfo = new finfo(FILEINFO_MIME_TYPE);
-  $mime = $finfo->file($tmp_name);
+  $mime = addp_file_kind($tmp_name);
   // The name must end in an allowed extension and the content must be an allowed type.
   // A picture saved with the "wrong" picture extension (a PNG named .jpg) is fine: it is
   // stored with the extension that matches what it really is.
@@ -116,6 +148,23 @@ $text_fields = [
 $errors = [];
 $old = ['is_active' => '1', 'proj_posted_on' => date('Y-m-d'), 'prj_type_id' => 7];
 $old_lists = ['proj_bedroom' => [], 'proj_price_type' => [], 'proj_fea_fac_opt' => [], 'proj_comm_feat' => [], 'inventory' => [], 'payplan' => [], 'faq' => []];
+
+// What the server accepts in one save: all files and fields together, and how many files.
+// Past the size limit PHP hands over an empty form, so the page checks this before sending (see the script below).
+function addp_ini_bytes($value)
+{
+  $value = trim((string) $value);
+  $number = (float) $value;
+  $unit = strtolower(substr($value, -1));
+  return (int) ($number * (['k' => 1024, 'm' => 1048576, 'g' => 1073741824][$unit] ?? 1));
+}
+$save_limit = addp_ini_bytes(ini_get('post_max_size'));
+$file_count_limit = (int) ini_get('max_file_uploads');
+
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && !$_POST && !$_FILES && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+  // Too much was sent at once: nothing arrived, so the form below is empty again.
+  $errors[] = 'The files were too large together (' . round((int) $_SERVER['CONTENT_LENGTH'] / 1048576, 1) . ' MB). The server accepts up to ' . round($save_limit / 1048576) . ' MB in one save, so nothing arrived and the form has to be filled in again. Add fewer or smaller files: the rest of the gallery can be added after saving, from the property\'s gallery.';
+}
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['add_project'])) {
 
@@ -713,7 +762,7 @@ $picked = function ($list, $value) use (&$old_lists) {
                     <!-- Images and files -->
                     <section class="dre-glass dre-form-section" id="sec-media">
                       <h2><i class="bi bi-images"></i> Images and files</h2>
-                      <p class="dre-form-note">Images: JPG, PNG, GIF or WEBP, up to 5 MB each. Documents: PDF or an image, up to 30 MB.</p>
+                      <p class="dre-form-note">Images: JPG, PNG, GIF or WEBP, up to 5 MB each. Documents: PDF or an image, up to 30 MB.<?php if ($save_limit > 0): ?> All files of one save together: up to <?= round($save_limit / 1048576) ?> MB<?= $file_count_limit > 0 ? ' and ' . $file_count_limit . ' files' : '' ?>.<?php endif; ?> <strong id="addpFileTotal"></strong></p>
                       <div class="dre-form-grid dre-cols-2">
                         <label class="dre-field">
                           <span>Thumbnail images <b>*</b></span>
@@ -982,6 +1031,10 @@ $picked = function ($list, $value) use (&$old_lists) {
                         <div><strong id="addpDone">0</strong> of <span id="addpOutOf">8</span> key details filled</div>
                         <div class="dre-track"><i id="addpMeter" style="width: 0%"></i></div>
                         <small id="addpMissing"></small>
+                      </div>
+                      <div class="dre-form-alert dre-form-bad" role="alert" id="addpFileProblem" tabindex="-1" style="display: none; flex-basis: 100%; margin: 0;">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <div><strong>Not saved yet: the files cannot be sent like this.</strong><ul></ul><em>Nothing you typed is lost. Change the files and press Save again.</em></div>
                       </div>
                       <div class="dre-form-bar-buttons">
                         <button type="submit" name="save_and_add" value="1" class="dre-btn">Save and add another</button>
@@ -1261,8 +1314,67 @@ $picked = function ($list, $value) use (&$old_lists) {
             }, { passive: true });
             markNav();
 
+            // --- Files: checked before sending, because the server drops the whole form when they are too large together ---
+            var saveLimit = <?= (int) $save_limit ?>;
+            var fileCountLimit = <?= (int) $file_count_limit ?>;
+            var fileTotal = document.getElementById('addpFileTotal');
+            var fileProblem = document.getElementById('addpFileProblem');
+            function megabytes(bytes) {
+              return (bytes / 1048576).toFixed(1) + ' MB';
+            }
+            // Returns what is wrong with the chosen files together (an empty list when they can be sent).
+            // One file being too large is checked where it is chosen.
+            function fileProblems() {
+              var problems = [];
+              var total = 0;
+              var count = 0;
+              form.querySelectorAll('input[type="file"]').forEach(function (input) {
+                Array.prototype.forEach.call(input.files, function (file) {
+                  total += file.size;
+                  count++;
+                });
+              });
+              // A little room is kept for the text of the form.
+              var room = saveLimit > 0 ? saveLimit - 1048576 : 0;
+              if (room > 0 && total > room) {
+                problems.push('All files together are ' + megabytes(total) + '. One save takes up to ' + megabytes(room) + '. Take some out: gallery images can be added after saving, from the property\'s gallery.');
+              }
+              if (fileCountLimit > 0 && count > fileCountLimit) {
+                problems.push(count + ' files are chosen. One save takes up to ' + fileCountLimit + ' files: add the rest of the gallery after saving.');
+              }
+              if (fileTotal) {
+                fileTotal.textContent = count === 0 ? '' : 'Chosen now: ' + count + (count === 1 ? ' file, ' : ' files, ') + megabytes(total) + '.';
+                fileTotal.classList.toggle('dre-warn-text', problems.length > 0);
+              }
+              return problems;
+            }
+            function showFileProblems(problems) {
+              var list = fileProblem.querySelector('ul');
+              list.textContent = '';
+              problems.forEach(function (problem) {
+                var item = document.createElement('li');
+                item.textContent = problem;
+                list.appendChild(item);
+              });
+              fileProblem.style.display = problems.length ? 'flex' : 'none';
+            }
+            form.addEventListener('change', function (event) {
+              if (event.target.type === 'file') {
+                var problems = fileProblems();
+                if (fileProblem.style.display !== 'none') { showFileProblems(problems); }
+              }
+            });
+
             // --- Saving ---
-            form.addEventListener('submit', function () {
+            form.addEventListener('submit', function (event) {
+              var problems = fileProblems();
+              showFileProblems(problems);
+              if (problems.length) {
+                event.preventDefault();
+                fileProblem.focus();
+                fileProblem.scrollIntoView({ block: 'center' });
+                return;
+              }
               syncInventory();
               if (window.tinymce) { window.tinymce.triggerSave(); }
               dirty = false;

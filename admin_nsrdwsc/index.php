@@ -57,7 +57,9 @@ include('lock.php');
 								<!--begin::Action-->
 								<div class="pb-lg-0 pb-5">
 									<button type="submit" name="login_submit" class="btn btn-primary font-weight-bolder font-size-h6 px-8 py-4 my-3 mr-3">Log In</button>
-									
+									<!-- Shown only on a device with a fingerprint reader or face check the browser can use. The words are set for the device below. -->
+									<button type="button" id="bioLogin" class="btn btn-light-primary font-weight-bolder font-size-h6 px-8 py-4 my-3" hidden><i class="bi bi-fingerprint"></i> <span>Sign in with fingerprint or face</span></button>
+									<div class="text-muted font-size-sm" id="bioLoginNote" hidden>Works after you set it up under My Profile on this device.</div>
 								</div>
 								<!--end::Action-->
 							</form>
@@ -68,4 +70,34 @@ include('lock.php');
 					
 					</div>
 					<!--end::Content body-->
+					<script src="<?=BASE_URL?>assets/js/dre-biometric.js?v=3"></script>
+					<script>
+					// Sign-in page: the fingerprint / face button. The device shows the accounts it has a key for, so no email is typed.
+					(function () {
+						var button = document.getElementById('bioLogin');
+						var note = document.getElementById('bioLoginNote');
+						var message = document.querySelector('.err_msg');
+						var method = DreBiometric.method();
+						button.querySelector('i').className = 'bi ' + method.icon;
+						button.querySelector('span').textContent = 'Sign in with ' + method.name;
+						DreBiometric.available().then(function (yes) {
+							button.hidden = note.hidden = !yes;
+						});
+						button.addEventListener('click', function () {
+							var label = button.innerHTML;
+							button.disabled = true;
+							button.textContent = 'WAIT...';
+							DreBiometric.signIn().then(function (answer) {
+								if (answer.status === 'success') {
+									window.location = base_url + 'dashboard.php';
+									return;
+								}
+								message.className = 'err_msg alert alert-danger';
+								message.textContent = answer.msg;
+								button.innerHTML = label;
+								button.disabled = false;
+							});
+						});
+					})();
+					</script>
 	<?php include('includes/footer.php');?>				

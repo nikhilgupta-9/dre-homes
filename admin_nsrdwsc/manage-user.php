@@ -93,7 +93,7 @@ if ($is_super_admin && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_
 	$notice = 'Nothing was changed. Please reload the page and try again.';
 }
 
-$users = $is_super_admin ? (set_query($conn, "SELECT login_id, username, login_email, login_type, is_active, tstp FROM tbl_login ORDER BY login_type ASC, username ASC") ?: []) : [];
+$users = $is_super_admin ? (set_query($conn, "SELECT l.login_id, l.username, l.login_email, l.login_type, l.is_active, l.biometric_allowed, l.tstp, (SELECT COUNT(*) FROM tbl_login_passkeys p WHERE p.login_id = l.login_id) AS fingerprint_devices FROM tbl_login l ORDER BY l.login_type ASC, l.username ASC") ?: []) : [];
 // Sign-in history is read on its own and matched here by email, so the two tables do not have to be compared in SQL.
 $sign_ins = [];
 if ($users) {
@@ -284,6 +284,9 @@ $notice = [
 													</div>
 													<div class="dre-tag-checks" role="cell">
 														<span><?= $last ? date('d M Y, H:i', $last) : 'Never' ?></span>
+														<?php if ((int) $row['biometric_allowed'] === 1): ?>
+															<span><i class="bi bi-fingerprint"></i> Fingerprint / face allowed &middot; <?= (int) $row['fingerprint_devices'] === 0 ? 'not set up yet' : (int) $row['fingerprint_devices'] . ((int) $row['fingerprint_devices'] === 1 ? ' device' : ' devices') ?></span>
+														<?php endif; ?>
 														<?php if ((int) $row['failed_recently'] > 0): ?>
 															<span class="dre-proj-missing"><i class="bi bi-exclamation-triangle"></i> <?= (int) $row['failed_recently'] ?> failed <?= (int) $row['failed_recently'] === 1 ? 'attempt' : 'attempts' ?> in 30 days</span>
 														<?php endif; ?>

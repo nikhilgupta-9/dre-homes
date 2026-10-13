@@ -1,5 +1,8 @@
 <?php
 
+// Upload checks keep working on a server without PHP's fileinfo extension.
+require_once __DIR__ . '/../includes/finfo-fallback.php';
+
 function getYouTubeVideoId($url) {
     parse_str(parse_url($url, PHP_URL_QUERY), $vars);
     return $vars['v'] ?? '';

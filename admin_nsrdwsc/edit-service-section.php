@@ -112,7 +112,7 @@ $entity = [
   'sections' => [['The service', 'bi-briefcase', ''], ['Search engines and sharing', 'bi-search', 'What search engines and social networks show for this page.']],
   'fields' => [
   ['name' => 'name', 'col' => 'serv_sec_name', 'label' => 'Service name', 'type' => 'text', 'required' => true, 'placeholder' => 'Mortgage Advisory', 'ai' => 'heading'],
-  ['name' => 'content', 'col' => 'serv_sec_content', 'label' => 'Page text', 'type' => 'rich', 'max' => 0, 'required' => true, 'help' => 'Everything a visitor reads on the service page.', 'ai' => 'improve'],
+  ['name' => 'content', 'col' => 'serv_sec_content', 'label' => 'Page text', 'type' => 'rich', 'max' => 0, 'required' => true, 'help' => 'Everything a visitor reads on the service page.', 'ai' => 'improve', 'guide' => true],
   ['name' => 'slug', 'col' => 'serv_sec_slug', 'label' => 'Page address (slug)', 'type' => 'slug', 'from' => 'name', 'max' => 200, 'section' => 'Search engines and sharing'],
   ['name' => 'meta_title', 'col' => 'meta_title', 'label' => 'Meta title', 'type' => 'text', 'count' => 60, 'ai' => 'meta_title', 'section' => 'Search engines and sharing'],
   ['name' => 'meta_description', 'col' => 'meta_description', 'label' => 'Meta description', 'type' => 'textarea', 'max' => 0, 'count' => 160, 'ai' => 'meta_description', 'section' => 'Search engines and sharing'],
@@ -132,6 +132,88 @@ function ent_slug($text)
 {
   return trim(preg_replace('/[^a-z0-9]+/', '-', strtolower(trim((string) $text))), '-');
 }
+// A small "How to edit" button next to the "Page text" label. It opens a pop-up that says where the text
+// shows, how to use the editor and, when the saved text has them, how to look after the boxes and the form in it.
+function ent_text_guide($html, $page_url, $page_name)
+{
+  $e = function ($text) { return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8'); };
+  $has_boxes = preg_match('/class="[^"]*\btoggle\b/i', (string) $html) && stripos((string) $html, 'accordion-inner') !== false;
+  $has_form = (bool) preg_match('/<(form|input|select|button)\b/i', (string) $html);
+  ob_start(); ?>
+  <span class="dre-guide-open">
+    <button type="button" class="dre-guide-btn" data-guide-open="dreTextGuide"><i class="bi bi-question-circle"></i> How to edit</button>
+    <?php if ($has_form): ?><span class="dre-guide-flag" title="This text has a form in it: read the guide before editing"><i class="bi bi-exclamation-triangle"></i> Has a form</span><?php endif; ?>
+  </span>
+  <dialog class="dre-guide-dialog" id="dreTextGuide" aria-labelledby="dreTextGuideTitle">
+    <div class="dre-guide-head">
+      <strong id="dreTextGuideTitle"><i class="bi bi-lightbulb"></i> How to edit this text</strong>
+      <button type="button" class="dre-guide-close" data-guide-close aria-label="Close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="dre-field-guide-body">
+      <p>
+        This is the text of the service page<?= $page_name !== '' ? ' &ldquo;' . $e($page_name) . '&rdquo;' : '' ?>, shown under its name.
+        <?php if ($page_url !== ''): ?><a href="<?= $e($page_url) ?>" target="_blank" rel="noopener">Open the page on the website <i class="bi bi-box-arrow-up-right"></i></a><?php endif; ?>
+      </p>
+
+      <h4>Everyday changes</h4>
+      <ul>
+        <li><b>Change words:</b> click in the text and type, like in Word.</li>
+        <li><b>Sub-heading:</b> click in the line, open the first menu on the toolbar (it shows the kind of line, for example <b>Paragraph</b> or <b>Div</b>) and pick <b>Headings &rsaquo; Heading 2</b>. Pick <b>Blocks &rsaquo; Paragraph</b> to make it normal text again.</li>
+        <li><b>Bold:</b> select the words and press <b>B</b>.</li>
+        <li><b>Link:</b> select the words, press the <b>chain</b> button and paste the address.</li>
+        <li><b>List:</b> press the <b>bullet list</b> or <b>numbered list</b> button.</li>
+        <li><b>Undo:</b> the curved arrow, or <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>Z</kbd>.</li>
+        <li><b>Copying from Word or Google Docs:</b> paste with <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>V</kbd>. That brings only the words, not other fonts and colours.</li>
+      </ul>
+
+      <?php if ($has_boxes): ?>
+        <h4>The boxes that open and close</h4>
+        <p>On the website each box shows a title, and its text opens when the title is clicked. In the editor all of them are shown open, one after another: a <b>title line</b>, then its <b>text</b>.</p>
+        <ul>
+          <li><b>Change a title or its text:</b> just type over it here.</li>
+          <li><b>Add a box:</b> press the <b>&lt;/&gt;</b> button (Source code, at the end of the toolbar). Copy one complete box, from <code>&lt;a class="toggle"</code> to the <code>&lt;/div&gt;</code> after its text, paste it after the last box, change the title and text, and press <b>Save</b> in that window.</li>
+          <li><b>Remove a box:</b> in the same window, delete its title line and its <code>&lt;div class="accordion-inner"&gt;&hellip;&lt;/div&gt;</code>.</li>
+        </ul>
+        <pre class="dre-field-guide-code">&lt;a class="toggle" href="#"&gt;Title of the box&lt;/a&gt;
+&lt;div class="accordion-inner"&gt;
+  &lt;p&gt;The text that opens.&lt;/p&gt;
+&lt;/div&gt;</pre>
+      <?php endif; ?>
+
+      <?php if ($has_form): ?>
+        <div class="dre-field-guide-warn">
+          <i class="bi bi-exclamation-triangle"></i>
+          <div><b>This text has a form in it</b> (the boxes visitors fill in and the button that sends it). Change the words around it, but do not delete, move or retype the form's boxes and button: without them the form stops sending enquiries.</div>
+        </div>
+      <?php endif; ?>
+
+      <h4>Before saving</h4>
+      <ul>
+        <li>The <b>eye</b> button (Preview) shows the text about as it will look.</li>
+        <li>Something went wrong? Do not save: reload this page and nothing is changed.</li>
+        <li>After saving, open the page on the website to check it.</li>
+      </ul>
+    </div>
+  </dialog>
+  <script>
+    // The pop-up: opens from the button, closes with the cross, the Esc key or a click outside it.
+    (function () {
+      var dialog = document.getElementById('dreTextGuide');
+      var opener = document.querySelector('[data-guide-open="dreTextGuide"]');
+      if (!dialog || !opener || typeof dialog.showModal !== 'function') {
+        if (opener) { opener.hidden = true; }
+        return;
+      }
+      opener.addEventListener('click', function () { dialog.showModal(); });
+      dialog.querySelector('[data-guide-close]').addEventListener('click', function () { dialog.close(); });
+      dialog.addEventListener('click', function (event) {
+        if (event.target === dialog) { dialog.close(); }
+      });
+    })();
+  </script>
+  <?php
+  return ob_get_clean();
+}
 // Text with its tags and empty spaces taken out, to tell whether an editor field really has words in it.
 function ent_plain($html)
 {
@@ -143,7 +225,7 @@ $editor_ids = ['kt-tinymce-4', 'kt-tinymce-2', 'kt-tinymce-5', 'kt-tinymce-6', '
 $dom_ids = [];      // field name => id of its form control
 $fields = [];       // field name => its settings
 foreach ($entity['fields'] as $field) {
-  $field += ['max' => 255, 'required' => false, 'help' => '', 'placeholder' => '', 'ai' => '', 'section' => $entity['sections'][0][0], 'rows' => 3, 'count' => 0, 'folder' => '', 'options_sql' => '', 'from' => '', 'alt' => ''];
+  $field += ['max' => 255, 'required' => false, 'help' => '', 'placeholder' => '', 'ai' => '', 'section' => $entity['sections'][0][0], 'guide' => false, 'rows' => 3, 'count' => 0, 'folder' => '', 'options_sql' => '', 'from' => '', 'alt' => ''];
   $fields[$field['name']] = $field;
   $dom_ids[$field['name']] = $field['type'] === 'rich' ? array_shift($editor_ids) : 'f_' . $field['name'];
 }
@@ -442,7 +524,7 @@ $uses_ai = (bool) array_filter(array_column($fields, 'ai'));
             <div class="container">
               <!--begin::Form-->
               <link href="<?= BASE_URL ?>assets/css/dre-dashboard.css?v=1" rel="stylesheet" type="text/css" />
-              <link href="<?= BASE_URL ?>assets/css/dre-form.css?v=1" rel="stylesheet" type="text/css" />
+              <link href="<?= BASE_URL ?>assets/css/dre-form.css?v=3" rel="stylesheet" type="text/css" />
               <link href="<?= BASE_URL ?>assets/css/dre-settings.css?v=1" rel="stylesheet" type="text/css" />
               <link href="<?= BASE_URL ?>assets/css/dre-careers.css?v=1" rel="stylesheet" type="text/css" />
               <link href="<?= BASE_URL ?>assets/css/dre-ai-assist.css?v=1" rel="stylesheet" type="text/css" />
@@ -522,7 +604,10 @@ $uses_ai = (bool) array_filter(array_column($fields, 'ai'));
                       ?>
                         <?php if ($field['type'] === 'rich'): ?>
                           <div class="dre-field">
-                            <label for="<?= set_e($dom_id) ?>"><span><?= set_e($field['label']) ?><?= $star ?></span></label>
+                            <label for="<?= set_e($dom_id) ?>"<?= $field['guide'] ? ' class="dre-guide-label"' : '' ?>><span><?= set_e($field['label']) ?><?= $star ?></span></label>
+                            <?php if ($field['guide']): ?>
+                              <?= ent_text_guide($old[$name], $public_url !== '' && $details && trim((string) ($details[$entity['public_slug']] ?? '')) !== '' ? $public_url . trim((string) $details[$entity['public_slug']]) : '', $details ? (string) ($details['serv_sec_name'] ?? '') : '') ?>
+                            <?php endif; ?>
                             <textarea name="<?= set_e($name) ?>" class="tinymce-editor" id="<?= set_e($dom_id) ?>" rows="12"><?= set_e($old[$name]) ?></textarea>
                             <?php if ($field['help'] !== ''): ?><small><?= set_e($field['help']) ?></small><?php endif; ?>
                             <?= $ai_button ?>

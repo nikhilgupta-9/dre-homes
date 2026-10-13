@@ -38,7 +38,7 @@ $entity = [
 	'missing' => ['order' => ['Position', "a.order_no IS NULL"]],
 	'in_use_sql' => "SELECT COUNT(*) AS n FROM tbl_team WHERE team_desg_id = ?", 'in_use_note' => 'A designation that still has team members was not deleted. Move its members to another designation first.',
 	'content_file' => '',
-	'links' => [['Team members', 'manage-team.php', 'bi-people']],
+	'links' => [['Team members', 'manage-team.php', 'bi-people'], ['Arrange team', 'arrange-team.php', 'bi-arrows-move']],
 	'sections' => [['The designation', 'bi-award', '']],
 	'fields' => [
 	['name' => 'name', 'col' => 'team_desg_name', 'label' => 'Name', 'type' => 'text', 'required' => true, 'placeholder' => 'Senior Property Associate'],
@@ -52,7 +52,7 @@ $id_col = $kind['id'];
 // The column the website orders by: the date when there is one, otherwise the order of adding.
 $when = $kind['date'] !== '' ? 'a.' . $kind['date'] : 'a.tstp';
 
-$sim_sorts = ['newest' => 'Newest first', 'oldest' => 'Oldest first', 'name' => 'Name A-Z', 'changed' => 'Last changed first'];
+$sim_sorts = ['order' => 'Page order (1, 2, 3...)', 'name' => 'Name A-Z', 'newest' => 'Newest first', 'oldest' => 'Oldest first', 'changed' => 'Last changed first'];
 
 // ---------------------------------------------------------------
 // Filters (all optional, all from the address bar)
@@ -61,11 +61,11 @@ $f_status = in_array($_GET['status'] ?? '', ['active', 'inactive'], true) ? $_GE
 $f_year = isset($_GET['year']) && preg_match('/^(19|20)\d\d$/', (string) $_GET['year']) ? (int) $_GET['year'] : 0;
 $f_flag = $kind['flag'] !== '' && ($_GET['flag'] ?? '') === '1' ? '1' : '';
 $f_missing = isset($_GET['missing']) && is_string($_GET['missing']) && isset($kind['missing'][$_GET['missing']]) ? $_GET['missing'] : '';
-$f_sort = isset($_GET['sort']) && is_string($_GET['sort']) && isset($sim_sorts[$_GET['sort']]) ? $_GET['sort'] : 'newest';
+$f_sort = isset($_GET['sort']) && is_string($_GET['sort']) && isset($sim_sorts[$_GET['sort']]) ? $_GET['sort'] : 'order';
 $f_search = isset($_GET['q']) && is_string($_GET['q']) ? trim(mb_substr($_GET['q'], 0, 100)) : '';
-$f_per_page = (int) ($_GET['per'] ?? 25);
+$f_per_page = (int) ($_GET['per'] ?? 50);
 if (!in_array($f_per_page, [25, 50, 100], true)) {
-	$f_per_page = 25;
+	$f_per_page = 50;
 }
 $f_page = max(1, (int) ($_GET['page'] ?? 1));
 
@@ -75,8 +75,8 @@ function sim_url(array $change = [])
 	global $kind, $f_status, $f_year, $f_flag, $f_missing, $f_sort, $f_search, $f_per_page, $f_page;
 	$params = array_merge([
 		'status' => $f_status, 'year' => $f_year ?: '', 'flag' => $f_flag, 'missing' => $f_missing,
-		'sort' => $f_sort === 'newest' ? '' : $f_sort, 'q' => $f_search,
-		'per' => $f_per_page === 25 ? '' : $f_per_page, 'page' => $f_page === 1 ? '' : $f_page,
+		'sort' => $f_sort === 'order' ? '' : $f_sort, 'q' => $f_search,
+		'per' => $f_per_page === 50 ? '' : $f_per_page, 'page' => $f_page === 1 ? '' : $f_page,
 	], $change);
 	$params = array_filter($params, function ($value) {
 		return $value !== '' && $value !== null;
@@ -145,8 +145,20 @@ function sim_set_flag($conn, $logger, $id, $column, $on, $what)
 // ---------------------------------------------------------------
 $notice = '';
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['sim_action'])) {
+	$is_ajax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+		|| (isset($_POST['is_ajax']) && $_POST['is_ajax'] === '1');
 	$token_ok = is_string($_POST['csrf'] ?? null) && hash_equals($_SESSION['admin_csrf'], $_POST['csrf']);
 	$action = is_string($_POST['sim_action']) ? $_POST['sim_action'] : '';
+
+	if ($is_ajax && !$token_ok) {
+		while (ob_get_level() > 0) {
+			ob_end_clean();
+		}
+		header('Content-Type: application/json; charset=utf-8');
+		echo json_encode(['success' => false, 'db_updated' => false, 'message' => 'Session expired. Please reload the page.']);
+		exit;
+	}
+
 	// One record, or every ticked record.
 	$ids = isset($_POST['sim_id']) ? [(int) $_POST['sim_id']] : array_map('intval', (array) ($_POST['sim_ids'] ?? []));
 	$ids = array_slice(array_unique(array_filter($ids)), 0, 200);
@@ -164,6 +176,99 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['sim_action'])
 			$changed += sim_set_flag($conn, $logger, $id, $kind['flag'], $action === 'flag', $action === 'flag' ? 'put on the homepage' : 'taken off the homepage') ? 1 : 0;
 		}
 		$done = $changed > 0 ? $action . '-' . $changed : 'none';
+	} elseif ($token_ok && ($action === 'move_up' || $action === 'move_down')) {
+		$target_id = !empty($ids) ? (int) $ids[0] : 0;
+		$updated_rows = [];
+		if ($target_id > 0) {
+			$all = sim_query($conn, "SELECT $id_col AS id, {$kind['heading']} AS heading, order_no FROM $t ORDER BY CASE WHEN order_no IS NULL THEN 1 ELSE 0 END ASC, order_no ASC, $id_col ASC") ?: [];
+			$curr_idx = -1;
+			foreach ($all as $idx => $item) {
+				if ((int) $item['id'] === $target_id) {
+					$curr_idx = $idx;
+					break;
+				}
+			}
+			if ($curr_idx !== -1) {
+				$swap_idx = $action === 'move_up' ? $curr_idx - 1 : $curr_idx + 1;
+				if ($swap_idx >= 0 && $swap_idx < count($all)) {
+					$target_item = $all[$curr_idx];
+					$other_item = $all[$swap_idx];
+					$all[$curr_idx] = $other_item;
+					$all[$swap_idx] = $target_item;
+
+					mysqli_begin_transaction($conn);
+					$changed = 0;
+					foreach ($all as $pos => $item) {
+						$new_pos = $pos + 1;
+						$iid = (int) $item['id'];
+						$old_pos = $item['order_no'] === null ? null : (int) $item['order_no'];
+						if ($old_pos !== $new_pos) {
+							sim_query($conn, "UPDATE $t SET order_no = ? WHERE $id_col = ?", [$new_pos, $iid]);
+							$changed++;
+							$updated_rows[] = [
+								'id' => $iid,
+								'name' => $item['heading'],
+								'old_pos' => $old_pos,
+								'new_pos' => $new_pos,
+							];
+						}
+					}
+					mysqli_commit($conn);
+
+					if ($changed > 0) {
+						$logger->log('UPDATE', $t, $target_id, null, null, ucfirst($kind['one']) . ' moved ' . ($action === 'move_up' ? 'up' : 'down') . ': ' . $target_item['heading']);
+						$done = ($action === 'move_up' ? 'moved_up' : 'moved_down') . '-' . urlencode($target_item['heading']);
+					} else {
+						$done = 'none';
+					}
+				} else {
+					$done = 'boundary';
+				}
+			}
+		}
+
+		if ($is_ajax) {
+			while (ob_get_level() > 0) {
+				ob_end_clean();
+			}
+			header('Content-Type: application/json; charset=utf-8');
+			if ($done && strpos($done, 'moved_') === 0 && isset($target_item, $other_item)) {
+				$first_row = !empty($all) ? (int) $all[0]['id'] : 0;
+				$last_row = !empty($all) ? (int) end($all)['id'] : 0;
+				$positions = [];
+				foreach ($all as $pos => $item) {
+					$positions[(int) $item['id']] = $pos + 1;
+				}
+				$dir_label = $action === 'move_up' ? 'up' : 'down';
+				$target_pos = $positions[$target_id] ?? 0;
+				$other_pos = $positions[(int) $other_item['id']] ?? 0;
+				echo json_encode([
+					'success' => true,
+					'db_updated' => true,
+					'action' => $action,
+					'message' => '"' . $target_item['heading'] . '" moved ' . $dir_label . ' to position #' . $target_pos . ' (Swapped with "' . $other_item['heading'] . '" at #' . $other_pos . '). Database updated successfully!',
+					'target_id' => $target_id,
+					'target_name' => $target_item['heading'],
+					'other_id' => (int) $other_item['id'],
+					'other_name' => $other_item['heading'],
+					'positions' => $positions,
+					'first_id' => $first_row,
+					'last_id' => $last_row,
+					'updated_rows' => $updated_rows,
+					'changed_count' => $changed,
+				]);
+			} else {
+				$error_msg = $done === 'boundary'
+					? 'This designation is already at the limit of the list.'
+					: 'Nothing was changed in the database.';
+				echo json_encode([
+					'success' => false,
+					'db_updated' => false,
+					'message' => $error_msg,
+				]);
+			}
+			exit;
+		}
 	} elseif ($token_ok && $action === 'delete') {
 		$deleted = 0;
 		foreach ($ids as $id) {
@@ -193,7 +298,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['sim_action'])
 	}
 
 	if ($done !== '') {
-		header('Location: ' . sim_url(['done' => $done]));
+		$target_hash = !empty($target_id) ? '#row-' . $target_id : '';
+		header('Location: ' . sim_url(['done' => $done]) . $target_hash);
 		exit;
 	}
 	$notice = 'Nothing was changed. Please reload the page and try again.';
@@ -231,11 +337,12 @@ $where_sql = 'WHERE ' . implode(' AND ', $where);
 $counted = sim_query($conn, "SELECT COUNT(*) AS n FROM $t AS a $where_sql", $params);
 $total = $counted ? (int) $counted[0]['n'] : 0;
 
-// "Newest" is the order the website uses.
-$site_order = $kind['date'] !== '' ? "a.{$kind['date']} DESC, a.$id_col DESC" : "a.$id_col DESC";
+// "Page order" is the order the website uses.
+$site_order = "CASE WHEN a.order_no IS NULL THEN 1 ELSE 0 END ASC, a.order_no ASC, a.$id_col ASC";
 $order_sql = [
-	'newest' => $site_order,
-	'oldest' => $kind['date'] !== '' ? "a.{$kind['date']} ASC, a.$id_col ASC" : "a.$id_col ASC",
+	'order' => $site_order,
+	'newest' => "a.$id_col DESC",
+	'oldest' => "a.$id_col ASC",
 	'name' => "a.{$kind['heading']} ASC",
 	'changed' => "a.tstp DESC, a.$id_col DESC",
 ][$f_sort];
@@ -250,7 +357,7 @@ foreach ($kind['missing'] as $key => $spec) {
 }
 $records = sim_query(
 	$conn,
-	"SELECT a.$id_col AS id, a.{$kind['heading']} AS heading, " . ($kind['summary'][0] === '(' ? $kind['summary'] : 'a.' . $kind['summary']) . " AS summary, a.is_active, a.tstp, $when AS shown_on"
+	"SELECT a.$id_col AS id, a.{$kind['heading']} AS heading, " . ($kind['summary'][0] === '(' ? $kind['summary'] : 'a.' . $kind['summary']) . " AS summary, a.is_active, a.tstp, $when AS shown_on, a.order_no"
 		. ($kind['thumb'] !== '' ? ", a.{$kind['thumb']} AS thumb" : ", '' AS thumb")
 		. ($kind['flag'] !== '' ? ", a.{$kind['flag']} AS flag" : ", '2' AS flag")
 		. ($kind['rating'] !== '' ? ", a.{$kind['rating']} AS rating" : ", '' AS rating")
@@ -260,6 +367,10 @@ $records = sim_query(
 	FROM $t AS a $where_sql ORDER BY $order_sql LIMIT ?, ?",
 	array_merge($params, [$offset, $f_per_page])
 ) ?: [];
+
+$boundary_query = sim_query($conn, "SELECT (SELECT $id_col FROM $t ORDER BY CASE WHEN order_no IS NULL THEN 1 ELSE 0 END ASC, order_no ASC, $id_col ASC LIMIT 1) AS first_id, (SELECT $id_col FROM $t ORDER BY CASE WHEN order_no IS NULL THEN 1 ELSE 0 END DESC, order_no DESC, $id_col DESC LIMIT 1) AS last_id");
+$first_id = $boundary_query ? (int) $boundary_query[0]['first_id'] : 0;
+$last_id = $boundary_query ? (int) $boundary_query[0]['last_id'] : 0;
 
 $stat = sim_query($conn, "SELECT COUNT(*) AS total, SUM(a.is_active = '1') AS active, SUM(a.is_active <> '1') AS hidden, SUM(YEAR($when) = YEAR(CURDATE())) AS this_year"
 	. ($kind['flag'] !== '' ? ", SUM(a.{$kind['flag']} = '1' AND a.is_active = '1') AS flagged" : ", 0 AS flagged")
@@ -284,6 +395,12 @@ if ($done === 'added') {
 		'flag' => "$who now on the homepage.", 'unflag' => "$who no longer on the homepage.",
 		'deleted' => $n . ' ' . ($n === 1 ? $kind['one'] . ' was' : $kind['many'] . ' were') . ' deleted. A copy of each record is kept in the delete log.',
 	][$match[1]];
+} elseif (preg_match('/^moved_(up|down)-(.+)$/', $done, $match)) {
+	$dir = $match[1] === 'up' ? 'up' : 'down';
+	$name = urldecode($match[2]);
+	$notice = '"' . $name . '" was moved ' . $dir . ' in the order.';
+} elseif ($done === 'boundary') {
+	$notice = 'This designation is already at the beginning or end of the order.';
 } elseif ($done === 'inuse') {
 	$notice = $kind['in_use_note'];
 } elseif ($done === 'none') {
@@ -399,6 +516,115 @@ if ($done === 'added') {
 							<link href="<?= BASE_URL ?>assets/css/dre-simple.css?v=1" rel="stylesheet" type="text/css" />
 							<link href="<?= BASE_URL ?>assets/css/dre-careers.css?v=1" rel="stylesheet" type="text/css" />
 
+							<style>
+							/* Team designations custom table layout with order column */
+							.dre-desg-table .dre-proj-row {
+								grid-template-columns: 26px 115px minmax(200px, 2fr) minmax(140px, 1fr) 115px 140px 90px;
+							}
+							.dre-col-order a {
+								color: inherit;
+								text-decoration: none;
+								display: inline-flex;
+								align-items: center;
+								gap: 4px;
+							}
+							.dre-col-order a:hover {
+								color: var(--dd-main);
+							}
+							.dre-order-widget {
+								display: inline-flex;
+								align-items: center;
+								gap: 6px;
+							}
+							.dre-order-pill {
+								display: inline-flex;
+								align-items: center;
+								justify-content: center;
+								min-width: 36px;
+								height: 30px;
+								padding: 0 6px;
+								background: rgba(95, 87, 76, 0.08);
+								border: 1px solid rgba(95, 87, 76, 0.16);
+								border-radius: 8px;
+								font-size: 0.85rem;
+								font-weight: 700;
+								color: var(--dd-main);
+								letter-spacing: -0.02em;
+							}
+							.dre-order-nav {
+								display: inline-flex;
+								align-items: center;
+								gap: 3px;
+								margin: 0;
+							}
+							.dre-order-btn {
+								display: inline-flex;
+								align-items: center;
+								justify-content: center;
+								width: 28px;
+								height: 28px;
+								padding: 0;
+								border: 1px solid rgba(95, 87, 76, 0.18);
+								border-radius: 7px;
+								background: #fff;
+								color: var(--dd-main);
+								font-size: 13px;
+								cursor: pointer;
+								transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+							}
+							.dre-order-btn:hover:not(:disabled):not(.is-disabled) {
+								background: var(--dd-main);
+								color: #fff;
+								border-color: var(--dd-main);
+							}
+							.dre-order-btn:disabled,
+							.dre-order-btn.is-disabled {
+								opacity: 0.3;
+								cursor: not-allowed;
+								background: rgba(95, 87, 76, 0.04);
+								border-color: rgba(95, 87, 76, 0.10);
+								color: var(--dd-muted);
+							}
+							.dre-row-shifted {
+								animation: dreRowFlash 2s ease-out;
+							}
+							@keyframes dreRowFlash {
+								0% { background: rgba(40, 167, 69, 0.32); }
+								40% { background: rgba(40, 167, 69, 0.16); }
+								100% { background: transparent; }
+							}
+							.dre-leads-notice.dre-notice-success {
+								background: rgba(40, 167, 69, 0.12);
+								border: 1px solid rgba(40, 167, 69, 0.35);
+								color: #1e7e34;
+							}
+							.dre-leads-notice.dre-notice-error {
+								background: rgba(220, 53, 69, 0.12);
+								border: 1px solid rgba(220, 53, 69, 0.35);
+								color: #b02a37;
+							}
+							.dre-order-btn.is-busy {
+								pointer-events: none;
+								opacity: 0.5;
+							}
+							.dre-desg-table .dre-proj-row {
+								transition: background 0.3s ease;
+							}
+							.dre-proj-row:target {
+								animation: dreRowFlash 2.5s ease-out;
+							}
+							@media (max-width: 991px) {
+								.dre-desg-table .dre-proj-row {
+									grid-template-columns: 26px 1fr;
+								}
+								.dre-proj-order {
+									grid-column: 2;
+									margin-top: 2px;
+									margin-bottom: 2px;
+								}
+							}
+							</style>
+
 							<div class="dre-dash dre-leads dre-projects dre-articles dre-simple dre-careers">
 
 								<!-- Title, numbers, main actions -->
@@ -419,6 +645,7 @@ if ($done === 'added') {
 									</div>
 									<div class="dre-actions">
 										<a class="dre-primary" href="<?= BASE_URL . $kind['add_file'] ?>"><i class="bi bi-plus-lg"></i> Add <?= sim_e($kind['one']) ?></a>
+										<a href="<?= BASE_URL ?>arrange-team.php"><i class="bi bi-arrows-move"></i> Arrange team</a>
 										<?php if ($kind['content_file'] !== ''): ?>
 											<a href="<?= BASE_URL . $kind['content_file'] ?>?edit=<?= base64_encode(1) ?>"><i class="bi bi-window"></i> Page content</a>
 										<?php endif; ?>
@@ -431,9 +658,7 @@ if ($done === 'added') {
 								<?php if ($kind['site_note'] !== ''): ?>
 									<div class="dre-leads-notice dre-site-note" role="note"><i class="bi bi-eye-slash"></i> <?= sim_e($kind['site_note']) ?></div>
 								<?php endif; ?>
-								<?php if ($notice !== ''): ?>
-									<div class="dre-leads-notice" role="status" id="simNotice"><i class="bi bi-info-circle"></i> <?= sim_e($notice) ?></div>
-								<?php endif; ?>
+								<div class="dre-leads-notice<?= $notice !== '' ? '' : ' d-none' ?>" role="status" id="simNotice"><i class="bi bi-info-circle"></i> <span id="simNoticeText"><?= sim_e($notice) ?></span></div>
 
 								<!-- Search and filters -->
 								<form method="get" action="<?= BASE_URL . $kind['list_file'] ?>" class="dre-glass dre-leads-filter dre-proj-filter">
@@ -484,7 +709,7 @@ if ($done === 'added') {
 									<?php endif; ?>
 									<div class="dre-leads-filter-buttons">
 										<button type="submit" class="dre-btn dre-btn-main"><i class="bi bi-funnel"></i> Apply</button>
-										<?php if ($filters_on || $f_sort !== 'newest'): ?>
+										<?php if ($filters_on || $f_sort !== 'order'): ?>
 											<a class="dre-btn" href="<?= BASE_URL . $kind['list_file'] ?>">Clear</a>
 										<?php endif; ?>
 									</div>
@@ -522,9 +747,10 @@ if ($done === 'added') {
 											<?php endif; ?>
 										</div>
 									<?php else: ?>
-										<div class="dre-proj-table" role="table" aria-label="<?= sim_e($kind['title']) ?>">
+										<div class="dre-proj-table dre-desg-table" role="table" aria-label="<?= sim_e($kind['title']) ?>">
 											<div class="dre-proj-row dre-proj-head" role="row">
 												<div role="columnheader"><span class="sr-only">Select</span></div>
+												<div role="columnheader" class="dre-col-order"><a href="<?= sim_e(sim_url(['sort' => 'order'])) ?>" title="Sort by page order">Order <i class="bi bi-arrow-down-up"></i></a></div>
 												<div role="columnheader"><?= sim_e($kind['head_label']) ?></div>
 												<div role="columnheader">Details</div>
 												<div role="columnheader">Last changed</div>
@@ -540,6 +766,8 @@ if ($done === 'added') {
 												$summary = trim(preg_replace('/\s+/', ' ', str_replace("\xC2\xA0", ' ', html_entity_decode(strip_tags((string) $row['summary']), ENT_QUOTES, 'UTF-8'))));
 												$shown_on = $row['shown_on'] ? strtotime($row['shown_on']) : false;
 												$rating = is_numeric($row['rating']) ? max(0, min(5, (float) $row['rating'])) : null;
+												$is_first = ($id === $first_id);
+												$is_last = ($id === $last_id);
 												$missing = [];
 												foreach ($kind['missing'] as $key => $spec) {
 													if ((int) $row['miss_' . $key] === 1) {
@@ -547,9 +775,24 @@ if ($done === 'added') {
 													}
 												}
 											?>
-												<div class="dre-proj-row<?= $is_live ? '' : ' is-hidden' ?>" role="row">
+												<div class="dre-proj-row<?= $is_live ? '' : ' is-hidden' ?>" role="row" id="row-<?= $id ?>" data-id="<?= $id ?>">
 													<div class="dre-proj-pick" role="cell">
 														<input type="checkbox" name="sim_ids[]" value="<?= $id ?>" form="simBulkForm" class="dre-proj-box" aria-label="Select <?= sim_e($row['heading']) ?>">
+													</div>
+													<div class="dre-proj-order" role="cell">
+														<div class="dre-order-widget">
+															<span class="dre-order-pill" title="Position <?= $row['order_no'] !== null ? (int) $row['order_no'] : '&ndash;' ?> on the Our Team page">#<?= $row['order_no'] !== null ? (int) $row['order_no'] : '&ndash;' ?></span>
+															<form method="post" action="<?= sim_e(sim_url()) ?>" class="dre-order-nav">
+																<input type="hidden" name="csrf" value="<?= sim_e($_SESSION['admin_csrf']) ?>">
+																<input type="hidden" name="sim_id" value="<?= $id ?>">
+																<button type="submit" name="sim_action" value="move_up" class="dre-order-btn<?= $is_first ? ' is-disabled' : '' ?>" title="Move up" aria-label="Move <?= sim_e($row['heading']) ?> up" <?= $is_first ? 'disabled' : '' ?>>
+																	<i class="bi bi-chevron-up"></i>
+																</button>
+																<button type="submit" name="sim_action" value="move_down" class="dre-order-btn<?= $is_last ? ' is-disabled' : '' ?>" title="Move down" aria-label="Move <?= sim_e($row['heading']) ?> down" <?= $is_last ? 'disabled' : '' ?>>
+																	<i class="bi bi-chevron-down"></i>
+																</button>
+															</form>
+														</div>
 													</div>
 													<div class="dre-proj-main" role="cell">
 														<a class="dre-proj-thumb<?= $kind['thumb'] === '' ? ' dre-sim-initial' : '' ?>" href="<?= sim_e($edit_url) ?>" tabindex="-1" aria-hidden="true">
@@ -605,6 +848,9 @@ if ($done === 'added') {
 																<form method="post" action="<?= sim_e(sim_url()) ?>" class="dre-sim-row-form" data-name="<?= sim_e($row['heading']) ?>">
 																	<input type="hidden" name="csrf" value="<?= sim_e($_SESSION['admin_csrf']) ?>">
 																	<input type="hidden" name="sim_id" value="<?= $id ?>">
+																	<button type="submit" name="sim_action" value="move_up" class="dropdown-item" <?= $is_first ? 'disabled' : '' ?>><i class="bi bi-arrow-up mr-2"></i>Move up</button>
+																	<button type="submit" name="sim_action" value="move_down" class="dropdown-item" <?= $is_last ? 'disabled' : '' ?>><i class="bi bi-arrow-down mr-2"></i>Move down</button>
+																	<div class="dropdown-divider"></div>
 																	<?php if ($kind['flag'] !== ''): ?>
 																		<button type="submit" name="sim_action" value="<?= $is_flagged ? 'unflag' : 'flag' ?>" class="dropdown-item"><i class="bi bi-house-heart mr-2"></i><?= $is_flagged ? 'Take off the homepage' : 'Put on the homepage' ?></button>
 																		<div class="dropdown-divider"></div>
@@ -707,9 +953,179 @@ if ($done === 'added') {
 									refresh();
 
 									var notice = document.getElementById('simNotice');
-									if (notice) {
+									if (notice && !notice.classList.contains('d-none')) {
 										setTimeout(function () { notice.style.display = 'none'; }, 8000);
 									}
+								})();
+
+								// AJAX reorder handler for Move Up / Move Down
+								(function () {
+									var table = document.querySelector('.dre-desg-table');
+									if (!table) return;
+
+									var notice = document.getElementById('simNotice');
+									var noticeText = document.getElementById('simNoticeText');
+									var noticeTimeout = null;
+
+									function escapeHtml(str) {
+										var div = document.createElement('div');
+										div.textContent = str || '';
+										return div.innerHTML;
+									}
+
+									function showDbNotice(msg, isSuccess, details) {
+										if (!notice) return;
+										notice.classList.remove('d-none', 'dre-notice-success', 'dre-notice-error');
+										notice.classList.add(isSuccess ? 'dre-notice-success' : 'dre-notice-error');
+										notice.style.display = 'block';
+
+										var icon = isSuccess ? 'bi-database-check' : 'bi-exclamation-triangle';
+										var html = '<i class="bi ' + icon + ' mr-2" style="font-size:1.15rem; vertical-align:middle;"></i> ';
+										html += '<strong>' + (isSuccess ? 'Database Updated: ' : 'Error: ') + '</strong>' + escapeHtml(msg);
+
+										if (details && Array.isArray(details) && details.length > 0) {
+											html += '<div style="margin-top:6px; font-size:0.86em; opacity:0.95;">';
+											html += details.map(function (d) {
+												return '<span class="badge badge-light mr-2" style="background:rgba(255,255,255,0.7); border:1px solid rgba(0,0,0,0.1); padding:3px 6px; border-radius:6px;"><strong>' + escapeHtml(d.name) + '</strong>: pos ' + d.old_pos + ' &rarr; ' + d.new_pos + '</span>';
+											}).join(' ');
+											html += '</div>';
+										}
+
+										if (noticeText) {
+											noticeText.innerHTML = html;
+										} else {
+											notice.innerHTML = html;
+										}
+
+										if (noticeTimeout) clearTimeout(noticeTimeout);
+										noticeTimeout = setTimeout(function () {
+											notice.style.display = 'none';
+										}, 8000);
+									}
+
+									function updateButtonsState(firstId, lastId) {
+										var rows = Array.prototype.slice.call(table.querySelectorAll('.dre-proj-row:not(.dre-proj-head)'));
+										if (!rows.length) return;
+
+										var actualFirstId = firstId !== undefined && firstId !== null ? String(firstId) : (rows[0] ? rows[0].getAttribute('data-id') : null);
+										var actualLastId = lastId !== undefined && lastId !== null ? String(lastId) : (rows[rows.length - 1] ? rows[rows.length - 1].getAttribute('data-id') : null);
+
+										rows.forEach(function (row) {
+											var id = row.getAttribute('data-id');
+											var isFirst = String(id) === actualFirstId;
+											var isLast = String(id) === actualLastId;
+
+											var upBtns = row.querySelectorAll('button[value="move_up"]');
+											upBtns.forEach(function (btn) {
+												btn.disabled = isFirst;
+												if (isFirst) btn.classList.add('is-disabled');
+												else btn.classList.remove('is-disabled');
+											});
+
+											var downBtns = row.querySelectorAll('button[value="move_down"]');
+											downBtns.forEach(function (btn) {
+												btn.disabled = isLast;
+												if (isLast) btn.classList.add('is-disabled');
+												else btn.classList.remove('is-disabled');
+											});
+										});
+									}
+
+									var isBusy = false;
+
+									document.addEventListener('click', function (event) {
+										var btn = event.target.closest('.dre-order-btn, .dropdown-item[value="move_up"], .dropdown-item[value="move_down"]');
+										if (!btn) return;
+
+										var action = btn.value || btn.getAttribute('value');
+										if (action !== 'move_up' && action !== 'move_down') return;
+
+										var form = btn.closest('form');
+										if (!form) return;
+
+										event.preventDefault();
+										if (isBusy || btn.disabled || btn.classList.contains('is-disabled')) return;
+
+										isBusy = true;
+										var allOrderBtns = Array.prototype.slice.call(table.querySelectorAll('.dre-order-btn'));
+										allOrderBtns.forEach(function (b) { b.classList.add('is-busy'); });
+
+										var originalHtml = btn.innerHTML;
+										btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" style="width:11px;height:11px;border-width:2px;"></span>';
+
+										var formData = new FormData(form);
+										formData.set('sim_action', action);
+										formData.set('is_ajax', '1');
+
+										var postUrl = form.action || window.location.href;
+
+										fetch(postUrl, {
+											method: 'POST',
+											body: formData,
+											headers: {
+												'X-Requested-With': 'XMLHttpRequest'
+											}
+										})
+										.then(function (res) {
+											return res.json();
+										})
+										.then(function (data) {
+											if (data && data.success && data.db_updated) {
+												// 1. Visually swap rows in DOM
+												var targetRow = document.getElementById('row-' + data.target_id);
+												var otherRow = document.getElementById('row-' + data.other_id);
+
+												if (targetRow && otherRow && targetRow.parentNode === otherRow.parentNode) {
+													var parent = targetRow.parentNode;
+													if (data.action === 'move_up') {
+														parent.insertBefore(targetRow, otherRow);
+													} else {
+														parent.insertBefore(otherRow, targetRow);
+													}
+
+													// 2. Update order pills
+													if (data.positions) {
+														Object.keys(data.positions).forEach(function (id) {
+															var r = document.getElementById('row-' + id);
+															if (r) {
+																var pill = r.querySelector('.dre-order-pill');
+																if (pill) {
+																	var p = data.positions[id];
+																	pill.textContent = '#' + p;
+																	pill.title = 'Position ' + p + ' on the Our Team page';
+																}
+															}
+														});
+													}
+
+													// 3. Highlight the shifted row
+													targetRow.classList.remove('dre-row-shifted');
+													void targetRow.offsetWidth; // trigger reflow
+													targetRow.classList.add('dre-row-shifted');
+
+													// 4. Update button states
+													updateButtonsState(data.first_id, data.last_id);
+
+													// 5. Tell the user database changed
+													showDbNotice(data.message, true, data.updated_rows);
+													console.log('✅ Database change confirmed:', data);
+												} else {
+													window.location.reload();
+												}
+											} else {
+												showDbNotice((data && data.message) ? data.message : 'Order could not be changed.', false);
+											}
+										})
+										.catch(function (err) {
+											console.error('AJAX order shift error, falling back to form submit:', err);
+											form.submit();
+										})
+										.finally(function () {
+											btn.innerHTML = originalHtml;
+											isBusy = false;
+											allOrderBtns.forEach(function (b) { b.classList.remove('is-busy'); });
+										});
+									});
 								})();
 							</script>
 							<!--end::List-->

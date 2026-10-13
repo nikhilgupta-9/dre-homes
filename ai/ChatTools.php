@@ -88,7 +88,7 @@ class ChatTools
             ],
             [
                 'name' => 'create_lead',
-                'description' => 'Save the visitor\'s contact details so a DRE Homes agent can call them back. Only call this after the visitor has typed their own name and phone number or email AND has clearly agreed to be contacted. Never invent or guess contact details.',
+                'description' => 'Save the visitor\'s contact details so a DRE Homes sales executive can call or video call them. Call this as soon as the visitor has typed their own name and a phone number or email, in reply to the offer of a call from a sales executive or when asking to be contacted. Never invent or guess contact details.',
                 'parameters' => [
                     'type' => 'object',
                     'properties' => [
@@ -96,7 +96,8 @@ class ChatTools
                         'phone' => ['type' => 'string', 'description' => 'With country code if the visitor gave one.'],
                         'email' => ['type' => 'string'],
                         'interested_in' => ['type' => 'string', 'description' => 'Project name or a short note on what they are looking for.'],
-                        'message' => ['type' => 'string', 'description' => 'Anything else the agent should know, in one or two sentences.'],
+                        'message' => ['type' => 'string', 'description' => 'Anything else the sales executive should know, in one or two sentences: budget, area, bedrooms, timing.'],
+                        'contact_by' => ['type' => 'string', 'enum' => ['phone call', 'video call', 'whatsapp', 'email'], 'description' => 'How the visitor prefers to be reached, only when they said so.'],
                         'visitor_agreed_to_be_contacted' => ['type' => 'boolean'],
                     ],
                     'required' => ['name', 'visitor_agreed_to_be_contacted'],
@@ -446,6 +447,7 @@ class ChatTools
         $email = self::text($args, 'email', 150);
         $interested_in = self::text($args, 'interested_in', 200);
         $message = self::text($args, 'message', 600);
+        $contact_by = in_array($args['contact_by'] ?? '', ['phone call', 'video call', 'whatsapp', 'email'], true) ? $args['contact_by'] : '';
 
         if (mb_strlen($name) < 2 || !preg_match('/^[\p{L}\p{M}][\p{L}\p{M} .\'-]*$/u', $name)) {
             return ['saved' => false, 'error' => 'A real name is needed. Ask the visitor for their name.'];
@@ -471,7 +473,7 @@ class ChatTools
             }
         }
 
-        $note = trim($message . "\n[Sent by the AI chat assistant" . ($this->context['page_url'] !== '' ? ' on ' . $this->context['page_url'] : '') . ']');
+        $note = trim($message . ($contact_by !== '' ? "\nPrefers: " . $contact_by : '') . "\n[Sent by the AI chat assistant" . ($this->context['page_url'] !== '' ? ' on ' . $this->context['page_url'] : '') . ']');
         $saved = db_query(
             "INSERT INTO tbl_offplan_enq
                 SET name = ?, email = ?, phone = ?, message = ?, prop_name = ?, prop_location = '', prop_bedroom = '',
@@ -483,20 +485,79 @@ class ChatTools
         }
         $this->leads_created_now++;
 
-        $notify = (string) secret('ai_lead_notify_email', '');
-        if ($notify !== '' && filter_var($notify, FILTER_VALIDATE_EMAIL)) {
-            $clean = function ($value) {
-                return trim(preg_replace('/[\r\n]+/', ' ', (string) $value));
-            };
-            $body = "Name: " . $clean($name) . "\r\nMobile: " . $clean($phone) . "\r\nEmail ID: " . $clean($email)
-                . "\r\nInterested in: " . $clean($interested_in) . "\r\nMessage: " . $clean($message)
-                . "\r\nChannel: AI Chat\r\nPage URL: " . $clean($this->context['page_url']) . "\r\nIP Address: " . $clean($ip_address)
-                . "\r\nDate: " . date('d-m-Y H:i:s') . "\r\n";
-            $headers = "From: donotreply@drehomes.com\r\nReply-To: donotreply@drehomes.com\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\n";
-            @mail($notify, date('d-m-Y H:i:s') . ' : Enquiry from Drehomes: AI Chat', $body, $headers);
-        }
+        $this->notifyOffice($name, $phone_ok ? $phone : '', $email_ok ? $email : '', $interested_in, $message, $contact_by, $ip_address);
 
         return ['saved' => true, 'message' => 'Details saved. Tell the visitor a DRE Homes agent will contact them shortly.'];
+    }
+
+    // Emails the new lead to the office: the addresses in ai/config.php, or the ones in the secrets file when set.
+    // Sent through the SMTP account in the secrets file when there is one, otherwise with PHP's mail() like the
+    // website's enquiry forms. A failed email never stops the lead from being saved; the reason goes to the PHP error log.
+    private function notifyOffice($name, $phone, $email, $interested_in, $message, $contact_by, $ip_address)
+    {
+        $configured = trim((string) secret('ai_lead_notify_email', ''));
+        $list = $configured !== '' ? explode(',', $configured) : (array) ($this->config['chat_lead_notify_emails'] ?? []);
+        $to = [];
+        foreach ($list as $address) {
+            $address = trim((string) $address);
+            if (filter_var($address, FILTER_VALIDATE_EMAIL)) {
+                $to[] = $address;
+            }
+        }
+        if (!$to) {
+            return false;
+        }
+        // Nothing the visitor typed may start a new header line.
+        $clean = function ($value) {
+            return trim(preg_replace('/[\r\n]+/', ' ', (string) $value));
+        };
+        $chat_link = (int) $this->context['conversation_id'] > 0
+            ? $this->base_url . 'admin_nsrdwsc/manage-ai-chats.php?chat=' . (int) $this->context['conversation_id']
+            : '';
+        $lines = [
+            'A visitor asked for a call through the AI chat on the website.',
+            '',
+            'Name: ' . $clean($name),
+            'Mobile: ' . ($phone !== '' ? $clean($phone) : '-'),
+            'Email ID: ' . ($email !== '' ? $clean($email) : '-'),
+            'Prefers: ' . ($contact_by !== '' ? $contact_by : 'not said (phone or video call)'),
+            'Interested in: ' . ($interested_in !== '' ? $clean($interested_in) : '-'),
+            'Message: ' . ($message !== '' ? $clean($message) : '-'),
+            '',
+            'Channel: AI Chat',
+            'Page URL: ' . $clean($this->context['page_url']),
+            'IP Address: ' . $clean($ip_address),
+            'Date: ' . date('d-m-Y H:i:s'),
+        ];
+        if ($chat_link !== '') {
+            $lines[] = '';
+            $lines[] = 'Read the whole chat (admin login needed): ' . $chat_link;
+        }
+        $subject = 'New lead from the AI chat: ' . mb_substr($clean($name), 0, 60) . ($phone !== '' ? ' - ' . $clean($phone) : '');
+        $body = implode("\r\n", $lines) . "\r\n";
+        $smtp = [
+            'host' => (string) secret('smtp_host', ''),
+            'port' => (int) secret('smtp_port', 587),
+            'user' => (string) secret('smtp_user', ''),
+            'pass' => (string) secret('smtp_pass', ''),
+            'from' => (string) secret('smtp_from', ''),
+        ];
+        if (trim($smtp['host']) !== '') {
+            require_once __DIR__ . '/SmtpMail.php';
+            $problem = SmtpMail::send($smtp, $to, $subject, $body, $email);
+            if ($problem !== '') {
+                error_log('AI chat: the lead email to the office could not be sent: ' . $problem);
+            }
+            return $problem === '';
+        }
+        $headers = "From: donotreply@drehomes.com\r\n"
+            . 'Reply-To: ' . ($email !== '' ? $clean($email) : 'donotreply@drehomes.com') . "\r\n"
+            . "MIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\n";
+        $sent = @mail(implode(', ', $to), '=?UTF-8?B?' . base64_encode($subject) . '?=', $body, $headers);
+        if (!$sent) {
+            error_log('AI chat: the lead email to the office could not be sent with mail(). On a computer without a mail system, fill in the SMTP settings in the secrets file.');
+        }
+        return $sent;
     }
 
     // ---------------------------------------------------------------

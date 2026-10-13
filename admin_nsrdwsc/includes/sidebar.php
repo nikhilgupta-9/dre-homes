@@ -21,6 +21,7 @@ $dre_menu = [
 	'Overview' => [
 		['Dashboard', 'bi-speedometer2', 'dashboard.php', ['dashboard.php']],
 		['Leads', 'bi-person-lines-fill', 'manage-leads.php', ['manage-leads.php', 'edit-leads.php'], 'only' => 1],
+		['AI Chats', 'bi-chat-dots', 'manage-ai-chats.php', ['manage-ai-chats.php'], 'only' => 1],
 		['Quiz Enquiries', 'bi-patch-question', 'manage-quiz.php', ['manage-quiz.php']],
 	],
 
@@ -143,6 +144,7 @@ $dre_menu = [
 	],
 
 	'Settings' => [
+		['My Profile', 'bi-person-circle', 'my-profile.php', ['my-profile.php']],
 		['SEO Meta Tags', 'bi-tags', 'manage-tags.php', ['manage-tags.php', 'edit-tags.php']],
 		['Header & Footer', 'bi-window-desktop', [
 			['Header Info', 'edit-header-info.php' . $dre_edit, ['edit-header-info.php']],

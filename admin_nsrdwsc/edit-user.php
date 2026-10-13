@@ -71,22 +71,26 @@ $id = 0;
 $details = null;
 if ($editing && $is_super_admin) {
   $id = (int) base64_decode(is_string($_GET['edit'] ?? null) ? $_GET['edit'] : '', true);
-  $details = $id > 0 ? (set_query($conn, "SELECT login_id, username, login_email, login_type, is_active, tstp FROM tbl_login WHERE login_id = ?", [$id]) ?: []) : [];
+  $details = $id > 0 ? (set_query($conn, "SELECT login_id, username, login_email, login_type, is_active, biometric_allowed, tstp FROM tbl_login WHERE login_id = ?", [$id]) ?: []) : [];
   $details = $details ? $details[0] : null;
 }
 $can_show_form = $is_super_admin && (!$editing || $details);
 $is_me = $editing && $id === $my_id;
 
 $errors = [];
-$old = ['username' => '', 'email' => '', 'is_active' => '1'];
+$old = ['username' => '', 'email' => '', 'is_active' => '1', 'biometric' => ''];
 if ($details) {
-  $old = ['username' => (string) $details['username'], 'email' => (string) $details['login_email'], 'is_active' => $details['is_active'] === '1' ? '1' : ''];
+  $old = ['username' => (string) $details['username'], 'email' => (string) $details['login_email'], 'is_active' => $details['is_active'] === '1' ? '1' : '', 'biometric' => (int) $details['biometric_allowed'] === 1 ? '1' : ''];
 }
+// Devices on which this user has set a fingerprint up (on their own profile page).
+$device_count = $details ? count(set_query($conn, "SELECT passkey_id FROM tbl_login_passkeys WHERE login_id = ?", [$id]) ?: []) : 0;
 
 if ($can_show_form && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['save_user'])) {
   $old['username'] = isset($_POST['username']) && is_string($_POST['username']) ? mb_substr(trim($_POST['username']), 0, 255) : '';
   $old['email'] = isset($_POST['login_email']) && is_string($_POST['login_email']) ? mb_substr(trim($_POST['login_email']), 0, 255) : '';
   $old['is_active'] = isset($_POST['is_active']) ? '1' : '';
+  $old['biometric'] = isset($_POST['biometric_allowed']) ? '1' : '';
+  $remove_devices = $editing && isset($_POST['remove_devices']);
   // The password is never shown again or put back into the form.
   $password = isset($_POST['password']) && is_string($_POST['password']) ? $_POST['password'] : '';
   $password_again = isset($_POST['password_again']) && is_string($_POST['password_again']) ? $_POST['password_again'] : '';
@@ -123,8 +127,8 @@ if ($can_show_form && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_P
     // Stored the way the sign-in page checks it.
     $password_hash = $password !== '' ? md5(prepStr($password)) : '';
     if ($editing) {
-      $sql = "UPDATE tbl_login SET username = ?, login_email = ?, is_active = ?, tstp = NOW()" . ($password_hash !== '' ? ", login_password = ?" : '') . " WHERE login_id = ?";
-      $values = [$old['username'], $old['email'], $old['is_active'] === '1' ? '1' : '2'];
+      $sql = "UPDATE tbl_login SET username = ?, login_email = ?, is_active = ?, biometric_allowed = ?, tstp = NOW()" . ($password_hash !== '' ? ", login_password = ?" : '') . " WHERE login_id = ?";
+      $values = [$old['username'], $old['email'], $old['is_active'] === '1' ? '1' : '2', $old['biometric'] === '1' ? 1 : 0];
       if ($password_hash !== '') {
         $values[] = $password_hash;
       }
@@ -133,18 +137,23 @@ if ($can_show_form && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_P
       $record_id = $id;
     } else {
       // New users are sub admins.
-      $saved = set_query($conn, "INSERT INTO tbl_login (username, login_email, login_password, login_type, is_active, tstp) VALUES (?, ?, ?, '2', ?, NOW())", [$old['username'], $old['email'], $password_hash, $old['is_active'] === '1' ? '1' : '2']);
+      $saved = set_query($conn, "INSERT INTO tbl_login (username, login_email, login_password, login_type, is_active, biometric_allowed, tstp) VALUES (?, ?, ?, '2', ?, ?, NOW())", [$old['username'], $old['email'], $password_hash, $old['is_active'] === '1' ? '1' : '2', $old['biometric'] === '1' ? 1 : 0]);
       $record_id = $saved ? (int) mysqli_insert_id($conn) : 0;
     }
     if (!$saved) {
       $errors[] = 'The user could not be saved. Please try again.';
     } else {
       // The log says what changed, never the password itself.
-      $changes = ['username' => $old['username'], 'login_email' => $old['email'], 'is_active' => $old['is_active'] === '1' ? '1' : '2'];
+      $changes = ['username' => $old['username'], 'login_email' => $old['email'], 'is_active' => $old['is_active'] === '1' ? '1' : '2', 'biometric_allowed' => $old['biometric'] === '1' ? '1' : '0'];
+      // "Remove the fingerprints" forgets every device: the user has to set them up again.
+      if ($remove_devices && $device_count > 0) {
+        set_query($conn, "DELETE FROM tbl_login_passkeys WHERE login_id = ?", [$id]);
+        $changes['fingerprint_devices'] = 'removed ' . $device_count;
+      }
       if ($password_hash !== '') {
         $changes['login_password'] = $editing ? 'changed' : 'set';
       }
-      $before = $editing ? ['username' => $details['username'], 'login_email' => $details['login_email'], 'is_active' => $details['is_active']] : null;
+      $before = $editing ? ['username' => $details['username'], 'login_email' => $details['login_email'], 'is_active' => $details['is_active'], 'biometric_allowed' => (string) (int) $details['biometric_allowed']] : null;
       $logger->log($editing ? 'UPDATE' : 'INSERT', 'tbl_login', $record_id, $before, $changes, ($editing ? 'User updated: ' : 'User added: ') . $old['username']);
       if ($is_me) {
         $_SESSION['username'] = $old['username'];
@@ -348,6 +357,24 @@ if ($can_show_form && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_P
                       <i></i>
                       <span><strong>Allowed to sign in</strong><small><?= $is_me ? 'This is your own account, so it stays on.' : 'Off = the account is kept but the user cannot sign in.' ?></small></span>
                     </label>
+                    <label class="dre-toggle">
+                      <input type="checkbox" name="biometric_allowed" value="1" <?= $old['biometric'] === '1' ? 'checked' : '' ?>>
+                      <i></i>
+                      <span><strong>Allowed to sign in with a fingerprint or face</strong><small>On = the user can set it up on their own device (My Profile) and then sign in without the password, with Touch ID, Face ID or Windows Hello. Off = password only, also on devices that were already set up.</small></span>
+                    </label>
+                    <?php if ($editing): ?>
+                      <p class="dre-form-note" style="margin: 14px 0 0;">
+                        <i class="bi bi-fingerprint"></i>
+                        <?= $device_count === 0 ? 'This user has not set it up on any device yet.' : 'Set up on ' . $device_count . ($device_count === 1 ? ' device.' : ' devices.') ?>
+                      </p>
+                      <?php if ($device_count > 0): ?>
+                        <label class="dre-toggle">
+                          <input type="checkbox" name="remove_devices" value="1">
+                          <i></i>
+                          <span><strong>Remove the set-up devices when saving</strong><small>For a lost or replaced device: every device is forgotten and the user has to set it up again.</small></span>
+                        </label>
+                      <?php endif; ?>
+                    <?php endif; ?>
                   </section>
 
                   <div class="dre-form-bar">

@@ -53,6 +53,7 @@
 <span class="navi-text text-muted text-hover-primary"><?=$_SESSION['email_id']?></span>
 </span>
 </a>
+<a href="<?=BASE_URL?>my-profile.php" class="btn btn-sm btn-light-primary font-weight-bolder py-2 px-5 mr-2">My Profile</a>
 <a href="<?=BASE_URL?>logout.php" class="btn btn-sm btn-light-primary font-weight-bolder py-2 px-5">Sign Out</a>
 </div>
 </div>

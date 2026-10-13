@@ -113,21 +113,28 @@ if(isset($_POST['submit_resume']))
                                 <div class="col-lg-12">
                                     <div class="post-container">
                                         <div class="boxed-content">
+                                            <?php
+                                            // "Build Your Future With Us": edited in the admin under Careers > Careers Page.
+                                            // The text below is shown only while nothing is saved there.
+                                            $intro_heading = trim((string) ($career_details['career_intro_heading'] ?? '')) ?: 'Build Your Future With Us';
+                                            $intro_text = trim((string) ($career_details['career_intro_text'] ?? '')) ?: 'At DRE, we empower ambitious minds with opportunities to grow, lead, and make an impact in Dubai’s evolving real estate landscape.';
+                                            // Colours and fonts pasted along with the text are dropped, so the section looks like the rest of the page.
+                                            $intro_body = preg_replace('/\s(style|class)="[^"]*"/i', '', trim((string) ($career_details['career_cont_descp'] ?? '')));
+                                            if (trim(strip_tags($intro_body)) === '') {
+                                                $intro_body = '<p>Join a diverse and vibrant community. We are an award-winning real estate firm nestled in the heart of the Dubai Hills estate. Our new flagship Head Office is a sustainable hub with a unique human-centric approach where innovation and creativity set a new benchmark within our industry.</p>'
+                                                    . '<p>At present, we are actively seeking like-minded professionals to join us on our journey, where together we can build and grow while enhancing your career and financial aspirations.</p>'
+                                                    . '<p>If you have experience in real estate, we will take you further than you have ever been; if you are new to this market, our dedicated team of coaches will give you the tools and motivation to help you achieve the outcome you desire.</p>';
+                                            }
+                                            ?>
                                             <div class="boxed-content-title">
-                                                <h3>Build Your Future With Us</h3>
-                                                <p>At DRE, we empower ambitious minds with opportunities to grow, lead,
-                                                    and make an impact in Dubai’s evolving real estate landscape.</p>
+                                                <h3><?= htmlspecialchars($intro_heading, ENT_QUOTES, 'UTF-8') ?></h3>
+                                                <p><?= nl2br(htmlspecialchars($intro_text, ENT_QUOTES, 'UTF-8')) ?></p>
                                             </div>
                                             <!--boxed-content-item-->
                                             <div class="boxed-content-item">
                                                 <div class="row">
                                                     <div class="col-12">
-                                                        <p>Join a diverse and vibrant community. We are an award-winning real estate firm nestled in the heart of the Dubai Hills estate. Our new flagship Head Office is a sustainable hub with a unique human-centric approach where innovation and creativity set a new benchmark within our industry.
-                                                        </p>
-                                                        <p>At present, we are actively seeking like-minded professionals to join us on our journey, where together we can build and grow while enhancing your career and financial aspirations.
-                                                        </p>
-                                                        <p>If you have experience in real estate, we will take you further than you have ever been; if you are new to this market, our dedicated team of coaches will give you the tools and motivation to help you achieve the outcome you desire.
-                                                        </p>
+                                                        <?= $intro_body ?>
                                                     </div>
                                                 </div>
                                             </div>

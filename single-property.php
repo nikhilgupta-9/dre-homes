@@ -103,14 +103,19 @@ $dev_detail = select_row('tbl_developer', 'dev_id=' . $proj_detail['prj_dev_id']
                                             <div class="hero-section-title proj-head">
                                             <div class="d-flex flex-column-reverse flex-md-row justify-content-between align-items-md-center">
                                                     <h1 class="mt-3"><?= $proj_detail['proj_name'] ?></h1>
-                                                                                                                                        <?php if (!empty($proj_detail['proj_dev_img'])) { ?>
-
+                                                                                                                                        <?php
+                                                $dev_logo = !empty($proj_detail['proj_dev_img']) && is_file(__DIR__ . '/admin_nsrdwsc/assets/media/project/dev/' . $proj_detail['proj_dev_img'])
+                                                    ? BASE_URL_IMG . 'project/dev/' . $proj_detail['proj_dev_img']
+                                                    : (!empty($dev_detail['dev_img']) && is_file(__DIR__ . '/admin_nsrdwsc/assets/media/developer/' . $dev_detail['dev_img'])
+                                                        ? BASE_URL_IMG . 'developer/' . $dev_detail['dev_img']
+                                                        : '');
+                                                if (!empty($dev_logo)) { ?>
                                                     <div class="proj-logo"><img
-                                                            src="<?= BASE_URL_IMG ?>project/dev/<?= $proj_detail['proj_dev_img'] ?>"
+                                                            src="<?= $dev_logo ?>"
                                                             width="130" height="auto"
-                                                            alt="<?= $proj_detail['proj_dev_img_alt'] ?>"
+                                                            alt="<?= !empty($proj_detail['proj_dev_img_alt']) ? $proj_detail['proj_dev_img_alt'] : ($dev_detail['dev_img_alt'] ?? $dev_detail['dev_heading']) ?>"
                                                             class="img-fluid" /></div>
-                                                            <?php }?>
+                                                <?php } ?>
                                                 </div>
                                                 <h4><strong>Starting From:</strong>
                                                     <span class="pshp_item">
@@ -160,48 +165,97 @@ $dev_detail = select_row('tbl_developer', 'dev_id=' . $proj_detail['prj_dev_id']
                                     <!-- Location -->
                                     <?php if (!empty($proj_detail['proj_location'])): ?>
                                         <div class="ps-facts-item">
-                                            <h4>Location</h4>
-                                            <h5><?= htmlspecialchars($proj_detail['proj_location']) ?></h5>
-                                            <i class="fa-light fa-location-dot"></i>
+                                            <div class="ps-facts-icon"><i class="fa-light fa-location-dot"></i></div>
+                                            <div class="ps-facts-info">
+                                                <h4>Location</h4>
+                                                <h5><?= htmlspecialchars($proj_detail['proj_location']) ?></h5>
+                                            </div>
                                         </div>
                                     <?php endif; ?>
 
-<?php if (!empty($proj_detail['proj_bedroom'])): ?>
-    <div class="ps-facts-item">
-        <h4>Bedroom</h4>
-        <h5>
-            <?php
-                $items = array_filter(array_map('trim', explode(',', $proj_detail['proj_bedroom'])), 'strlen');
+                                    <!-- Bedrooms -->
+                                    <?php if (!empty($proj_detail['proj_bedroom'])): ?>
+                                        <div class="ps-facts-item">
+                                            <div class="ps-facts-icon"><i class="fa-light fa-bed"></i></div>
+                                            <div class="ps-facts-info">
+                                                <h4>Bedrooms</h4>
+                                                <h5>
+                                                    <?php
+                                                        $items = array_filter(array_map('trim', explode(',', $proj_detail['proj_bedroom'])), 'strlen');
+                                                        $text = [];
+                                                        $numbers = [];
+                                                        foreach ($items as $item) {
+                                                            if (is_numeric($item)) {
+                                                                $numbers[] = $item;
+                                                            } else {
+                                                                $text[] = $item;
+                                                            }
+                                                        }
+                                                        sort($numbers, SORT_NUMERIC);
+                                                        echo htmlspecialchars(implode(', ', array_merge($text, $numbers)));
+                                                    ?>
+                                                </h5>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
 
-                $text = [];
-                $numbers = [];
+                                    <!-- Handover -->
+                                    <?php if (!empty($proj_detail['proj_handover'])): ?>
+                                        <div class="ps-facts-item">
+                                            <div class="ps-facts-icon"><i class="fa-light fa-calendar"></i></div>
+                                            <div class="ps-facts-info">
+                                                <h4>Handover</h4>
+                                                <h5><?= htmlspecialchars(str_replace('Handover: ', '', $proj_detail['proj_handover'])) ?></h5>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
 
-                foreach ($items as $item) {
-                    if (is_numeric($item)) {
-                        $numbers[] = $item;
-                    } else {
-                        $text[] = $item;
-                    }
-                }
-
-                // Optional: sort numbers ascending
-                sort($numbers, SORT_NUMERIC);
-
-                echo htmlspecialchars(implode(', ', array_merge($text, $numbers)));
-            ?>
-        </h5>
-        <i class="fa-light fa-bed"></i>
-    </div>
-<?php endif; ?>
-
-
+                                    <!-- Size / Area -->
+                                    <?php if (!empty($proj_detail['proj_size'])): ?>
+                                        <div class="ps-facts-item">
+                                            <div class="ps-facts-icon"><i class="fa-light fa-chart-area"></i></div>
+                                            <div class="ps-facts-info">
+                                                <h4>Size</h4>
+                                                <h5><?= htmlspecialchars($proj_detail['proj_size']) ?></h5>
+                                            </div>
+                                        </div>
+                                    <?php elseif (!empty($proj_detail['proj_area'])): ?>
+                                        <div class="ps-facts-item">
+                                            <div class="ps-facts-icon"><i class="fa-light fa-chart-area"></i></div>
+                                            <div class="ps-facts-info">
+                                                <h4>Area</h4>
+                                                <h5><?= htmlspecialchars($proj_detail['proj_area']) ?> sq ft</h5>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
 
                                     <!-- Payment plan -->
                                     <?php if (!empty($proj_detail['proj_pplan_cont'])): ?>
                                         <div class="ps-facts-item">
-                                            <h4>Payment Plan</h4>
-                                            <h5><?= htmlspecialchars($proj_detail['proj_pplan_cont']) ?></h5>
-                                            <i class="fa-solid fa-credit-card"></i>
+                                            <div class="ps-facts-icon"><i class="fa-light fa-credit-card"></i></div>
+                                            <div class="ps-facts-info">
+                                                <h4>Payment Plan</h4>
+                                                <h5><?= htmlspecialchars($proj_detail['proj_pplan_cont']) ?></h5>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <!-- Status / Property Type -->
+                                    <?php if (!empty($proj_detail['property_status'])): ?>
+                                        <div class="ps-facts-item">
+                                            <div class="ps-facts-icon"><i class="fa-light fa-circle-check"></i></div>
+                                            <div class="ps-facts-info">
+                                                <h4>Status</h4>
+                                                <h5><?= htmlspecialchars($proj_detail['property_status']) ?></h5>
+                                            </div>
+                                        </div>
+                                    <?php elseif (!empty($proj_detail['proj_inventory_type'])): ?>
+                                        <div class="ps-facts-item">
+                                            <div class="ps-facts-icon"><i class="fa-light fa-building"></i></div>
+                                            <div class="ps-facts-info">
+                                                <h4>Property Type</h4>
+                                                <h5><?= htmlspecialchars($proj_detail['proj_inventory_type']) ?></h5>
+                                            </div>
                                         </div>
                                     <?php endif; ?>
                                 </div>
@@ -265,14 +319,19 @@ $dev_detail = select_row('tbl_developer', 'dev_id=' . $proj_detail['prj_dev_id']
                                     <!--boxed-content-item-->
                                     <div class="boxed-content-item">
                                         
+                                        <?php
+                                        $feat_fac_query = select_query('tbl_proj_featfac', 'is_active=1');
+                                        $feat_fac_arr = array_filter(array_map('trim', explode(',', (string) ($proj_detail['proj_fea_fac_opt'] ?? ''))));
+                                        $has_icons = false;
+                                        ?>
+                                        <?php if (!empty($feat_fac_arr)): ?>
                                         <div class="pp-single-opt mb-3">
                                             <div class="pp-single-features ">
                                                 <ul>
                                                     <?php
-                                                    $feat_fac_query = select_query('tbl_proj_featfac', 'is_active=1');
-                                                    $feat_fac_arr = explode(',', $proj_detail['proj_fea_fac_opt']);
                                                     while ($row = mysqli_fetch_array($feat_fac_query)) {
-                                                        if (in_array($row['featfac_id'], $feat_fac_arr)) {
+                                                        if (in_array((string) $row['featfac_id'], $feat_fac_arr, true)) {
+                                                            $has_icons = true;
                                                             ?>
                                                             <li>
                                                                 <a href="javascript:void(0)">
@@ -284,13 +343,15 @@ $dev_detail = select_row('tbl_developer', 'dev_id=' . $proj_detail['prj_dev_id']
                                                         <?php }
                                                     } ?>
                                                 </ul>
-
-
                                             </div>
                                         </div>
-                                        <div class="">
-                                                <?= $proj_detail['proj_fea_fac_cont'] ?>
+                                        <div class="clearfix"></div>
+                                        <?php endif; ?>
+                                        <?php if (!empty($proj_detail['proj_fea_fac_cont'])): ?>
+                                        <div class="dre-amenities-extra <?= $has_icons ? 'has-icons' : '' ?>">
+                                            <?= $proj_detail['proj_fea_fac_cont'] ?>
                                         </div>
+                                        <?php endif; ?>
                                     </div>
                                     <!--boxed-content-item end-->
                                 </div>
@@ -365,11 +426,27 @@ $dev_detail = select_row('tbl_developer', 'dev_id=' . $proj_detail['prj_dev_id']
                                         <div class="row">
                                             
                                             <div class="col-lg-12">
-                                                <?php if (!empty($proj_detail['proj_map'])) { ?>
-
-                                                    <iframe src="<?= $proj_detail['proj_map'] ?>" width="100%" height="300"
-                                                        style="border:0;" allowfullscreen="" loading="lazy"
-                                                        referrerpolicy="no-referrer-when-downgrade"></iframe> <?php } ?>
+                                                <?php if (!empty($proj_detail['proj_map'])) { 
+                                                    $map_url = $proj_detail['proj_map'];
+                                                    if (strpos($map_url, 'output=embed') !== false && !empty($proj_detail['latitude']) && !empty($proj_detail['longitude'])) {
+                                                        $lat = (float) $proj_detail['latitude'];
+                                                        $lon = (float) $proj_detail['longitude'];
+                                                        $delta = 0.01;
+                                                        $map_url = 'https://www.openstreetmap.org/export/embed.html?bbox=' . ($lon - $delta) . ',' . ($lat - $delta) . ',' . ($lon + $delta) . ',' . ($lat + $delta) . '&layer=mapnik&marker=' . $lat . ',' . $lon;
+                                                    }
+                                                ?>
+                                                    <iframe src="<?= htmlspecialchars($map_url) ?>" width="100%" height="320"
+                                                        style="border:0; border-radius: 8px;" allowfullscreen="" loading="lazy"
+                                                        referrerpolicy="no-referrer-when-downgrade"></iframe>
+                                                    <?php if (!empty($proj_detail['latitude']) && !empty($proj_detail['longitude'])): ?>
+                                                        <div class="mt-2 text-end">
+                                                            <a href="https://www.google.com/maps/search/?api=1&query=<?= rawurlencode($proj_detail['latitude'] . ',' . $proj_detail['longitude']) ?>" 
+                                                               target="_blank" rel="noopener noreferrer" style="font-size: 13px; color: #7d705c; font-weight: 600; text-decoration: none;">
+                                                                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Open in Google Maps
+                                                            </a>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                <?php } ?>
 
 
                                             </div>

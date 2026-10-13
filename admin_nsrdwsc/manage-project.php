@@ -172,7 +172,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['proj_action']
 // The list
 // ---------------------------------------------------------------
 $has_facts = (bool) proj_query($conn, "SHOW TABLES LIKE 'tbl_ai_proj_facts'");
-$price_sql = $has_facts ? 'f.price_aed' : "IF(tp.proj_price REGEXP '^ *[0-9]+ *$' AND tp.proj_price + 0 > 0, tp.proj_price + 0, NULL)";
+$legacy_price_sql = "IF(tp.proj_price REGEXP '^ *[0-9]+ *$' AND tp.proj_price + 0 > 0, tp.proj_price + 0, NULL)";
+$price_sql = $has_facts ? "COALESCE(f.price_aed, $legacy_price_sql)" : $legacy_price_sql;
 $from_sql = "FROM tbl_proj AS tp
 	LEFT JOIN tbl_developer AS td ON tp.prj_dev_id = td.dev_id
 	LEFT JOIN tbl_community AS tc ON tp.prj_comm_id = tc.comm_id"

@@ -104,7 +104,7 @@ $team_details = select_row('tbl_team_det', 'is_active=1');
 
 
                                 <div class="boxed-content-item ot-pg">
-                                    <div class="agent-page-container">
+                                    <div class="agent-page-container" id="team-members">
 
                                         <?php
                                         $team_query = mysqli_query($conn, "
@@ -163,6 +163,9 @@ $team_details = select_row('tbl_team_det', 'is_active=1');
 
                                         <?php } ?>
 
+                                    </div>
+                                    <div class="pagination-wrap" id="teamPaginationWrap" style="display:none;">
+                                        <div class="pagination" id="teamPagination" aria-label="Team pages"></div>
                                     </div>
                                 </div>
 

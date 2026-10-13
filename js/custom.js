@@ -1,36 +1,4 @@
 
-document.addEventListener("DOMContentLoaded", function () {
-
-    const buttons = document.querySelectorAll(".filter-btn");
-    const agents = document.querySelectorAll(".agent-detail-box");
-
-    function filterAgents(id) {
-        agents.forEach((agent) => {
-            let desg = agent.getAttribute("data-desg");
-            let show = (id === "all" || desg == id);
-            agent.style.display = show ? "block" : "none";
-        });
-    }
-
-    // Desktop filter buttons
-    buttons.forEach(btn => {
-        btn.addEventListener("click", function () {
-            let id = this.getAttribute("data-id");
-            buttons.forEach(b => b.classList.remove("active"));
-            this.classList.add("active");
-            filterAgents(id);
-        });
-    });
-
-    // Mobile dropdown — use Chosen's event, not native change
-    $("#mobileDepartmentFilter").on("change", function () {
-        filterAgents($(this).val());
-    });
-
-    // Default: show all
-    filterAgents("all");
-});
-
   document.addEventListener("DOMContentLoaded", function () {
       
     const button = document.querySelector('.commentssubmit.commentssubmit_fw');
@@ -2034,39 +2002,110 @@ $('#global-currency-select').on('change', function () {
 // Currency Conversion Scripts Ends
 
 
-let activeFilter = "all";
-
-document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', function () {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        activeFilter = this.getAttribute('data-id');
-        applyFilters();
-    });
-});
-
 // our team auto suggestion 
 document.addEventListener("DOMContentLoaded", function () {
 
     const searchInput    = document.getElementById("teamSearch");
     const suggestionsBox = document.getElementById("teamSuggestions");
     const agents         = document.querySelectorAll(".agent-detail-box");
+    const paginationWrap = document.getElementById("teamPaginationWrap");
+    const pagination     = document.getElementById("teamPagination");
+    const departmentSelect = document.getElementById("mobileDepartmentFilter");
+    const filterButtons  = document.querySelectorAll(".filter-btn");
+    const pageSize       = 20;
+    let activeFilter     = "all";
+    let currentPage      = 1;
 
     // Only the team pages have the search box
     if (!searchInput || !suggestionsBox) return;
 
-    // ── Filter cards ───────────────────────────────────────────
-    function filterCards(query) {
-        let visibleCount = 0;
+    function renderPagination(pageCount) {
+        if (!pagination || !paginationWrap) return;
+        paginationWrap.style.display = pageCount > 1 ? "" : "none";
+        pagination.innerHTML = "";
+
+        function addPageLink(page, label, className = "") {
+            const link = document.createElement("a");
+            link.href = "#team-members";
+            link.className = "page-numbers " + className + (page === currentPage ? " current current-page" : "");
+            link.textContent = label;
+            link.setAttribute("aria-label", className === "prevposts-link" ? "Previous page" : (className === "nextposts-link" ? "Next page" : "Page " + page));
+            if (page === currentPage) link.setAttribute("aria-current", "page");
+            link.addEventListener("click", function (event) {
+                event.preventDefault();
+                currentPage = page;
+                renderCards();
+                document.getElementById("team-members").scrollIntoView({ behavior: "smooth", block: "start" });
+            });
+            pagination.appendChild(link);
+        }
+
+        if (currentPage > 1) addPageLink(currentPage - 1, "‹", "prevposts-link");
+
+        const visiblePages = new Set([1, pageCount]);
+        for (let page = Math.max(1, currentPage - 1); page <= Math.min(pageCount, currentPage + 1); page++) {
+            visiblePages.add(page);
+        }
+
+        let previousPage = 0;
+        [...visiblePages].sort((first, second) => first - second).forEach(page => {
+            if (previousPage && page - previousPage > 1) {
+                const ellipsis = document.createElement("span");
+                ellipsis.className = "page-numbers";
+                ellipsis.textContent = "...";
+                pagination.appendChild(ellipsis);
+            }
+            addPageLink(page, String(page));
+            previousPage = page;
+        });
+
+        if (currentPage < pageCount) addPageLink(currentPage + 1, "›", "nextposts-link");
+    }
+
+    function renderCards() {
+        const query = searchInput.value.toLowerCase().trim();
+        const matchingAgents = [];
+
         agents.forEach(box => {
             let name = (box.getAttribute("data-name") || "").toLowerCase();
             let role = (box.getAttribute("data-role") || "").toLowerCase();
-            let show = query === "" || name.includes(query) || role.includes(query);
-            box.style.display = show ? "block" : "none";
-            if (show) visibleCount++;
+            let department = box.getAttribute("data-desg") || "";
+            let matchesDepartment = activeFilter === "all" || department === activeFilter;
+            let matchesSearch = query === "" || name.includes(query) || role.includes(query);
+            box.style.display = "none";
+            if (matchesDepartment && matchesSearch) matchingAgents.push(box);
         });
+
+        const pageCount = Math.ceil(matchingAgents.length / pageSize);
+        currentPage = Math.min(currentPage, Math.max(pageCount, 1));
+        matchingAgents.slice((currentPage - 1) * pageSize, currentPage * pageSize).forEach(box => {
+            box.style.display = "block";
+        });
+
         let msg = document.getElementById("noResultsMessage");
-        if (msg) msg.style.display = visibleCount === 0 ? "block" : "none";
+        if (msg) msg.style.display = matchingAgents.length === 0 ? "block" : "none";
+        renderPagination(pageCount);
+    }
+
+    filterButtons.forEach(btn => {
+        btn.addEventListener("click", function () {
+            activeFilter = this.getAttribute("data-id") || "all";
+            currentPage = 1;
+            filterButtons.forEach(button => button.classList.toggle("active", button === this));
+            if (departmentSelect) {
+                $(departmentSelect).val(activeFilter).trigger("chosen:updated");
+            }
+            renderCards();
+        });
+    });
+
+    if (departmentSelect) {
+        $(departmentSelect).on("change", function () {
+            activeFilter = $(this).val() || "all";
+            currentPage = 1;
+            filterButtons.forEach(button => button.classList.toggle("active", button.getAttribute("data-id") === activeFilter));
+            renderCards();
+        });
     }
 
     // ── Build suggestions ──────────────────────────────────────
@@ -2118,7 +2157,8 @@ document.addEventListener("DOMContentLoaded", function () {
             item.addEventListener("mousedown", function () {
                 searchInput.value = match.label;
                 suggestionsBox.style.display = "none";
-                filterCards(match.label.toLowerCase());
+                currentPage = 1;
+                renderCards();
             });
 
             suggestionsBox.appendChild(item);
@@ -2128,9 +2168,10 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // ── Events ─────────────────────────────────────────────────
-    searchInput.addEventListener("keyup", function () {
+    searchInput.addEventListener("input", function () {
         let query = this.value.toLowerCase().trim();
-        filterCards(query);
+        currentPage = 1;
+        renderCards();
         showSuggestions(query);
     });
 
@@ -2142,6 +2183,8 @@ document.addEventListener("DOMContentLoaded", function () {
     searchInput.addEventListener("blur", function () {
         setTimeout(() => { suggestionsBox.style.display = "none"; }, 200);
     });
+
+    renderCards();
 });
 
 

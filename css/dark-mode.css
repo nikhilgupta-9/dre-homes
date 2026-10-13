@@ -1634,3 +1634,66 @@ html[data-theme="dark"] .suggestion-item:hover {
 html[data-theme="dark"] .sug-badge {
 	background-color: #211914;
 }
+
+html[data-theme="dark"] .dre-amenities-extra {
+	border-top-color: #3b3630;
+}
+html[data-theme="dark"] .dre-amenities-extra-title {
+	color: #c5bfb9;
+}
+html[data-theme="dark"] .dre-amenities-extra ul li,
+html[data-theme="dark"] .dre-amenity-grid ul li,
+html[data-theme="dark"] .boxed-content-item .dre-amenities-extra ul li {
+	background-color: #181614 !important;
+	border-color: #3b3630 !important;
+	color: #e5ded5 !important;
+}
+html[data-theme="dark"] .dre-amenities-extra ul li:hover,
+html[data-theme="dark"] .dre-amenity-grid ul li:hover,
+html[data-theme="dark"] .boxed-content-item .dre-amenities-extra ul li:hover {
+	background-color: #221f1b !important;
+	border-color: #4f473e !important;
+	color: #fff !important;
+}
+html[data-theme="dark"] .project-specifications {
+	background-color: #181614;
+	border-color: #3b3630;
+}
+html[data-theme="dark"] .project-specifications h4,
+html[data-theme="dark"] .project-specifications ul li strong {
+	color: #eee;
+}
+html[data-theme="dark"] .project-specifications ul li {
+	color: #bbb;
+}
+
+html[data-theme="dark"] .ps-facts-wrapper {
+	background: #181614 !important;
+	border-color: #3b3630 !important;
+}
+html[data-theme="dark"] .ps-facts-item {
+	background: #181614 !important;
+	border-color: #2e2a25 !important;
+}
+html[data-theme="dark"] .ps-facts-item:hover {
+	background: #201d19 !important;
+}
+html[data-theme="dark"] .ps-facts-icon,
+html[data-theme="dark"] .ps-facts-item > i {
+	background: #24201b !important;
+	border-color: #3b3630 !important;
+	color: #cfbda4 !important;
+}
+html[data-theme="dark"] .ps-facts-item:hover .ps-facts-icon {
+	background: #9f8c6f !important;
+	border-color: #9f8c6f !important;
+	color: #ffffff !important;
+}
+html[data-theme="dark"] .ps-facts-info h4,
+html[data-theme="dark"] .ps-facts-item h4 {
+	color: #a3998b !important;
+}
+html[data-theme="dark"] .ps-facts-info h5,
+html[data-theme="dark"] .ps-facts-item h5 {
+	color: #f0ebe1 !important;
+}

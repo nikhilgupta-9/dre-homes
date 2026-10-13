@@ -93,6 +93,17 @@ function gm_match($name, array $ours, array $drop = [])
 			return (int) $id;
 		}
 	}
+	// Fallback: match without standalone/trailing numbers (e.g. "Warsan 4" -> "Warsan" matches "Al Warsan")
+	$wanted_nodigits = trim(preg_replace('/\b\d+\b/', '', $wanted));
+	if ($wanted_nodigits !== '') {
+		foreach ($ours as $id => $our_name) {
+			$our_key = gm_key($our_name, $drop);
+			$our_nodigits = trim(preg_replace('/\b\d+\b/', '', $our_key));
+			if ($our_nodigits === $wanted_nodigits) {
+				return (int) $id;
+			}
+		}
+	}
 	return 0;
 }
 // "2028-01-01T00:00:00Z" -> "Handover: Q1 2028"
@@ -189,6 +200,7 @@ foreach (set_query($conn, "SELECT prj_type_id, proj_type_name FROM tbl_proj_type
 	$our_types[(int) $row['prj_type_id']] = (string) $row['proj_type_name'];
 }
 $developer_noise = ['properties', 'property', 'developers', 'developer', 'developments', 'development', 'real', 'estate', 'group', 'holding', 'holdings', 'llc', 'the'];
+$community_noise = ['al', 'the', 'city', 'area', 'community', 'phase', 'estate', 'estates'];
 
 // Projects that were imported before: GenieMap id => our project
 $imported = [];
@@ -231,7 +243,7 @@ if ($detail) {
 	$district = trim((string) ($detail['district']['name'] ?? ''));
 	$form['proj_name'] = $own_name . ($district !== '' && stripos($own_name, $district) === false ? ' at ' . $district : '');
 	$form['prj_dev_id'] = gm_match($detail['developer']['name'] ?? '', $our_developers, $developer_noise);
-	$form['prj_comm_id'] = gm_match($district, $our_communities);
+	$form['prj_comm_id'] = gm_match($district, $our_communities, $community_noise);
 	// To begin with: the first picture is the main one and the next ten go to the gallery.
 	$form['pictures'] = range(0, min(10, max(0, count($detail['images'] ?? []) - 1)));
 }
@@ -379,6 +391,80 @@ if ($post && isset($_POST['import_project']) && $detail) {
 			$slug = $base . '-' . $n;
 		}
 
+		// Extra specifications & details from GenieMap
+		$ownership = trim((string) ($detail['ownershipType'] ?? ''));
+		$finishes = array_values(array_filter(array_map(function ($f) {
+			return is_array($f) ? trim((string) ($f['name'] ?? '')) : (is_string($f) ? trim($f) : '');
+		}, $detail['finishes'] ?? [])));
+		$finishes_text = implode(', ', $finishes);
+		$service_charge = !empty($detail['serviceCharge']) ? (is_numeric($detail['serviceCharge']) ? number_format((float) $detail['serviceCharge']) : (string) $detail['serviceCharge']) : '';
+		$noc = !empty($detail['noc']) ? trim((string) $detail['noc']) : '';
+
+		// Map project status
+		$genie_status = strtolower(trim((string) ($detail['status'] ?? '')));
+		$status_map = [
+			'available' => 'Available',
+			'launch' => 'New Launch',
+			'sold_out' => 'Sold Out',
+		];
+		$proj_status_val = $status_map[$genie_status] ?? (ucfirst($genie_status) ?: 'Available');
+
+		// Developer logo from tbl_developer
+		$dev_img = '';
+		if ($form['prj_dev_id'] > 0) {
+			$dev_row = set_query($conn, 'SELECT dev_img FROM tbl_developer WHERE dev_id = ? LIMIT 1', [$form['prj_dev_id']]);
+			if ($dev_row && !empty($dev_row[0]['dev_img'])) {
+				$dev_img = (string) $dev_row[0]['dev_img'];
+			}
+		}
+
+		// Structured specifications block appended to overview
+		$spec_items = [];
+		if ($ownership !== '') {
+			$spec_items[] = '<li><strong>Ownership:</strong> ' . htmlspecialchars(ucfirst($ownership), ENT_QUOTES, 'UTF-8') . '</li>';
+		}
+		if ($finishes_text !== '') {
+			$spec_items[] = '<li><strong>Furnishing / Finishes:</strong> ' . htmlspecialchars($finishes_text, ENT_QUOTES, 'UTF-8') . '</li>';
+		}
+		if ($service_charge !== '') {
+			$spec_items[] = '<li><strong>Service Charge:</strong> AED ' . htmlspecialchars($service_charge, ENT_QUOTES, 'UTF-8') . ' / sq ft / year</li>';
+		}
+		if ($noc !== '') {
+			$spec_items[] = '<li><strong>NOC:</strong> ' . htmlspecialchars($noc, ENT_QUOTES, 'UTF-8') . '</li>';
+		}
+		$overview_content = gm_paragraphs($description);
+		if ($spec_items) {
+			$overview_content .= "\n" . '<div class="project-specifications"><h4><i class="fa fa-info-circle"></i> Key Project Specifications</h4><ul class="dre-spec-list">' . implode('', $spec_items) . '</ul></div>';
+		}
+
+		// Quick highlight cards (up to 5)
+		$features = [];
+		if ($ownership !== '') {
+			$features[] = ['icon' => 'fa-award', 'text' => ucfirst($ownership) . ' Ownership'];
+		}
+		if ($finishes_text !== '') {
+			$features[] = ['icon' => 'fa-couch', 'text' => $finishes_text];
+		}
+		if ($service_charge !== '') {
+			$features[] = ['icon' => 'fa-coins', 'text' => 'Service Charge: AED ' . $service_charge . '/sqft'];
+		}
+		$handover_text = gm_handover($detail['handover'] ?? '');
+		if ($handover_text !== '') {
+			$features[] = ['icon' => 'fa-calendar-alt', 'text' => $handover_text];
+		}
+		if ($proj_status_val !== '') {
+			$features[] = ['icon' => 'fa-check-circle', 'text' => 'Status: ' . $proj_status_val];
+		}
+
+		// OpenStreetMap embed for location map (Google output=embed is deprecated / returns 404)
+		$map_embed = '';
+		if ($has_point) {
+			$lat_f = (float) $lat;
+			$lon_f = (float) $lon;
+			$bbox = ($lon_f - 0.008) . '%2C' . ($lat_f - 0.005) . '%2C' . ($lon_f + 0.008) . '%2C' . ($lat_f + 0.005);
+			$map_embed = '<iframe width="100%" height="450" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://www.openstreetmap.org/export/embed.html?bbox=' . $bbox . '&amp;layer=mapnik&amp;marker=' . $lat_f . '%2C' . $lon_f . '" style="border: 0;"></iframe>';
+		}
+
 		$data = [
 			'prj_type_id' => $form['prj_type_id'],
 			'prj_dev_id' => $form['prj_dev_id'],
@@ -402,13 +488,13 @@ if ($post && isset($_POST['import_project']) && $detail) {
 			'proj_whatsaapno' => '',
 			'proj_mobileno' => '',
 			'proj_inner_img' => $inner,
-			'proj_dev_img' => '',
-			'proj_dev_img_alt' => '',
+			'proj_dev_img' => $dev_img,
+			'proj_dev_img_alt' => $dev_img !== '' ? mb_substr($our_developers[$form['prj_dev_id']] ?? '', 0, 255) : '',
 			'proj_size' => $size,
 			'proj_inventory_type' => mb_substr(gm_type_text($types), 0, 255),
 			'proj_inventory_type_filter' => implode(',', array_unique($inventory_ids)),
 			'proj_start_price' => $price > 0 ? (string) (int) round($price) : '',
-			'proj_overview' => gm_paragraphs($description),
+			'proj_overview' => $overview_content,
 			'proj_brochure' => $files['proj_brochure'] ?? '',
 			'proj_payplan' => $files['proj_payplan'] ?? '',
 			'proj_floorplan' => $files['proj_floorplan'] ?? '',
@@ -421,7 +507,7 @@ if ($post && isset($_POST['import_project']) && $detail) {
 			'proj_mastrpln_img' => '',
 			'proj_mastrpln_img_alt_tag' => '',
 			'proj_slug' => $slug,
-			'proj_map' => $has_point ? 'https://www.google.com/maps?q=' . rawurlencode($lat . ',' . $lon) . '&z=14&output=embed' : '',
+			'proj_map' => $map_embed,
 			'meta_title' => mb_substr($form['proj_name'], 0, 255),
 			'meta_keyword' => '',
 			'meta_description' => $description !== '' ? rtrim(mb_substr(preg_replace('/\s+/', ' ', $description), 0, 157)) . (mb_strlen($description) > 157 ? '...' : '') : '',
@@ -435,6 +521,18 @@ if ($post && isset($_POST['import_project']) && $detail) {
 			'latitude' => $has_point ? $lat : null,
 			'longitude' => $has_point ? $lon : null,
 			'emirate' => $emirate !== '' ? mb_substr($emirate, 0, 100) : null,
+			'property_status' => $proj_status_val,
+			'proj_status' => $proj_status_val,
+			'proj_feature_icon_1' => $features[0]['icon'] ?? '',
+			'proj_feature_text_1' => mb_substr($features[0]['text'] ?? '', 0, 255),
+			'proj_feature_icon_2' => $features[1]['icon'] ?? '',
+			'proj_feature_text_2' => mb_substr($features[1]['text'] ?? '', 0, 255),
+			'proj_feature_icon_3' => $features[2]['icon'] ?? '',
+			'proj_feature_text_3' => mb_substr($features[2]['text'] ?? '', 0, 255),
+			'proj_feature_icon_4' => $features[3]['icon'] ?? '',
+			'proj_feature_text_4' => mb_substr($features[3]['text'] ?? '', 0, 255),
+			'proj_feature_icon_5' => $features[4]['icon'] ?? '',
+			'proj_feature_text_5' => mb_substr($features[4]['text'] ?? '', 0, 255),
 		];
 
 		$now = date('Y-m-d H:i:s');
@@ -467,7 +565,8 @@ if ($post && isset($_POST['import_project']) && $detail) {
 					$ok = $ok && set_query($conn, "INSERT INTO tbl_proj_payplan (proj_id, payplan_heading, payplan_percentage, payplan_status, is_active, tstp) VALUES (?, ?, ?, '', '1', ?)", [$proj_id, mb_substr($heading, 0, 255), mb_substr($share, 0, 255), $now]);
 				}
 			}
-			$ok = $ok && set_query($conn, 'INSERT INTO tbl_geniemap_import (prj_id, genie_id, genie_name, imported_by, imported_at) VALUES (?, ?, ?, ?, ?)', [$proj_id, $view_id, mb_substr((string) ($detail['name'] ?? ''), 0, 255), (string) $_SESSION['email_id'], $now]);
+			$raw_json = json_encode($detail, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+			$ok = $ok && set_query($conn, 'INSERT INTO tbl_geniemap_import (prj_id, genie_id, genie_name, imported_by, imported_at, raw_data) VALUES (?, ?, ?, ?, ?, ?)', [$proj_id, $view_id, mb_substr((string) ($detail['name'] ?? ''), 0, 255), (string) $_SESSION['email_id'], $now, $raw_json]);
 		}
 		if ($ok) {
 			mysqli_commit($conn);
@@ -781,6 +880,14 @@ if ($detail && !isset($imported[$view_id])) {
 												<?php else: ?>
 													<p class="dre-genie-note dre-genie-warn"><i class="bi bi-exclamation-triangle"></i> GenieMap has no pictures for this project.</p>
 												<?php endif; ?>
+												<?php
+												$preview_finishes = array_values(array_filter(array_map(function ($f) {
+													return is_array($f) ? trim((string) ($f['name'] ?? '')) : (is_string($f) ? trim($f) : '');
+												}, $detail['finishes'] ?? [])));
+												$preview_finishes_text = implode(', ', $preview_finishes);
+												$preview_sc = !empty($detail['serviceCharge']) ? (is_numeric($detail['serviceCharge']) ? number_format((float) $detail['serviceCharge']) : (string) $detail['serviceCharge']) : '';
+												$preview_noc = !empty($detail['noc']) ? trim((string) $detail['noc']) : '';
+												?>
 												<dl class="dre-genie-facts">
 													<div><dt>Starting price</dt><dd><?= set_e(gm_money((float) ($detail['unitPriceRange']['from'] ?? 0))) ?></dd></div>
 													<div><dt>Handover</dt><dd><?= set_e(str_replace('Handover: ', '', gm_handover($detail['handover'] ?? '')) ?: 'Not given') ?></dd></div>
@@ -788,6 +895,11 @@ if ($detail && !isset($imported[$view_id])) {
 													<div><dt>Unit types</dt><dd><?= set_e(gm_type_text($types) ?: 'Not given') ?></dd></div>
 													<div><dt>Size</dt><dd><?= (float) ($detail['unitAreaRange']['from'] ?? 0) > 0 ? number_format((float) $detail['unitAreaRange']['from']) . ' – ' . number_format((float) ($detail['unitAreaRange']['to'] ?? 0)) . ' sq ft' : 'Not given' ?></dd></div>
 													<div><dt>Ownership</dt><dd><?= set_e(ucfirst((string) ($detail['ownershipType'] ?? '')) ?: 'Not given') ?></dd></div>
+													<div><dt>Furnishing</dt><dd><?= set_e($preview_finishes_text ?: 'Not given') ?></dd></div>
+													<div><dt>Service charge</dt><dd><?= set_e($preview_sc !== '' ? 'AED ' . $preview_sc . ' / sq ft / yr' : 'Not given') ?></dd></div>
+													<?php if ($preview_noc !== ''): ?>
+														<div><dt>NOC</dt><dd><?= set_e($preview_noc) ?></dd></div>
+													<?php endif; ?>
 												</dl>
 											</section>
 
@@ -912,6 +1024,7 @@ if ($detail && !isset($imported[$view_id])) {
 													<ul class="dre-genie-will">
 														<li><i class="bi bi-eye-slash"></i> Saved <strong>hidden</strong>; nothing appears on the website until you publish it.</li>
 														<li><i class="bi bi-geo-alt-fill"></i> Marked with the badge "Imported from GenieMap".</li>
+														<li><i class="bi bi-check2-circle"></i> Extra details (Furnishing, Ownership, Service Charge) imported into specs & overview.</li>
 														<li><i class="bi bi-pencil"></i> Location text, master plan and FAQs are not on GenieMap: add them on the project form.</li>
 													</ul>
 													<button type="submit" class="dre-btn dre-btn-main" id="genieImportButton"><i class="bi bi-box-arrow-in-down"></i> Import as a hidden project</button>

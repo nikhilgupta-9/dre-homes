@@ -101,7 +101,7 @@ $dre_menu = [
 			['Page Content', 'edit-team-details.php' . $dre_edit, ['edit-team-details.php']],
 		]],
 		['Brand Video', 'bi-camera-reels', 'edit-brand-video-content.php' . $dre_edit, ['edit-brand-video-content.php']],
-		['Privacy Policy', 'bi-shield-lock', 'edit-privacy-policy-content.php' . $dre_edit, ['edit-privacy-policy-content.php']],
+		['Legal Pages', 'bi-shield-lock', 'edit-privacy-policy-content.php' . $dre_edit, ['edit-privacy-policy-content.php']],
 	],
 
 	'Services & Tools' => [

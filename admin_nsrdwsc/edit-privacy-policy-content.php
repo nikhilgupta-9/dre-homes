@@ -90,8 +90,8 @@ function set_check_upload($file, $label, $allow_icon = false)
 $entity = [
   'one' => 'content',
   'many' => 'content',
-  'title' => 'Privacy Policy page',
-  'blurb' => 'The banner and the full text of the Privacy Policy page.',
+  'title' => 'Legal pages',
+  'blurb' => 'Manage the Terms & Conditions and Privacy Policy pages.',
   'icon' => 'bi-shield-lock',
   'table' => 'tbl_privacy_policy',
   'id' => 'privacy_policy_id',
@@ -109,12 +109,19 @@ $entity = [
   'missing' => [],
   'in_use_sql' => "", 'in_use_note' => '',
   'content_file' => '',
-  'links' => [],
-  'sections' => [['Top of the page', 'bi-window', ''], ['The policy', 'bi-file-earmark-text', 'A legal text: have every change, also one suggested by AI, read by the person responsible before saving.']],
+  'links' => [['View Terms & Conditions', 'terms-conditions', 'bi-box-arrow-up-right']],
+  'sections' => [
+    ['Top of the page', 'bi-window', ''],
+    ['Terms & Conditions', 'bi-file-earmark-text', 'Review legal wording carefully before publishing changes.'],
+    ['Privacy Policy', 'bi-shield-lock', 'Review legal wording carefully before publishing changes.'],
+  ],
   'fields' => [
+  ['name' => 'terms_heading', 'col' => 'terms_heading', 'label' => 'Terms page title', 'type' => 'text', 'required' => true, 'section' => 'Terms & Conditions'],
+  ['name' => 'terms_descp', 'col' => 'terms_descp', 'label' => 'Terms text', 'type' => 'rich', 'max' => 0, 'required' => true, 'section' => 'Terms & Conditions', 'help' => 'Legal text. Have every change reviewed by the responsible person before publishing.'],
   ['name' => 'heading', 'col' => 'privacy_policy_heading', 'label' => 'Title on the banner', 'type' => 'text', 'required' => true, 'ai' => 'heading'],
   ['name' => 'image', 'col' => 'privacy_policy_img', 'label' => 'Banner image', 'type' => 'image', 'folder' => 'assets/media/privacy-policy/', 'help' => 'A wide picture works best (about 1920 × 600).'],
-  ['name' => 'descp', 'col' => 'privacy_policy_descp', 'label' => 'Text', 'type' => 'rich', 'max' => 0, 'required' => true, 'section' => 'The policy', 'ai' => 'improve', 'help' => 'The AI button only rewords the text to read more clearly. It can still change a legal meaning by accident, so compare its version with the current one before using it.'],
+  ['name' => 'privacy_heading', 'col' => 'privacy_policy_content_heading', 'label' => 'Heading above the policy text', 'type' => 'text', 'required' => true, 'section' => 'Privacy Policy'],
+  ['name' => 'descp', 'col' => 'privacy_policy_descp', 'label' => 'Text', 'type' => 'rich', 'max' => 0, 'required' => true, 'section' => 'Privacy Policy', 'ai' => 'improve', 'help' => 'The AI button only rewords the text to read more clearly. It can still change a legal meaning by accident, so compare its version with the current one before using it.'],
   ],
 ];
 

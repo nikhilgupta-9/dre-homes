@@ -130,7 +130,7 @@
     <!-- End Google Tag Manager -->
     
 
-<?= generateProjectDetailSchema($home_meta, $header_details, $footer_info, $breadcrumbs, $proj_detail ?? '', $images, $category_slug ?? '', $slug, $meta_tags ?? '') ?>
+<?= empty($is_404_page) ? generateProjectDetailSchema($home_meta, $header_details, $footer_info, $breadcrumbs, $proj_detail ?? '', $images, $category_slug ?? '', $slug, $meta_tags ?? '') : '' ?>
 
     
 

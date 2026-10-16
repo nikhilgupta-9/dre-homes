@@ -1,6 +1,9 @@
 <?php
 include('db/config.php');
 $meta_tags = select_row('tbl_tags', 'id=38 and is_active=1');
+$row = select_row('tbl_privacy_policy', 'is_active=1') ?: [];
+$terms_heading = trim((string) ($row['terms_heading'] ?? '')) ?: 'Terms & Conditions';
+$terms_descp = (string) ($row['terms_descp'] ?? '');
 include('common/header.php');
 
 ?>
@@ -15,7 +18,7 @@ include('common/header.php');
                     <div class="container">
                         <div class="hero-section-container">
                             <div class="hero-section-title">
-                                <h1>Terms & Conditions</h1>
+                                <h1><?= htmlspecialchars($terms_heading, ENT_QUOTES, 'UTF-8') ?></h1>
                             </div>
                         </div>
                     </div>
@@ -32,7 +35,7 @@ include('common/header.php');
         <div class="container">
             <!--breadcrumbs-list-->
             <div class="breadcrumbs-list bl_flat">
-                <a href="<?= BASE_URL ?>">Home</a><span>Terms & Conditions</span>
+                        <a href="<?= BASE_URL ?>">Home</a><span><?= htmlspecialchars($terms_heading, ENT_QUOTES, 'UTF-8') ?></span>
                 <div class="breadcrumbs-list_dec"><i class="fa-thin fa-arrow-up"></i></div>
             </div>
             <!--breadcrumbs-list end-->
@@ -47,7 +50,7 @@ include('common/header.php');
                                 <div class="post-container">
                                     <div class="boxed-content">
                                         <div class="boxed-content-title">
-                                            <h3>Terms & Conditions</h3>
+                                            <h3><?= htmlspecialchars($terms_heading, ENT_QUOTES, 'UTF-8') ?></h3>
                                         </div>
                                         <div class="boxed-content-item">
 
@@ -57,6 +60,9 @@ include('common/header.php');
 
                                                     <div class="privacy-box mt-3">
 
+                                                        <?php if (trim($terms_descp) !== ''): ?>
+                                                            <div class="my-4 editor-cont"><?= $terms_descp ?></div>
+                                                        <?php else: ?>
                                                         <div class="my-4">
                                                             <p>
                                                                 Please be advised that accessing or using this website implies the user's consent to abide by the following terms and conditions:
@@ -92,6 +98,7 @@ include('common/header.php');
                                                                 <p><b>Jurisdiction</b></p>
                                                                 <p>All disputes relating to the Website or these Terms shall be submitted to the competent courts of Dubai, United Arab Emirates, which shall have primary jurisdiction. The Company also reserves the right to commence legal proceedings in any other jurisdiction where a user resides or where a violation of these Terms has occurred. By using this Website, you agree to submit to such jurisdiction and waive any objection to the venue or legal authority of those courts.</p>
                                                         </div>
+                                                            <?php endif; ?>
 
                                                     </div>
 

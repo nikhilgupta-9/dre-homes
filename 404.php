@@ -1,5 +1,10 @@
 <?php
-include('db/config.php');
+include_once('db/config.php');
+$is_404_page = true;
+$meta_tags = [
+    'meta_title' => 'Page not found | DRE Homes',
+    'meta_description' => 'The page may have been moved or deleted, or the URL may be incorrect.',
+];
 include('common/header.php');
 ?>
 
@@ -20,7 +25,7 @@ include('common/header.php');
                     </div>
 
                     <div class="bg-wrap bg-hero bg-parallax-wrap-gradien fs-wrapper" data-scrollax-parent="true">
-                        <div class="bg" data-bg="images/page-not-found-3.jpg"
+                        <div class="bg" data-bg="<?= BASE_URL ?>images/page-not-found-3.jpg"
                              data-scrollax="properties: { translateY: '30%' }">
                         </div>
                     </div>

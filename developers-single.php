@@ -1,9 +1,15 @@
 <?php
 include('db/config.php');
-$detail = str_replace('/', '', $_GET['detail']);
-$meta_tags = select_row('tbl_developer', "dev_slug='$detail' and is_active=1");
+$detail = trim((string) ($_GET['detail'] ?? ''));
+$detail = mysqli_real_escape_string($conn, str_replace('/', '', $detail));
+$dev_detail = $detail !== '' ? select_row('tbl_developer', "dev_slug='$detail' and is_active='1'") : [];
+if (!$dev_detail) {
+    http_response_code(404);
+    include('404.php');
+    exit;
+}
+$meta_tags = $dev_detail;
 include('common/header.php');
-$dev_detail = select_row('tbl_developer', "dev_slug='$detail' and is_active='1'");
 
 ?>
 <!--warpper-->

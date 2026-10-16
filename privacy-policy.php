@@ -2,7 +2,10 @@
 include('db/config.php');
 $meta_tags=select_row('tbl_tags','id=29 and is_active=1');
 include('common/header.php');
-$row=select_row('tbl_privacy_policy','is_active=1 ');
+$row=select_row('tbl_privacy_policy','is_active=1 ') ?: [];
+$privacy_heading = trim((string) ($row['privacy_policy_heading'] ?? '')) ?: 'Privacy Policy';
+$privacy_content_heading = trim((string) ($row['privacy_policy_content_heading'] ?? '')) ?: 'PRIVACY POLICY & TERM OF USES';
+$privacy_descp = (string) ($row['privacy_policy_descp'] ?? '');
 ?>
     <!--warpper-->
     <div class="wrapper">
@@ -15,7 +18,7 @@ $row=select_row('tbl_privacy_policy','is_active=1 ');
                         <div class="container">
                             <div class="hero-section-container">
                                 <div class="hero-section-title">
-                                    <h1><?=$row['privacy_policy_heading']?></h1>
+                                    <h1><?=htmlspecialchars($privacy_heading, ENT_QUOTES, 'UTF-8')?></h1>
                                 </div>
                             </div>
                         </div>
@@ -47,7 +50,7 @@ $row=select_row('tbl_privacy_policy','is_active=1 ');
                                     <div class="post-container">
                                         <div class="boxed-content">
                                             <div class="boxed-content-title">
-                                                <h3>PRIVACY POLICY & TERM OF USES</h3>
+                                                        <h3><?=htmlspecialchars($privacy_content_heading, ENT_QUOTES, 'UTF-8')?></h3>
                                             </div>
                                             <div class="boxed-content-item">
 
@@ -57,7 +60,7 @@ $row=select_row('tbl_privacy_policy','is_active=1 ');
 
                                                         <div class="privacy-box mt-3 editor-cont">
                                                             
-                                                        <?=$row['privacy_policy_descp']?>
+                                                        <?=$privacy_descp?>
 
                                                         </div>
 

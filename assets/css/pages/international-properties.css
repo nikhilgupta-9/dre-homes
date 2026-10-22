@@ -1,0 +1,348 @@
+/* International Properties | DRE Homes — page styles */
+/* ================= INTERNATIONAL PAGE ================= */
+.intl-hero {
+  min-height: 82vh;
+}
+.intl-hero h1 {
+  font-size: clamp(56px, 8vw, 128px);
+  line-height: 0.95;
+}
+.intl-hero .sub {
+  margin-bottom: 34px;
+}
+.dest {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  border-radius: 24px;
+  overflow: hidden;
+  max-width: 900px;
+}
+.dest li {
+  padding: 18px 20px;
+  border-right: 1px solid var(--stroke);
+  display: grid;
+  gap: 2px;
+}
+.dest li:last-child {
+  border: 0;
+}
+.dest i {
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+}
+.dest b {
+  font-weight: 500;
+  font-size: 16px;
+  margin-top: 6px;
+}
+.dest span {
+  font-size: 12px;
+  color: var(--faint);
+}
+.cchips {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 999px;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-bottom: 34px;
+}
+.cchips button {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: none;
+  padding: 11px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+}
+.cchips button i {
+  font-style: normal;
+  font-size: 16px;
+}
+.cchips button b {
+  font-size: 11px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(var(--tint-rgb), 0.12);
+}
+.cchips button.on {
+  background: var(--btn);
+  color: var(--btn-fg);
+}
+.cchips button.on b {
+  background: rgba(255, 255, 255, 0.22);
+}
+.ilist {
+  display: grid;
+  gap: 26px;
+}
+.icard {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  align-items: center;
+  position: relative;
+}
+.icard.rev {
+  grid-template-columns: 1fr 1.35fr;
+}
+.icard.rev .ic-img {
+  order: 2;
+}
+.icard[hidden] {
+  display: none;
+}
+.ic-img {
+  position: relative;
+  display: block;
+  aspect-ratio: 16/10;
+  border-radius: 30px;
+  overflow: hidden;
+  border: 1px solid var(--stroke);
+  background: #888;
+}
+.ic-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 1.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.icard:hover .ic-img img {
+  transform: scale(1.05);
+}
+.ic-flag {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.ic-flag i {
+  font-style: normal;
+  font-size: 16px;
+}
+.ic-body {
+  position: relative;
+  z-index: 2;
+  margin-left: -70px;
+  padding: 38px 36px;
+  border-radius: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.icard.rev .ic-body {
+  margin-left: 0;
+  margin-right: -70px;
+}
+.ic-no {
+  position: absolute;
+  right: 28px;
+  top: 22px;
+  font-weight: 200;
+  font-size: 54px;
+  line-height: 1;
+  opacity: 0.6;
+}
+.ic-body h3 {
+  font-weight: 300;
+  font-size: clamp(28px, 2.8vw, 40px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin-top: 4px;
+  padding-right: 60px;
+}
+.ic-body h3 a:hover {
+  color: var(--acc);
+}
+.ic-dev {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--acc);
+}
+.ic-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0;
+  margin-top: 10px;
+  border-top: 1px solid var(--stroke);
+  border-bottom: 1px solid var(--stroke);
+}
+.ic-meta small {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 4px;
+}
+.ic-b {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+}
+.ic-b svg {
+  width: 18px;
+  height: 18px;
+  color: var(--acc);
+}
+.ic-meta .pr {
+  text-align: right;
+}
+.ic-meta .pr b {
+  font-weight: 500;
+  font-size: 18px;
+}
+.ic-meta .pr em {
+  font-style: normal;
+  color: var(--acc);
+  font-weight: 500;
+}
+.ic-act {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.ic-act .btn {
+  flex: 1;
+  justify-content: center;
+}
+.ic-ic {
+  width: 50px;
+  height: 50px;
+  flex: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--stroke);
+  color: var(--text);
+  transition: 0.25s;
+}
+.ic-ic svg {
+  width: 19px;
+  height: 19px;
+}
+.ic-ic:hover {
+  border-color: var(--stroke-acc);
+  color: var(--acc);
+}
+.ic-ic.wa {
+  color: #25d366;
+}
+.ic-ic.wa:hover {
+  background: #25d366;
+  color: #fff;
+  border-color: #25d366;
+}
+.op-cta {
+  display: grid;
+  grid-template-columns: 1.4fr auto;
+  gap: 40px;
+  align-items: center;
+  padding: 50px 54px;
+  border-radius: 34px;
+}
+.op-cta-b {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.op-cta-b .btn {
+  justify-content: center;
+}
+@media (min-width: 1081px) and (max-width: 1500px) {
+  #listing .wrap {
+    padding-right: 96px;
+  }
+}
+@media (max-width: 1080px) {
+  .icard,
+  .icard.rev {
+    grid-template-columns: 1fr;
+  }
+  .icard.rev .ic-img {
+    order: 0;
+  }
+  .ic-body,
+  .icard.rev .ic-body {
+    margin: -60px 20px 0;
+  }
+  .dest {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .dest li:nth-child(3) {
+    border-right: 0;
+  }
+  .dest li {
+    border-bottom: 1px solid var(--stroke);
+  }
+  .op-cta {
+    grid-template-columns: 1fr;
+    padding: 36px;
+  }
+}
+@media (max-width: 640px) {
+  .intl-hero {
+    min-height: auto;
+    padding: 140px 0 40px;
+  }
+  .dest {
+    grid-template-columns: 1fr 1fr;
+  }
+  .dest li {
+    border-right: 1px solid var(--stroke) !important;
+  }
+  .dest li:nth-child(2n) {
+    border-right: 0 !important;
+  }
+  .ic-img {
+    border-radius: 22px;
+  }
+  .ic-body,
+  .icard.rev .ic-body {
+    margin: -40px 10px 0;
+    padding: 26px 22px;
+  }
+  .ic-no {
+    font-size: 40px;
+    right: 20px;
+    top: 18px;
+  }
+  .ic-meta {
+    flex-direction: column;
+  }
+  .ic-meta .pr {
+    text-align: left;
+  }
+  .cchips {
+    border-radius: 20px;
+    width: 100%;
+  }
+  .op-cta {
+    padding: 28px 20px;
+  }
+}

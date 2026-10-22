@@ -1,0 +1,13 @@
+{
+    "name": "dre-homes/website",
+    "description": "DRE Homes website dependencies",
+    "type": "project",
+    "require": {
+        "php": ">=7.4",
+        "phpmailer/phpmailer": "6.8.0",
+        "vlucas/phpdotenv": "^5.6"
+    },
+    "config": {
+        "optimize-autoloader": true
+    }
+}

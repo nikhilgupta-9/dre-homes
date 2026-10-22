@@ -1,6 +1,5 @@
 <?php
 include('db/config.php');
-include('includes/header.php');
 include('lock2.php');
 include('includes/Logger.php');
 
@@ -80,7 +79,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['tag_action'])
 			set_query($conn, "UPDATE tbl_tags SET is_active = ? WHERE id = ?", [$value, $id]);
 			$logger->log('UPDATE', 'tbl_tags', $id, ['is_active' => $tag[0]['is_active']], ['is_active' => $value], 'SEO tags ' . ($value === '1' ? 'switched on: ' : 'switched off: ') . trim((string) $tag[0]['page_name']));
 		}
+		if (isset($_POST['ajax'])) {
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(['status' => 'success', 'is_on' => ($value === '1'), 'id' => $id]);
+			exit;
+		}
 		header('Location: ' . BASE_URL . 'manage-tags.php?done=' . ($action === 'show' ? 'on' : 'off'));
+		exit;
+	}
+	if (isset($_POST['ajax'])) {
+		header('Content-Type: application/json; charset=utf-8');
+		echo json_encode(['status' => 'error', 'message' => 'Nothing was changed.']);
 		exit;
 	}
 	$notice = 'Nothing was changed. Please reload the page and try again.';
@@ -128,8 +137,100 @@ foreach ($all as $row) {
 	$tags[] = $row;
 }
 
+function render_tag_list($tags, $f_search = '', $f_check = '')
+{
+	ob_start();
+	?>
+	<div class="dre-h">
+		<h3><?= count($tags) ?> <?= count($tags) === 1 ? 'page' : 'pages' ?><?= $f_search !== '' || $f_check !== '' ? ' <small>filtered</small>' : '' ?></h3>
+	</div>
+
+	<?php if (!$tags): ?>
+		<div class="dre-empty">
+			<i class="bi bi-tags" style="font-size: 2rem;"></i><br>
+			Nothing to show. <a href="<?= BASE_URL ?>manage-tags.php" class="dre-reset-filter">Show all pages</a>
+		</div>
+	<?php else: ?>
+		<div class="dre-proj-table" role="table" aria-label="SEO meta tags">
+			<div class="dre-proj-row dre-proj-head" role="row">
+				<div role="columnheader">Page</div>
+				<div role="columnheader">In a search result</div>
+				<div role="columnheader">Checks</div>
+				<div role="columnheader">Status</div>
+				<div role="columnheader"><span class="sr-only">Actions</span></div>
+			</div>
+			<?php foreach ($tags as $row):
+				$id = (int) $row['id'];
+				$is_on = $row['is_active'] === '1';
+				$image = trim((string) $row['meta_og_img']);
+				$edit_url = BASE_URL . 'edit-tags.php?edit=' . base64_encode($id);
+			?>
+				<div class="dre-proj-row<?= $is_on ? '' : ' is-hidden' ?>" role="row" data-id="<?= $id ?>">
+					<div class="dre-proj-main" role="cell">
+						<a class="dre-proj-thumb" href="<?= set_e($edit_url) ?>" tabindex="-1" aria-hidden="true">
+							<?php if ($image !== ''): ?>
+								<img src="<?= BASE_URL ?>assets/media/meta/<?= set_e(rawurlencode($image)) ?>" alt="" loading="lazy" onerror="this.remove()">
+							<?php endif; ?>
+							<i class="bi bi-image"></i>
+						</a>
+						<div>
+							<a class="dre-proj-name" href="<?= set_e($edit_url) ?>"><?= $row['page_name'] !== '' ? set_e($row['page_name']) : 'Page without a name' ?></a>
+							<span class="dre-proj-sub"><i class="bi bi-link-45deg"></i> /<?= set_e($row['page_slug']) ?></span>
+						</div>
+					</div>
+					<div class="dre-tag-result" role="cell">
+						<strong><?= $row['title_length'] > 0 ? set_e(mb_strimwidth((string) $row['meta_title'], 0, 64, '...')) : '<em>No title</em>' ?></strong>
+						<span><?= $row['desc_length'] > 0 ? set_e(mb_strimwidth((string) $row['meta_description'], 0, 150, '...')) : '<em>No description</em>' ?></span>
+					</div>
+					<div class="dre-tag-checks" role="cell">
+						<?php if (!$row['problems']): ?>
+							<span class="dre-tag-ok"><i class="bi bi-check2-circle"></i> Looks good</span>
+						<?php else: ?>
+							<?php foreach ($row['problems'] as $problem): ?>
+								<span class="dre-proj-missing"><i class="bi bi-exclamation-triangle"></i> <?= set_e($problem) ?></span>
+							<?php endforeach; ?>
+						<?php endif; ?>
+					</div>
+					<div class="dre-proj-status" role="cell">
+						<form method="post" action="<?= BASE_URL ?>manage-tags.php" class="dre-tag-status-form">
+							<input type="hidden" name="csrf" value="<?= set_e($_SESSION['admin_csrf'] ?? '') ?>">
+							<input type="hidden" name="tag_id" value="<?= $id ?>">
+							<button type="submit" name="tag_action" value="<?= $is_on ? 'hide' : 'show' ?>" class="dre-switch<?= $is_on ? ' is-on' : '' ?>" role="switch" aria-checked="<?= $is_on ? 'true' : 'false' ?>" title="<?= $is_on ? 'Used on the website. Click to switch off.' : 'Switched off. Click to use on the website.' ?>">
+								<i></i><span><?= $is_on ? 'In use' : 'Off' ?></span>
+							</button>
+						</form>
+						<span class="dre-proj-sync"><i class="bi bi-clock-history"></i> Changed <?= strtotime((string) $row['tstp']) > 0 ? date('d M Y', strtotime($row['tstp'])) : 'not known' ?></span>
+					</div>
+					<div class="dre-proj-actions" role="cell">
+						<a class="dre-icon-btn" href="<?= set_e($edit_url) ?>" title="Edit" aria-label="Edit the tags of <?= set_e($row['page_name']) ?>"><i class="bi bi-pencil"></i></a>
+						<a class="dre-icon-btn" href="<?= set_e(BASE_URL_HOME . $row['page_slug']) ?>" target="_blank" rel="noopener" title="View the page" aria-label="View <?= set_e($row['page_name']) ?> on the website"><i class="bi bi-box-arrow-up-right"></i></a>
+					</div>
+				</div>
+			<?php endforeach; ?>
+		</div>
+	<?php endif; ?>
+	<?php
+	return ob_get_clean();
+}
+
+// ---------------------------------------------------------------
+// AJAX Search / Filter Endpoint
+// ---------------------------------------------------------------
+if (isset($_GET['ajax'])) {
+	header('Content-Type: application/json; charset=utf-8');
+	echo json_encode([
+		'status' => 'success',
+		'count' => count($tags),
+		'html' => render_tag_list($tags, $f_search, $f_check),
+		'has_filters' => ($f_search !== '' || $f_check !== '')
+	]);
+	exit;
+}
+
 $done = is_string($_GET['done'] ?? null) ? $_GET['done'] : '';
 $notice = ['saved' => 'The changes were saved.', 'on' => 'These tags are now used on the website.', 'off' => 'These tags are switched off: the page has no title or description of its own now.'][$done] ?? $notice;
+
+include('includes/header.php');
 ?>
 <!--begin::Body-->
 
@@ -258,15 +359,15 @@ $notice = ['saved' => 'The changes were saved.', 'on' => 'These tags are now use
 									<div class="dre-leads-notice" role="status" id="tagNotice"><i class="bi bi-info-circle"></i> <?= set_e($notice) ?></div>
 								<?php endif; ?>
 
-								<form method="get" action="<?= BASE_URL ?>manage-tags.php" class="dre-glass dre-leads-filter dre-proj-filter">
+								<form method="get" action="<?= BASE_URL ?>manage-tags.php" class="dre-glass dre-leads-filter dre-proj-filter" id="tagFilter">
 									<label class="dre-leads-search">
 										<span>Search</span>
 										<i class="bi bi-search"></i>
-										<input type="search" name="q" value="<?= set_e($f_search) ?>" placeholder="Page, title or description" autocomplete="off">
+										<input type="search" name="q" id="tagSearchInput" value="<?= set_e($f_search) ?>" placeholder="Page, title or description" autocomplete="off">
 									</label>
 									<label>
 										<span>Show pages where</span>
-										<select name="check">
+										<select name="check" id="tagCheckSelect">
 											<option value="">Anything</option>
 											<?php foreach ($tag_checks as $key => $label): ?>
 												<option value="<?= $key ?>" <?= $f_check === $key ? 'selected' : '' ?>><?= set_e($label) ?></option>
@@ -275,81 +376,12 @@ $notice = ['saved' => 'The changes were saved.', 'on' => 'These tags are now use
 									</label>
 									<div class="dre-leads-filter-buttons">
 										<button type="submit" class="dre-btn dre-btn-main"><i class="bi bi-funnel"></i> Apply</button>
-										<?php if ($f_search !== '' || $f_check !== ''): ?>
-											<a class="dre-btn" href="<?= BASE_URL ?>manage-tags.php">Clear</a>
-										<?php endif; ?>
+										<a class="dre-btn" href="<?= BASE_URL ?>manage-tags.php" id="tagClearBtn" style="<?= ($f_search !== '' || $f_check !== '') ? '' : 'display:none;' ?>">Clear</a>
 									</div>
 								</form>
 
-								<div class="dre-glass dre-leads-list">
-									<div class="dre-h">
-										<h3><?= count($tags) ?> <?= count($tags) === 1 ? 'page' : 'pages' ?><?= $f_search !== '' || $f_check !== '' ? ' <small>filtered</small>' : '' ?></h3>
-									</div>
-
-									<?php if (!$tags): ?>
-										<div class="dre-empty">
-											<i class="bi bi-tags" style="font-size: 2rem;"></i><br>
-											Nothing to show. <a href="<?= BASE_URL ?>manage-tags.php">Show all pages</a>
-										</div>
-									<?php else: ?>
-										<div class="dre-proj-table" role="table" aria-label="SEO meta tags">
-											<div class="dre-proj-row dre-proj-head" role="row">
-												<div role="columnheader">Page</div>
-												<div role="columnheader">In a search result</div>
-												<div role="columnheader">Checks</div>
-												<div role="columnheader">Status</div>
-												<div role="columnheader"><span class="sr-only">Actions</span></div>
-											</div>
-											<?php foreach ($tags as $row):
-												$id = (int) $row['id'];
-												$is_on = $row['is_active'] === '1';
-												$image = trim((string) $row['meta_og_img']);
-												$edit_url = BASE_URL . 'edit-tags.php?edit=' . base64_encode($id);
-											?>
-												<div class="dre-proj-row<?= $is_on ? '' : ' is-hidden' ?>" role="row">
-													<div class="dre-proj-main" role="cell">
-														<a class="dre-proj-thumb" href="<?= set_e($edit_url) ?>" tabindex="-1" aria-hidden="true">
-															<?php if ($image !== ''): ?>
-																<img src="<?= BASE_URL ?>assets/media/meta/<?= set_e(rawurlencode($image)) ?>" alt="" loading="lazy" onerror="this.remove()">
-															<?php endif; ?>
-															<i class="bi bi-image"></i>
-														</a>
-														<div>
-															<a class="dre-proj-name" href="<?= set_e($edit_url) ?>"><?= $row['page_name'] !== '' ? set_e($row['page_name']) : 'Page without a name' ?></a>
-															<span class="dre-proj-sub"><i class="bi bi-link-45deg"></i> /<?= set_e($row['page_slug']) ?></span>
-														</div>
-													</div>
-													<div class="dre-tag-result" role="cell">
-														<strong><?= $row['title_length'] > 0 ? set_e(mb_strimwidth((string) $row['meta_title'], 0, 64, '...')) : '<em>No title</em>' ?></strong>
-														<span><?= $row['desc_length'] > 0 ? set_e(mb_strimwidth((string) $row['meta_description'], 0, 150, '...')) : '<em>No description</em>' ?></span>
-													</div>
-													<div class="dre-tag-checks" role="cell">
-														<?php if (!$row['problems']): ?>
-															<span class="dre-tag-ok"><i class="bi bi-check2-circle"></i> Looks good</span>
-														<?php else: ?>
-															<?php foreach ($row['problems'] as $problem): ?>
-																<span class="dre-proj-missing"><i class="bi bi-exclamation-triangle"></i> <?= set_e($problem) ?></span>
-															<?php endforeach; ?>
-														<?php endif; ?>
-													</div>
-													<div class="dre-proj-status" role="cell">
-														<form method="post" action="<?= BASE_URL ?>manage-tags.php">
-															<input type="hidden" name="csrf" value="<?= set_e($_SESSION['admin_csrf']) ?>">
-															<input type="hidden" name="tag_id" value="<?= $id ?>">
-															<button type="submit" name="tag_action" value="<?= $is_on ? 'hide' : 'show' ?>" class="dre-switch<?= $is_on ? ' is-on' : '' ?>" role="switch" aria-checked="<?= $is_on ? 'true' : 'false' ?>" title="<?= $is_on ? 'Used on the website. Click to switch off.' : 'Switched off. Click to use on the website.' ?>">
-																<i></i><span><?= $is_on ? 'In use' : 'Off' ?></span>
-															</button>
-														</form>
-														<span class="dre-proj-sync"><i class="bi bi-clock-history"></i> Changed <?= strtotime((string) $row['tstp']) > 0 ? date('d M Y', strtotime($row['tstp'])) : 'not known' ?></span>
-													</div>
-													<div class="dre-proj-actions" role="cell">
-														<a class="dre-icon-btn" href="<?= set_e($edit_url) ?>" title="Edit" aria-label="Edit the tags of <?= set_e($row['page_name']) ?>"><i class="bi bi-pencil"></i></a>
-														<a class="dre-icon-btn" href="<?= set_e(BASE_URL_HOME . $row['page_slug']) ?>" target="_blank" rel="noopener" title="View the page" aria-label="View <?= set_e($row['page_name']) ?> on the website"><i class="bi bi-box-arrow-up-right"></i></a>
-													</div>
-												</div>
-											<?php endforeach; ?>
-										</div>
-									<?php endif; ?>
+								<div class="dre-glass dre-leads-list" id="tagListContainer" style="position:relative; transition: opacity 0.2s ease;">
+									<?= render_tag_list($tags, $f_search, $f_check) ?>
 								</div>
 							</div>
 
@@ -359,6 +391,189 @@ $notice = ['saved' => 'The changes were saved.', 'on' => 'These tags are now use
 									if (notice) {
 										setTimeout(function () { notice.style.display = 'none'; }, 8000);
 									}
+
+									var form = document.getElementById('tagFilter');
+									if (!form) return;
+
+									var input = document.getElementById('tagSearchInput');
+									var select = document.getElementById('tagCheckSelect');
+									var clearBtn = document.getElementById('tagClearBtn');
+									var container = document.getElementById('tagListContainer');
+									var timer = null;
+									var abortCtrl = null;
+
+									function applyFilter(pushHistory) {
+										if (abortCtrl) {
+											abortCtrl.abort();
+										}
+										abortCtrl = new AbortController();
+
+										var q = input ? input.value.trim() : '';
+										var check = select ? select.value : '';
+
+										if (clearBtn) {
+											clearBtn.style.display = (q !== '' || check !== '') ? '' : 'none';
+										}
+
+										if (container) {
+											container.style.opacity = '0.5';
+										}
+
+										var params = new URLSearchParams();
+										if (q !== '') params.set('q', q);
+										if (check !== '') params.set('check', check);
+
+										var queryStr = params.toString();
+										var newUrl = window.location.pathname + (queryStr ? '?' + queryStr : '');
+										if (pushHistory) {
+											window.history.pushState({}, '', newUrl);
+										} else {
+											window.history.replaceState({}, '', newUrl);
+										}
+
+										params.set('ajax', '1');
+										var fetchUrl = window.location.pathname + '?' + params.toString();
+
+										fetch(fetchUrl, {
+											signal: abortCtrl.signal,
+											headers: {
+												'X-Requested-With': 'XMLHttpRequest'
+											}
+										})
+										.then(function (res) {
+											if (!res.ok) throw new Error('Network error');
+											return res.json();
+										})
+										.then(function (data) {
+											if (data && data.html && container) {
+												container.innerHTML = data.html;
+											}
+										})
+										.catch(function (err) {
+											if (err.name !== 'AbortError') {
+												console.error('Tag filter error:', err);
+											}
+										})
+										.finally(function () {
+											if (container) {
+												container.style.opacity = '1';
+											}
+										});
+									}
+
+									if (input) {
+										input.addEventListener('input', function () {
+											clearTimeout(timer);
+											timer = setTimeout(function () {
+												applyFilter(false);
+											}, 250);
+										});
+										input.addEventListener('keydown', function (e) {
+											if (e.key === 'Enter') {
+												e.preventDefault();
+												clearTimeout(timer);
+												applyFilter(true);
+											}
+										});
+									}
+
+									if (select) {
+										select.addEventListener('change', function () {
+											clearTimeout(timer);
+											applyFilter(true);
+										});
+									}
+
+									form.addEventListener('submit', function (e) {
+										e.preventDefault();
+										clearTimeout(timer);
+										applyFilter(true);
+									});
+
+									if (clearBtn) {
+										clearBtn.addEventListener('click', function (e) {
+											e.preventDefault();
+											if (input) input.value = '';
+											if (select) select.value = '';
+											clearTimeout(timer);
+											applyFilter(true);
+										});
+									}
+
+									document.addEventListener('click', function (e) {
+										var resetLink = e.target.closest('.dre-reset-filter');
+										if (resetLink) {
+											e.preventDefault();
+											if (input) input.value = '';
+											if (select) select.value = '';
+											clearTimeout(timer);
+											applyFilter(true);
+										}
+									});
+
+									window.addEventListener('popstate', function () {
+										var urlParams = new URLSearchParams(window.location.search);
+										if (input) input.value = urlParams.get('q') || '';
+										if (select) select.value = urlParams.get('check') || '';
+										applyFilter(false);
+									});
+
+									// Instant AJAX toggle for switches
+									document.addEventListener('click', function (e) {
+										var switchBtn = e.target.closest('.dre-tag-status-form button.dre-switch');
+										if (!switchBtn) return;
+
+										e.preventDefault();
+										var switchForm = switchBtn.closest('form');
+										if (!switchForm) return;
+
+										var formData = new FormData(switchForm);
+										formData.append('ajax', '1');
+										formData.append('tag_action', switchBtn.value);
+
+										switchBtn.disabled = true;
+										switchBtn.style.opacity = '0.6';
+
+										fetch(switchForm.action || window.location.pathname, {
+											method: 'POST',
+											body: formData,
+											headers: {
+												'X-Requested-With': 'XMLHttpRequest'
+											}
+										})
+										.then(function (res) { return res.json(); })
+										.then(function (res) {
+											if (res.status === 'success') {
+												var row = switchBtn.closest('.dre-proj-row');
+												var span = switchBtn.querySelector('span');
+												if (res.is_on) {
+													switchBtn.classList.add('is-on');
+													switchBtn.value = 'hide';
+													switchBtn.setAttribute('aria-checked', 'true');
+													switchBtn.setAttribute('title', 'Used on the website. Click to switch off.');
+													if (span) span.textContent = 'In use';
+													if (row) row.classList.remove('is-hidden');
+												} else {
+													switchBtn.classList.remove('is-on');
+													switchBtn.value = 'show';
+													switchBtn.setAttribute('aria-checked', 'false');
+													switchBtn.setAttribute('title', 'Switched off. Click to use on the website.');
+													if (span) span.textContent = 'Off';
+													if (row) row.classList.add('is-hidden');
+												}
+											} else {
+												alert(res.message || 'Error updating status');
+											}
+										})
+										.catch(function (err) {
+											console.error('Status toggle error:', err);
+											switchForm.submit();
+										})
+										.finally(function () {
+											switchBtn.disabled = false;
+											switchBtn.style.opacity = '';
+										});
+									});
 								})();
 							</script>
 							<!--end::SEO tags-->

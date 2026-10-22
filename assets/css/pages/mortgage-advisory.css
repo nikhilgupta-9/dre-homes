@@ -1,0 +1,572 @@
+/* Mortgage Advisory | DRE Homes — page styles */
+/* ================= MORTGAGE ADVISORY ================= */
+.mg-hero {
+  min-height: 88vh;
+}
+.mg-hero h1 {
+  font-size: clamp(56px, 8.5vw, 130px);
+  line-height: 0.92;
+  margin: 16px 0 20px;
+}
+.mg-hero .sub {
+  max-width: 640px;
+  margin-bottom: 26px;
+}
+.mg-hero .dp-stats {
+  margin-top: 34px;
+}
+.dp-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-radius: 24px;
+  overflow: hidden;
+  max-width: 900px;
+}
+.dp-stats > div {
+  padding: 20px 22px;
+  border-right: 1px solid var(--stroke);
+}
+.dp-stats > div:last-child {
+  border-right: 0;
+}
+.dp-stats small {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 8px;
+}
+.dp-stats b {
+  font-size: 20px;
+  font-weight: 400;
+}
+.mg-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 50px;
+  align-items: center;
+}
+.mi-num {
+  padding: 40px;
+  border-radius: 30px;
+  display: grid;
+  gap: 12px;
+}
+.mi-num b {
+  font-size: clamp(90px, 11vw, 160px);
+  font-weight: 200;
+  line-height: 0.85;
+}
+.mi-num span {
+  font-size: 20px;
+  line-height: 1.45;
+  font-weight: 300;
+}
+.mi-num small {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--acc);
+}
+.mx-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.mx {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 26px 24px;
+  border-radius: 26px;
+}
+.mx-n {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--faint);
+}
+.mx-ic,
+.ms-ic,
+.os-ic {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: rgba(var(--tint-rgb), 0.12);
+  border: 1px solid var(--stroke);
+  color: var(--acc);
+}
+.mx-ic svg,
+.ms-ic svg,
+.os-ic svg {
+  width: 24px;
+  height: 24px;
+}
+.mx h3 {
+  margin: 8px 0 0;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+.mx p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+.mx-go {
+  margin-top: auto;
+  padding: 12px 0 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  font: 600 13px var(--font);
+  color: var(--acc);
+  cursor: pointer;
+}
+.mort {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  padding: 30px;
+  border-radius: 28px;
+}
+.mort > * {
+  min-width: 0;
+}
+.mg-in {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 22px;
+  align-content: start;
+}
+.mg-in label {
+  display: block;
+}
+.mg-in label > span {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 10px;
+}
+.mg-in label > span b {
+  color: var(--text);
+  letter-spacing: 0;
+}
+.mg-type {
+  display: inline-flex;
+  justify-self: start;
+  gap: 4px;
+  padding: 5px;
+  border-radius: 999px;
+  background: rgba(var(--tint-rgb), 0.08);
+  border: 1px solid var(--stroke);
+}
+.mg-type button {
+  border: 0;
+  background: none;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font: 600 13px var(--font);
+  color: var(--muted);
+  cursor: pointer;
+}
+.mg-type button.on {
+  background: var(--btn);
+  color: var(--btn-fg);
+}
+.mv {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--stroke);
+  background: rgba(var(--tint-rgb), 0.08);
+}
+.mv span {
+  color: var(--acc);
+  font-weight: 600;
+}
+.mv input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  background: none;
+  outline: none;
+  color: var(--text);
+  font: 300 26px var(--font);
+}
+.m-out {
+  padding: 26px;
+  border-radius: 22px;
+  background: rgba(var(--tint-rgb), 0.08);
+  border: 1px solid var(--stroke);
+}
+.m-out small {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.m-big {
+  font-weight: 200;
+  font-size: 48px;
+  line-height: 1.1;
+  margin: 6px 0 14px;
+}
+.m-split {
+  display: flex;
+  height: 8px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(var(--fg-rgb), 0.12);
+  margin-bottom: 10px;
+}
+.m-split i {
+  display: block;
+  height: 100%;
+  transition: width 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+#mBarP,
+.m-leg .lp {
+  background: var(--acc);
+}
+#mBarI,
+.m-leg .li {
+  background: rgba(var(--fg-rgb), 0.35);
+}
+.m-leg {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+.m-leg > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.m-leg i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.m-leg b {
+  color: var(--text);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.m-out ul {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0;
+}
+.m-out li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.m-out li b {
+  color: var(--text);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.m-up {
+  padding-top: 14px;
+  border-top: 1px solid var(--stroke);
+}
+.m-up ul {
+  margin-top: 10px;
+}
+.m-up li.tot {
+  padding-top: 8px;
+  border-top: 1px dashed var(--stroke);
+}
+.m-up li.tot span,
+.m-up li.tot b {
+  color: var(--text);
+  font-weight: 600;
+}
+.m-out p {
+  font-size: 12px;
+  color: var(--faint);
+  margin: 0 0 16px;
+}
+.ms-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  counter-reset: s;
+}
+.ms {
+  position: relative;
+  padding: 26px 24px;
+  border-radius: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ms:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 51px;
+  right: -17px;
+  width: 18px;
+  height: 1px;
+  background: var(--acc);
+  opacity: 0.6;
+}
+.ms small {
+  margin-top: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--acc);
+}
+.ms b {
+  font-size: 19px;
+  font-weight: 500;
+}
+.ms p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+.mg-call {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 30px;
+  align-items: center;
+  padding: 34px 38px;
+  border-radius: 30px;
+}
+.mg-call h3 {
+  margin: 8px 0 0;
+  font-size: clamp(26px, 3vw, 40px);
+  font-weight: 300;
+  line-height: 1.15;
+}
+.mc-acts {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.mc {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 14px;
+  align-items: center;
+  padding: 16px 22px 16px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--stroke);
+  background: rgba(var(--tint-rgb), 0.08);
+  color: var(--text);
+  transition: 0.3s;
+}
+.mc:hover {
+  border-color: var(--stroke-acc);
+}
+.mc span {
+  grid-row: 1/3;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--btn);
+  color: var(--btn-fg);
+}
+.mc span svg {
+  width: 20px;
+  height: 20px;
+}
+.mc b {
+  font-size: 16px;
+  font-weight: 500;
+}
+.mc small {
+  font-size: 12px;
+  color: var(--faint);
+}
+.os-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.os {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 22px 16px 16px;
+  border-radius: 22px;
+  color: var(--text);
+}
+.os b {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 500;
+}
+.os-go {
+  color: var(--acc);
+  font-size: 18px;
+  transition: transform 0.3s;
+}
+.os:hover .os-go {
+  transform: translateX(4px);
+}
+body .form select {
+  padding: 17px 20px;
+  border-radius: 16px;
+  border: 1px solid var(--stroke);
+  background: rgba(var(--tint-rgb), 0.1);
+  color: var(--text);
+  font: 15px var(--font);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23999' stroke-width='1.6'%3E%3Cpath d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 18px center;
+}
+body .form select option {
+  color: #222;
+}
+@media (min-width: 1081px) and (max-width: 1500px) {
+  .mg-hero .wrap,
+  section .wrap {
+    padding-right: 96px;
+  }
+}
+@media (max-width: 1080px) {
+  .mx-grid,
+  .ms-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ms::after {
+    display: none;
+  }
+  .mg-intro {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .mort {
+    grid-template-columns: 1fr;
+  }
+  .mg-call {
+    grid-template-columns: 1fr;
+  }
+  .os-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .mg-hero {
+    min-height: auto;
+    padding: 130px 0 40px;
+  }
+  .dp-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+  .dp-stats > div:nth-child(2) {
+    border-right: 0;
+  }
+  .dp-stats > div:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--stroke);
+  }
+  .mx-grid,
+  .ms-grid,
+  .os-grid {
+    grid-template-columns: 1fr;
+  }
+  .mort {
+    padding: 18px;
+  }
+  .m-out {
+    padding: 20px;
+  }
+  .m-big {
+    font-size: 40px;
+  }
+  .mi-num {
+    padding: 28px;
+  }
+  .mg-call {
+    padding: 24px;
+  }
+  .mc {
+    width: 100%;
+  }
+}
+
+/* Lenders / Banks section */
+.mc2-lend {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 34px;
+  align-items: center;
+  padding: 36px;
+  border-radius: 32px;
+}
+.mc2-lend h2 {
+  margin: 10px 0 22px;
+  font-size: clamp(28px, 3vw, 42px);
+  font-weight: 300;
+  line-height: 1.15;
+}
+.mc2-logos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.mc2-lg {
+  display: grid;
+  place-items: center;
+  height: 110px;
+  padding: 20px 26px;
+  border-radius: 20px;
+  background: linear-gradient(160deg, #fff, #f4f0ea);
+  border: 1px solid var(--stroke);
+}
+.mc2-lg img {
+  max-width: 100%;
+  max-height: 56px;
+  object-fit: contain;
+}
+@media (max-width: 1080px) {
+  .mc2-lend {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .mc2-lend {
+    padding: 22px;
+  }
+}
+

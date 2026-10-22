@@ -2153,3 +2153,127 @@ function showNotification(type, message) {
         }
     }, 5000);
 }
+/* =====================================================================
+   Manage Projects: filter bar (manage-project.php #projFilter)
+   - "More filters" opens / closes the extra filters
+   - dropdowns and the checkbox apply straight away; empty / default values stay out of the address
+   - live search: matching projects appear while typing (ajax/project-search.php)
+   ===================================================================== */
+(function () {
+	var form = document.getElementById('projFilter');
+	if (!form) return;
+
+	// ---- "More filters" ----
+	var toggle = document.getElementById('projFilterToggle');
+	if (toggle) {
+		toggle.addEventListener('click', function () {
+			var open = form.classList.toggle('is-open');
+			toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+		});
+	}
+
+	// ---- Apply ----
+	var defaults = { sort: 'newest', per: '25' };
+	function cleanSubmit() {
+		form.querySelectorAll('input[name], select[name]').forEach(function (field) {
+			if (field.type === 'checkbox') return;
+			if (field.value === '' || defaults[field.name] === field.value) field.disabled = true;
+		});
+		form.submit();
+	}
+	form.addEventListener('submit', function (event) {
+		event.preventDefault();
+		cleanSubmit();
+	});
+	form.addEventListener('change', function (event) {
+		if (event.target.matches('select, input[type="checkbox"]')) cleanSubmit();
+	});
+
+	// ---- Live search ----
+	var input = form.querySelector('input[name="q"]');
+	if (!input) return;
+	var typeField = form.querySelector('input[name="type"]');
+	var box = document.createElement('div');
+	box.className = 'dre-pf-suggest';
+	box.id = 'projSuggest';
+	box.setAttribute('role', 'listbox');
+	box.hidden = true;
+	input.parentNode.appendChild(box);
+	input.setAttribute('role', 'combobox');
+	input.setAttribute('aria-autocomplete', 'list');
+	input.setAttribute('aria-controls', 'projSuggest');
+	input.setAttribute('aria-expanded', 'false');
+
+	var timer = null, request = null, items = [], active = -1, lastTerm = '';
+
+	function esc(text) {
+		return String(text == null ? '' : text).replace(/[&<>"']/g, function (c) {
+			return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+		});
+	}
+	function close() {
+		box.hidden = true;
+		input.setAttribute('aria-expanded', 'false');
+		active = -1;
+	}
+	function highlight(index) {
+		var links = box.querySelectorAll('.dre-pf-sg-item');
+		links.forEach(function (link, i) { link.classList.toggle('is-active', i === index); });
+		active = index;
+		if (links[index]) links[index].scrollIntoView({ block: 'nearest' });
+	}
+	function render(term, results) {
+		items = results;
+		active = -1;
+		if (!results.length) {
+			box.innerHTML = '<div class="dre-pf-sg-empty">No project matches “' + esc(term) + '”</div>';
+		} else {
+			box.innerHTML = results.map(function (r, i) {
+				var meta = [r.location, r.developer].filter(Boolean).join(' · ');
+				return '<a class="dre-pf-sg-item" role="option" href="' + esc(r.edit_url) + '" data-i="' + i + '">' +
+					(r.thumb ? '<img src="' + esc(r.thumb) + '" alt="" loading="lazy">' : '<span class="dre-pf-sg-noimg"><i class="bi bi-building"></i></span>') +
+					'<span class="dre-pf-sg-text"><b>' + esc(r.name) + '</b><small>' + esc(meta) + '</small></span>' +
+					'<span class="dre-pf-sg-tags"><em>' + esc(r.type) + '</em><em class="' + (r.live ? 'is-live' : 'is-hidden') + '">' + (r.live ? 'Live' : 'Hidden') + '</em></span>' +
+					'</a>';
+			}).join('') +
+				'<button type="submit" class="dre-pf-sg-all">Show all results for “' + esc(term) + '”<small>Enter</small></button>';
+		}
+		box.hidden = false;
+		input.setAttribute('aria-expanded', 'true');
+	}
+	function search() {
+		var term = input.value.trim();
+		if (term.length < 2) { close(); lastTerm = ''; return; }
+		if (term === lastTerm && !box.hidden) return;
+		lastTerm = term;
+		if (request) request.abort();
+		request = new AbortController();
+		var url = base_url + 'ajax/project-search.php?q=' + encodeURIComponent(term) + (typeField ? '&type=' + encodeURIComponent(typeField.value) : '');
+		box.classList.add('is-loading');
+		fetch(url, { signal: request.signal, credentials: 'same-origin' })
+			.then(function (res) { return res.json(); })
+			.then(function (data) { if (input.value.trim() === term) render(term, data.results || []); })
+			.catch(function (err) { if (err.name !== 'AbortError') close(); })
+			.finally(function () { box.classList.remove('is-loading'); });
+	}
+
+	input.addEventListener('input', function () {
+		clearTimeout(timer);
+		timer = setTimeout(search, 250);
+	});
+	input.addEventListener('focus', function () {
+		if (input.value.trim().length >= 2 && items.length) { box.hidden = false; input.setAttribute('aria-expanded', 'true'); }
+	});
+	input.addEventListener('keydown', function (event) {
+		if (box.hidden) return;
+		var count = box.querySelectorAll('.dre-pf-sg-item').length;
+		if (event.key === 'ArrowDown' && count) { event.preventDefault(); highlight((active + 1) % count); }
+		else if (event.key === 'ArrowUp' && count) { event.preventDefault(); highlight((active - 1 + count) % count); }
+		else if (event.key === 'Escape') { close(); }
+		else if (event.key === 'Enter' && active >= 0 && items[active]) { event.preventDefault(); window.location.href = items[active].edit_url; }
+		// Enter with nothing highlighted: normal search (filters the list)
+	});
+	document.addEventListener('click', function (event) {
+		if (!box.contains(event.target) && event.target !== input) close();
+	});
+})();

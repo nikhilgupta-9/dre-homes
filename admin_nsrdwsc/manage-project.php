@@ -393,7 +393,7 @@ if ($push_message === 'push_success') {
 							<!--begin::Projects-->
 							<link href="<?= BASE_URL ?>assets/css/dre-dashboard.css?v=1" rel="stylesheet" type="text/css" />
 							<link href="<?= BASE_URL ?>assets/css/dre-leads.css?v=1" rel="stylesheet" type="text/css" />
-							<link href="<?= BASE_URL ?>assets/css/dre-projects.css?v=1" rel="stylesheet" type="text/css" />
+							<link href="<?= BASE_URL ?>assets/css/dre-projects.css?v=5" rel="stylesheet" type="text/css" />
 							<link href="<?= BASE_URL ?>assets/css/dre-geniemap.css?v=3" rel="stylesheet" type="text/css" />
 							<link href="<?= BASE_URL ?>assets/css/dre-seo-check.css?v=2" rel="stylesheet" type="text/css" />
 
@@ -433,15 +433,34 @@ if ($push_message === 'push_success') {
 									<?php endif; ?>
 								</nav>
 
-								<!-- Search and filters -->
-								<form method="get" action="<?= BASE_URL ?>manage-project.php" class="dre-glass dre-leads-filter dre-proj-filter">
+								<!-- Search and filters: one row (search, status, developer, sort); the rest under "More filters" -->
+								<?php
+								// Filters inside "More filters", and the chips that show every active filter with its own remove link
+								$adv_active = count(array_filter([$f_comm > 0, $f_missing !== '', $f_sync !== '', $f_seo !== '', $f_source !== '', $f_per_page !== 25, $f_home !== '']));
+								$filter_chips = [];
+								if ($f_search !== '') $filter_chips[] = ['Search: “' . $f_search . '”', ['q' => '']];
+								if ($f_status !== '') $filter_chips[] = [$f_status === 'active' ? 'Live' : 'Hidden', ['status' => '']];
+								foreach ($developer_options as $option) {
+									if ($f_dev === (int) $option['dev_id']) $filter_chips[] = ['Developer: ' . $option['dev_heading'], ['dev' => '']];
+								}
+								foreach ($community_options as $option) {
+									if ($f_comm === (int) $option['comm_id']) $filter_chips[] = ['Community: ' . $option['comm_heading'], ['comm' => '']];
+								}
+								if ($f_missing !== '') $filter_chips[] = ['Missing: ' . $proj_missing[$f_missing], ['missing' => '']];
+								if ($f_sync !== '') $filter_chips[] = [$f_sync === 'pushed' ? 'In the app' : 'Not in the app', ['sync' => '']];
+								if ($has_seo && $f_seo !== '' && isset($seo_levels[$f_seo])) $filter_chips[] = ['SEO: ' . $seo_levels[$f_seo][0], ['seo' => '']];
+								if ($f_source !== '') $filter_chips[] = ['From GenieMap', ['source' => '']];
+								if ($f_home !== '') $filter_chips[] = ['On the homepage', ['home' => '']];
+								$clear_all = ['q' => '', 'status' => '', 'home' => '', 'sync' => '', 'source' => '', 'seo' => '', 'dev' => '', 'comm' => '', 'missing' => '', 'sort' => '', 'per' => '', 'page' => ''];
+								?>
+								<form method="get" action="<?= BASE_URL ?>manage-project.php" class="dre-glass dre-leads-filter dre-proj-filter<?= $adv_active ? ' is-open' : '' ?>" id="projFilter">
 									<?php if ($f_type): ?><input type="hidden" name="type" value="<?= $f_type ?>"><?php endif; ?>
 									<label class="dre-leads-search">
 										<span>Search</span>
 										<i class="bi bi-search"></i>
 										<input type="search" name="q" value="<?= proj_e($f_search) ?>" placeholder="Project, location, developer or community" autocomplete="off">
 									</label>
-									<label>
+									<label class="dre-pf-main">
 										<span>Website status</span>
 										<select name="status">
 											<option value="">Any</option>
@@ -449,7 +468,7 @@ if ($push_message === 'push_success') {
 											<option value="inactive" <?= $f_status === 'inactive' ? 'selected' : '' ?>>Hidden</option>
 										</select>
 									</label>
-									<label>
+									<label class="dre-pf-main">
 										<span>Developer</span>
 										<select name="dev">
 											<option value="">Any</option>
@@ -458,7 +477,26 @@ if ($push_message === 'push_success') {
 											<?php endforeach; ?>
 										</select>
 									</label>
-									<label>
+									<label class="dre-pf-main">
+										<span>Sort by</span>
+										<select name="sort">
+											<?php foreach ($proj_sorts as $key => $label): ?>
+												<option value="<?= $key ?>" <?= $f_sort === $key ? 'selected' : '' ?>><?= proj_e($label) ?></option>
+											<?php endforeach; ?>
+										</select>
+									</label>
+									<div class="dre-pf-actions">
+										<button type="button" class="dre-btn dre-pf-toggle" id="projFilterToggle" aria-expanded="<?= $adv_active ? 'true' : 'false' ?>" aria-controls="projFilter">
+											<i class="bi bi-sliders"></i> <span class="dre-pf-more-label">More filters</span><span class="dre-pf-all-label">Filters</span>
+											<?php $badge = $adv_active + ($f_status !== '' ? 1 : 0) + ($f_dev > 0 ? 1 : 0); ?>
+											<b class="dre-pf-count dre-pf-count-adv"<?= $adv_active ? '' : ' hidden' ?>><?= $adv_active ?></b>
+											<b class="dre-pf-count dre-pf-count-all"<?= $badge ? '' : ' hidden' ?>><?= $badge ?></b>
+										</button>
+										<button type="submit" class="dre-btn dre-btn-main" aria-label="Apply filters"><i class="bi bi-search"></i><span class="dre-pf-apply-label"> Apply</span></button>
+									</div>
+
+									<!-- More filters (open when one of them is in use) -->
+									<label class="dre-pf-adv">
 										<span>Community</span>
 										<select name="comm">
 											<option value="">Any</option>
@@ -467,7 +505,7 @@ if ($push_message === 'push_success') {
 											<?php endforeach; ?>
 										</select>
 									</label>
-									<label>
+									<label class="dre-pf-adv">
 										<span>Missing</span>
 										<select name="missing">
 											<option value="">Nothing selected</option>
@@ -476,7 +514,7 @@ if ($push_message === 'push_success') {
 											<?php endforeach; ?>
 										</select>
 									</label>
-									<label>
+									<label class="dre-pf-adv">
 										<span>App</span>
 										<select name="sync">
 											<option value="">Any</option>
@@ -485,7 +523,7 @@ if ($push_message === 'push_success') {
 										</select>
 									</label>
 									<?php if ($has_seo): ?>
-										<label>
+										<label class="dre-pf-adv">
 											<span>SEO check</span>
 											<select name="seo">
 												<option value="">Any</option>
@@ -496,7 +534,7 @@ if ($push_message === 'push_success') {
 										</label>
 									<?php endif; ?>
 									<?php if ($has_genie): ?>
-										<label>
+										<label class="dre-pf-adv">
 											<span>Source</span>
 											<select name="source">
 												<option value="">Any</option>
@@ -504,15 +542,7 @@ if ($push_message === 'push_success') {
 											</select>
 										</label>
 									<?php endif; ?>
-									<label>
-										<span>Sort by</span>
-										<select name="sort">
-											<?php foreach ($proj_sorts as $key => $label): ?>
-												<option value="<?= $key ?>" <?= $f_sort === $key ? 'selected' : '' ?>><?= proj_e($label) ?></option>
-											<?php endforeach; ?>
-										</select>
-									</label>
-									<label>
+									<label class="dre-pf-adv">
 										<span>Per page</span>
 										<select name="per">
 											<?php foreach ([25, 50, 100] as $option): ?>
@@ -520,16 +550,21 @@ if ($push_message === 'push_success') {
 											<?php endforeach; ?>
 										</select>
 									</label>
-									<label class="dre-proj-check">
+									<label class="dre-pf-adv dre-proj-check">
 										<input type="checkbox" name="home" value="1" <?= $f_home !== '' ? 'checked' : '' ?>> On the homepage only
 									</label>
-									<div class="dre-leads-filter-buttons">
-										<button type="submit" class="dre-btn dre-btn-main"><i class="bi bi-funnel"></i> Apply</button>
-										<?php if ($filters_on || $f_sort !== 'newest'): ?>
-											<a class="dre-btn" href="<?= proj_e(proj_url(['q' => '', 'status' => '', 'home' => '', 'sync' => '', 'dev' => '', 'comm' => '', 'missing' => '', 'sort' => '', 'page' => ''])) ?>">Clear</a>
-										<?php endif; ?>
-									</div>
 								</form>
+
+								<?php if ($filter_chips): ?>
+									<!-- Active filters: each one can be removed on its own -->
+									<div class="dre-pf-chips" aria-label="Active filters">
+										<?php foreach ($filter_chips as [$label, $remove]): ?>
+											<a class="dre-pf-chip" href="<?= proj_e(proj_url($remove + ['page' => ''])) ?>" title="Remove this filter"><?= proj_e($label) ?> <i class="bi bi-x-lg"></i></a>
+										<?php endforeach; ?>
+										<a class="dre-pf-clear" href="<?= proj_e(proj_url($clear_all)) ?>">Clear all</a>
+									</div>
+								<?php endif; ?>
+
 
 								<!-- The form the ticked projects belong to. Its buttons choose what happens. -->
 								<form method="post" action="<?= proj_e(proj_url()) ?>" id="projBulkForm">

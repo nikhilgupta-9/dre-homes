@@ -1,595 +1,153 @@
 <?php
+// 1. CONFIG
 include('db/config.php');
-$meta_tags = select_row("tbl_tags", "id=10 and is_active=1");
-include('common/header.php');
-$page = 1;
-if (!empty($_GET)) {
-    $conditions = [];
 
-    $conditions[] = "prj_type_id = 3";
+// 2. DATA: International properties listing (/international-properties, see .htaccess) — design: international-properties.html
+// Admin > International (tbl_international_content, id 1; tbl_tags, id 10; tbl_proj, type 3)
+$meta_tags = get_seo_tags(10);
+$intl_content = get_international_content();
+$projects = get_international_projects();
+$destinations = get_international_destinations($projects);
 
-    if (!empty($_GET["search_offplan"])) {
-        $searchRaw = urldecode($_GET["search_offplan"]);
-        $searchTerm = mysqli_real_escape_string($conn, $searchRaw);
-        $conditions[] = "proj_name LIKE '%$searchTerm%'";
-    }
+$banner_img = !empty($intl_content['intl_cont_img'])
+  ? BASE_URL_IMG . 'project/' . rawurlencode($intl_content['intl_cont_img'])
+  : BASE_URL_IMG . 'project/thumb/thumb_img_140_Mandarin-Oriental-img-02_3_11zon.jpg';
+$hero_eyebrow = !empty($intl_content['intl_cont_heading']) ? $intl_content['intl_cont_heading'] : 'International Properties';
 
-    if (!empty($_GET["dev_id"])) {
-        $devId = (int) $_GET["dev_id"];
-        $conditions[] = "prj_dev_id = $devId";
-    }
-
-    if (!empty($_GET["proj_bedroom"])) {
-        $bedroomsArr = [];
-
-        if (is_array($_GET["proj_bedroom"])) {
-            $bedroomsArr = $_GET["proj_bedroom"];
-        } else {
-            $bedroomsRaw = urldecode($_GET["proj_bedroom"]);
-            $bedroomsArr = explode(",", $bedroomsRaw);
-        }
-
-        $bedroomsClean = array_map(function ($b) use ($conn) {
-            return mysqli_real_escape_string($conn, trim($b));
-        }, $bedroomsArr);
-
-        $bedroomConditions = [];
-        foreach ($bedroomsClean as $bed) {
-            $bedroomConditions[] = "proj_bedroom LIKE '%$bed%'";
-        }
-
-        if (!empty($bedroomConditions)) {
-            $conditions[] = "(" . implode(" OR ", $bedroomConditions) . ")";
-        }
-    }
-
-    // --- Price Filter ---
-    if (!empty($_GET["price_min"]) && is_numeric($_GET["price_min"])) {
-        $priceMin = (int) $_GET["price_min"];
-        $conditions[] = "proj_price >= $priceMin";
-    }
-
-    if (
-        !empty($_GET["price_max"]) &&
-        is_numeric($_GET["price_max"]) &&
-        $_GET["price_max"] !== "show_all"
-    ) {
-        $priceMax = (int) $_GET["price_max"];
-        $conditions[] = "proj_price <= $priceMax";
-    }
-
-    // --- Amenities Filter ---
-    if (!empty($_GET["amenities"]) && is_array($_GET["amenities"])) {
-        $amenityConditions = [];
-        $selectedAmenityIds = array_map("intval", $_GET["amenities"]);
-        foreach ($selectedAmenityIds as $aid) {
-            $amenityConditions[] = "FIND_IN_SET($aid, proj_fea_fac_opt)";
-        }
-
-        if (!empty($amenityConditions)) {
-            $conditions[] = "(" . implode(" AND ", $amenityConditions) . ")";
-        }
-    }
-
-    $whereClause = implode(" AND ", $conditions);
-    $whereClause .= " AND is_active = 1";
-
-    $sql = select_query("tbl_proj", $whereClause);
-} else {
-    $sql = select_query("tbl_proj", "prj_type_id = 3 AND is_active = 1");
-}
-
-$count = mysqli_num_rows($sql);
-$per_page = 9;
-$no_of_page = ceil($count / $per_page);
-$start = ($page - 1) * $per_page;
-$internationalprop_content = select_row("tbl_international_content", "is_active=1");
-?>
-<!--warpper-->
-<div class="wrapper">
-    <!--content-->
-    <div class="content search-pgs">
-        <!--section-->
-        <div class="section hero-section hero-section_sin">
-            <div class="hero-section-wrap">
-                <div class="hero-section-wrap-item">
-                    <div class="container">
-                        <div class="hero-section-container">
-                            <div class="hero-section-title">
-                                 <h1><?= $internationalprop_content[
-                                    "intl_cont_heading"
-                                ] ?></h1>
-                                
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-wrap bg-hero bg-parallax-wrap-gradien fs-wrapper" data-scrollax-parent="true">
-                        <div class="bg" data-bg="<?= BASE_URL_IMG ?>project/<?= $internationalprop_content[
-    "intl_cont_img"
-] ?>" data-scrollax="properties: { translateY: '30%' }">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!--section-end-->
-
-        <!-- breadcrumb list start -->
-         <div class="breadcrumbs-list bl_flat">
-                <a href="<?=BASE_URL?>">Home</a><a href="javascript:void(0)">Properties</a><span>International Properties</span>
-                <div class="breadcrumbs-list_dec">
-                    <i class="fa-thin fa-arrow-up"></i>
-                </div>
-            </div>
-         <!-- breadcrumb list end -->
-
-
-        <!--container-->
-        <div class="container">
-            
-                <div class="boxed-container space-r">
-<div class="show-mob-filter"><i class="far fa-sliders-h"></i> Search Filters</div>
-                    <!-- list-searh-input-wrap-->
-                    <form action="" method="get">
-                    <div class="list-searh-input-wrap box_list-searh-input-wrap lws_mobile lsw_mb-btn">
-                        <div class="close_mob-filter cmf"><i class="fa-regular fa-xmark"></i></div>
-                        <div class="list-searh-input-wrap-title_wrap">
-                            <div class="list-searh-input-wrap-title"><i class="far fa-sliders-h"></i><span>Search
-                                    Filters</span></div>
-                           
-                        </div>
-<div class="custom-form">
-    <div class="row">
-        <!-- listsearch-input-item -->
-        <div class="col-lg-4">
-            <div class="cs-intputwrap">
-                <label for="" class="sr-only">Your Query</label>
-                <i class="fa-light fa-search"></i>
-                <div class="autocomplete-container">
-                    <div class="search-wrapper">
-                       <input type="text" name="search_offplan" class="search-input"
-    placeholder="Search Property..." autocomplete="off"
-    <?php if (isset($_GET['search_offplan'])): ?>
-        value="<?= htmlspecialchars($_GET['search_offplan']) ?>"
-    <?php endif; ?>>
-
-                        <span class="clear-btn">&times;</span>
-                    </div>
-                    <?php
-                    $prop_query = select_query("tbl_proj", "prj_type_id=3 and is_active=1 order by prj_id desc");
-                    $proj_count = mysqli_num_rows($prop_query);
-                    if ($proj_count > 0): ?>
-                        <ul class="suggestions">
-                            <?php while ($row = mysqli_fetch_array($prop_query)): ?>
-                                <li><?= htmlspecialchars($row["proj_name"]) ?></li>
-                            <?php endwhile; ?>
-                        </ul>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-        <!-- listsearch-input-item -->
-        
-         <!-- listsearch-input-item -->
-        <div class="col-lg-4">
-            <div class="cs-intputwrap">
-                <label for="" class="sr-only">Developer</label>
-                <i class="fa-light fa-home"></i>
-                <div class="autocomplete-container">
-                    <div class="search-wrapper">
-                        <input type="text" name="dev_name" class="search-input" placeholder="Developer" autocomplete="off"
-                            <?php if (isset($_GET['dev_name'])): ?>
-                                value="<?= htmlspecialchars($_GET['dev_name']) ?>"
-                            <?php endif; ?>>
-                        <input type="hidden" name="dev_id" id="dev_id" value="<?= isset($_GET['dev_id']) ? (int)$_GET['dev_id'] : 0 ?>">
-                        <span class="clear-btn">&times;</span>
-                    </div>
-                    <?php
-                    $dev_query = select_query("tbl_developer", "is_active=1 ORDER BY dev_heading");
-                    if (mysqli_num_rows($dev_query) > 0): ?>
-                        <ul class="suggestions">
-                            <?php while ($row = mysqli_fetch_array($dev_query)): ?>
-                                <li data-dev-id="<?= (int)$row["dev_id"] ?>"><?= htmlspecialchars($row["dev_heading"]) ?></li>
-                            <?php endwhile; ?>
-                        </ul>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-        <!-- listsearch-input-item -->
-        
-        
-
-    <?php
-// Bedrooms logic unchanged, assuming $conn is your mysqli connection
-$sql = "SELECT DISTINCT proj_bedroom FROM tbl_proj WHERE proj_bedroom IS NOT NULL AND proj_bedroom != ''";
-$result = mysqli_query($conn, $sql);
-
-$bedroom_options = [];
-
-while ($row = mysqli_fetch_assoc($result)) {
-    $values = explode(",", $row["proj_bedroom"]);
-    foreach ($values as $val) {
-        $val = trim($val);
-        // Keep only integers
-        if ($val !== "" && ctype_digit($val) && !in_array($val, $bedroom_options, true)) {
-            $bedroom_options[] = $val;
-        }
-    }
-}
-
-// Sort numerically
-sort($bedroom_options, SORT_NUMERIC);
-
-$selected_bedrooms_string = "";
-if (isset($_GET["proj_bedroom"])) {
-    if (is_array($_GET["proj_bedroom"])) {
-        $selected_bedrooms_string = implode(",", $_GET["proj_bedroom"]);
-    } else {
-        $selected_bedrooms_string = $_GET["proj_bedroom"];
-    }
-}
-$selected_bedrooms = array_filter(array_map("trim", explode(",", $selected_bedrooms_string)));
-?>
-
-<div class="col-lg-4">
-    <div class="cs-intputwrap">
-        <label for="proj_bedroom" class="sr-only">Choose Bedroom</label>
-        <i class="fa-light fa-bed"></i>
-        <select name="proj_bedroom[]" data-placeholder="Project Bedroom" class="chosen-select on-radius no-search-select" multiple>
-            <?php foreach ($bedroom_options as $option): ?>
-                <?php $isSelected = in_array($option, $selected_bedrooms, true) ? "selected" : ""; ?>
-                <option value="<?= htmlspecialchars($option) ?>" <?= $isSelected ?>>
-                    <?= htmlspecialchars($option) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-    </div>
-</div>
-        
-        
-
-      <?php
-// Prices array and formatting function unchanged
-
-$prices = [
-    500000, 750000, 1000000, 2000000, 3000000, 4000000,
-    5000000, 6000000, 7000000, 8000000, 9000000, 10000000,
-    15000000, 25000000, 35000000, 45000000,
+// 3. SEO: tbl_tags id 10 (Admin > Manage Tags > edit-tags.php?edit=MTA=)
+$page = [
+  'active' => 'properties',
+  'title' => $meta_tags['meta_title'] ?? 'International Properties | DRE Homes',
+  'description' => $meta_tags['meta_description'] ?? 'Handpicked residences from Istanbul to Muscat and the Adriatic coast — with the same trusted DRE guidance you get in Dubai.',
+  'css' => ['assets/css/pages/international-properties.css'],
 ];
 
-function formatPrice($price)
-{
-    return "AED " . number_format($price);
-}
-
-// Check if GET values exist and sanitize
-$selectedMin = isset($_GET["price_min"]) ? $_GET["price_min"] : "";
-$selectedMax = isset($_GET["price_max"]) ? $_GET["price_max"] : "";
+include('common/header.php');
 ?>
-
-<!-- Min Price -->
-<div class="col-lg-3">
-    <div class="cs-intputwrap">
-        <label for="price_min" class="sr-only">Set Min Price</label>
-        <i class="fa-light fa-tag"></i>
-        <select name="price_min" data-placeholder="Price Min" class="chosen-select on-radius no-search-select" id="price_min">
-            <option value="show_all" <?= $selectedMin === "show_all" ? "selected" : "" ?>>Min</option>
-            <?php foreach ($prices as $price): ?>
-                <option value="<?= htmlspecialchars($price) ?>" 
-                    <?= ($selectedMin !== "" && $selectedMin == $price) ? "selected" : "" ?>>
-                    <?= formatPrice($price) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
+<!-- ===== INTERNATIONAL: HERO ===== -->
+<header class="ph-hero intl-hero">
+  <div class="ph-bg" style="background-image: url(<?= e($banner_img) ?>);"></div>
+  <div class="wrap">
+    <div class="crumbs" role="navigation" aria-label="Breadcrumb">
+      <a href="<?= BASE_URL ?>">Home</a><span>/</span><a href="#">Properties</a><span>/</span><span
+        aria-current="page">International Properties</span>
     </div>
-</div>
+    <span class="eyebrow"><?= e($hero_eyebrow) ?></span>
+    <h1 class="serif">Own <em class="gold-text">beyond borders.</em></h1>
+    <p class="sub">
+      Handpicked residences from Istanbul to Muscat and the Adriatic coast — with the same trusted DRE guidance you
+      get in Dubai.
+    </p>
+    <?php if (!empty($destinations)) { ?>
+      <ul class="dest glass reveal">
+        <?php foreach ($destinations as $dest) { ?>
+          <li><i><?= e($dest['flag']) ?></i><b><?= e($dest['country']) ?></b><span><?= e($dest['label']) ?></span></li>
+        <?php } ?>
+      </ul>
+    <?php } ?>
+  </div>
+</header>
 
-<!-- Max Price -->
-<div class="col-lg-3">
-    <div class="cs-intputwrap">
-        <label for="price_max" class="sr-only">Set Max Price</label>
-        <i class="fa-light fa-tag"></i>
-        <select name="price_max" data-placeholder="Price Max" class="chosen-select on-radius no-search-select" id="price_max">
-            <option value="show_all" <?= $selectedMax === "show_all" ? "selected" : "" ?>>Max</option>
-            <?php foreach ($prices as $price): ?>
-                <option value="<?= htmlspecialchars($price) ?>" 
-                    <?= ($selectedMax !== "" && $selectedMax == $price) ? "selected" : "" ?>>
-                    <?= formatPrice($price) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
+<section id="listing" style="padding-top: 60px">
+  <div class="wrap">
+    <div class="head-row" style="margin-bottom: 26px">
+      <div>
+        <span class="eyebrow">Destinations</span>
+        <h2 class="serif"><?= count($projects) ?> projects, <em class="gold-text"><?= count($destinations) ?>
+            countries.</em></h2>
+      </div>
     </div>
-</div>
+    <?php if (!empty($destinations)) { ?>
+      <div class="cchips glass" id="cChips" role="tablist" aria-label="Filter by country">
+        <button class="on" data-c="">All destinations <b><?= count($projects) ?></b></button>
+        <?php foreach ($destinations as $dest) { ?>
+          <button data-c="<?= e($dest['country']) ?>"><i><?= e($dest['flag']) ?></i><?= e($dest['country']) ?>
+            <b><?= (int) $dest['count'] ?></b></button>
+        <?php } ?>
+      </div>
+    <?php } ?>
 
-
-
-        <!-- Amenities -->
-        <div class="col-lg-3">
-            <div class="hidden-listing_search_wrap">
-                <div class="more_search-btn">More Options <i class="fa-regular fa-plus"></i></div>
-                <div class="hidden-listing-filter">
-                    <?php
-                    $amenities_query = mysqli_query($conn, "SELECT featfac_id, featfac_name FROM tbl_proj_featfac WHERE is_active = 1 ORDER BY featfac_name");
-                    $selected_amenities = isset($_GET["amenities"]) ? (array)$_GET["amenities"] : [];
-                    ?>
-                    <div class="hidden-listing-item">
-                        <div class="filter-tags-title">Amenities</div>
-                        <div class="filter-tags">
-                            <ul class="no-list-style">
-                                <?php while ($amenity = mysqli_fetch_assoc($amenities_query)): 
-                                    $id = (int)$amenity["featfac_id"];
-                                    $name = htmlspecialchars($amenity["featfac_name"]);
-                                    $isChecked = in_array($id, $selected_amenities) ? "checked" : "";
-                                ?>
-                                    <li>
-                                        <input class="amenity-checkbox" id="amenity-<?= $id ?>" type="checkbox" name="amenities[]" value="<?= $id ?>" <?= $isChecked ?>>
-                                        <label for="amenity-<?= $id ?>"><?= $name ?></label>
-                                    </li>
-                                <?php endwhile; ?>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
+    <div class="ilist" id="iList">
+      <?php foreach ($projects as $p) { ?>
+        <article class="<?= $p['is_rev'] ? 'icard rev reveal' : 'icard reveal' ?>" data-c="<?= e($p['country']) ?>">
+          <a class="ic-img" href="<?= e($p['url']) ?>"><img src="<?= e($p['image']) ?>" alt="<?= e($p['name']) ?>"
+              loading="lazy" /><span
+              class="ic-flag glass on-img"><i><?= e($p['flag']) ?></i><?= e($p['country']) ?></span></a>
+          <div class="ic-body glass">
+            <span class="ic-no gold-text"><?= e($p['number']) ?></span>
+            <span class="eyebrow"><?= e($p['location']) ?></span>
+            <h3><a href="<?= e($p['url']) ?>"><?= e($p['name']) ?></a></h3>
+            <?php if ($p['developer'] !== '') { ?>
+              <span class="ic-dev">by <?= e($p['developer']) ?></span>
+            <?php } ?>
+            <div class="ic-meta">
+              <div>
+                <small>Bedrooms</small><span class="ic-b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="1.6">
+                    <path d="M3 18V8M21 18v-5a3 3 0 00-3-3H10v8M3 14h18M6.5 11.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"></path>
+                  </svg><?= e($p['beds']) ?></span>
+              </div>
+              <div class="pr">
+                <small>Starting price</small><?= $p['price_html'] ?>
+              </div>
             </div>
-        </div>
-
-
-
-        <!-- Search Button -->
-        <div class="col-lg-3">
-            <button type="submit" name="submit" class="commentssubmit commentssubmit_fw">Search</button>
-        </div>
+            <div class="ic-act">
+              <a class="btn btn-gold" href="<?= e($p['url']) ?>">Explore project →</a><a class="ic-ic"
+                href="tel:+971527543243" aria-label="Call about <?= e($p['name']) ?>"><svg viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="1.7">
+                  <path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2"></path>
+                </svg></a><a class="ic-ic wa" href="<?= e($p['whatsapp']) ?>" target="_blank" rel="noopener"
+                aria-label="WhatsApp about <?= e($p['name']) ?>"><svg viewBox="0 0 24 24" fill="currentColor">
+                  <path
+                    d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm4.5 12.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 01-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 2s.8 2.3.9 2.5c.1.2 1.6 2.5 4 3.5 1.5.6 2.1.7 2.8.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.4-.2z">
+                  </path>
+                </svg></a>
+            </div>
+          </div>
+        </article>
+      <?php } ?>
     </div>
-</div>
-                    </div>
+  </div>
+</section>
 
-                </form>
-                  
-                </div>
-
-            <!--<div class="small-head">-->
-            <!--    <p>Properties for rent in Dubai (378)</p>-->
-            <!--</div>-->
-
-            <?php
-$prop_query = select_query("tbl_proj", "prj_type_id=3 and proj_markfeat=1 and is_active=1 order by prj_id desc");
-$proj_count = mysqli_num_rows($prop_query);
-
-if ($proj_count > 0): ?>
-
-<?php endif; ?>
-
-            <!--main-content-->
-            <div class="main-content">
-                <!--boxed-container-->
-                <div class="boxed-container">
-                    <!---add-filter----->
-                    <div class="row">
-                        <div class="col-lg-12 international_prop_pos">
-                            <!-- list-main-wrap-header-->
-                            <div class="list-main-wrap-header box-list-header" style="margin-top: 0">
-                                <!-- list-main-wrap-title-->
-                                <div class="list-main-wrap-title">
-    <h2>Results : <span><?= $searchRaw ?></span><strong><?= $count ?></strong></h2>
-</div>
-                                <!-- list-main-wrap-title end-->
-                            </div>
-                            <!-- list-main-wrap-header end-->
-                            <!--listing-item-container-->
-                            <div class="listing-item-container fw-listing-item buy-listing  international_prop_data">
-                                <!-- 1st listing-item -->
-<?php
-if (!isset($whereClause)) {
-    $conditions = [];
-    $conditions[] = "prj_type_id = 3";
-    $conditions[] = "is_active = 1";
-
-    if (!empty($_GET["search_offplan"])) {
-        $searchRaw = urldecode($_GET["search_offplan"]);
-        $searchTerm = mysqli_real_escape_string($conn, $searchRaw);
-        $conditions[] = "proj_name LIKE '%$searchTerm%'";
-    }
-
-    if (!empty($_GET["dev_id"])) {
-        $devId = (int) $_GET["dev_id"];
-        $conditions[] = "prj_dev_id = $devId";
-    }
-
-    if (!empty($_GET["proj_bedroom"])) {
-        $bedroomsArr = [];
-
-        if (is_array($_GET["proj_bedroom"])) {
-            $bedroomsArr = $_GET["proj_bedroom"];
-        } else {
-            $bedroomsRaw = urldecode($_GET["proj_bedroom"]);
-            $bedroomsArr = explode(",", $bedroomsRaw);
-        }
-
-        $bedroomsClean = array_map(function ($b) use ($conn) {
-            return mysqli_real_escape_string($conn, trim($b));
-        }, $bedroomsArr);
-
-        $bedroomConditions = [];
-        foreach ($bedroomsClean as $bed) {
-            $bedroomConditions[] = "proj_bedroom LIKE '%$bed%'";
-        }
-
-        if (!empty($bedroomConditions)) {
-            $conditions[] = "(" . implode(" OR ", $bedroomConditions) . ")";
-        }
-    }
-
-    if (!empty($_GET["price_min"]) && is_numeric($_GET["price_min"])) {
-        $conditions[] = "proj_price >= " . (int) $_GET["price_min"];
-    }
-
-    if (!empty($_GET["price_max"]) && is_numeric($_GET["price_max"]) && $_GET["price_max"] !== "show_all") {
-        $conditions[] = "proj_price <= " . (int) $_GET["price_max"];
-    }
-
-    if (!empty($_GET["amenities"]) && is_array($_GET["amenities"])) {
-        $amenityConditions = [];
-        $selectedAmenityIds = array_map("intval", $_GET["amenities"]);
-        foreach ($selectedAmenityIds as $aid) {
-            $amenityConditions[] = "FIND_IN_SET($aid, proj_fea_fac_opt)";
-        }
-
-        if (!empty($amenityConditions)) {
-            $conditions[] = "(" . implode(" AND ", $amenityConditions) . ")";
-        }
-    }
-
-    $whereClause = implode(" AND ", $conditions);
-}
-
-// Now use it in the dynamic listing query
-$finalQuery = $whereClause . " ORDER BY prj_id desc LIMIT $start, $per_page";
-$dynamic_listings = select_query("tbl_proj", $finalQuery);
-
-
-if (mysqli_num_rows($dynamic_listings) > 0):
-    while ($row = mysqli_fetch_array($dynamic_listings)):
-
-        $proj_dev = select_row("tbl_developer", "dev_id=" . $row["prj_dev_id"]);
-
-        $prj_thumb_arr = explode(",", $row["prj_thumb_img"]);
-        $prj_thumb_img = count($prj_thumb_arr) > 1 ? $prj_thumb_arr[0] : $row["prj_thumb_img"];
-?>
-<div class="listing-item re-int-list">
-    <div class="geodir-category-listing">
-        <div class="geodir-category-img">
-            <a href="<?= BASE_URL ?>international-properties/<?= $row["proj_slug"] ?>">
-                <!--boxed-content-->
-                <div class="boxed-content">
-                    <div class="boxed-content-item">
-                       <div class="gisp grid-small-pad list-single-gallery three-coulms lightgallery">
-    <?php
-    if (!empty($prj_thumb_arr)) {
-        $img = $prj_thumb_arr[0]; // Get the first image only
-    ?>
-        <div class="">
-            <div class="grid-item-holder hovzoom">
-                <img src="<?= BASE_URL_IMG ?>project/thumb/<?= $img ?>" alt="">
-            </div>
-        </div>
-    <?php
-    }
-    ?>
-</div>
-                    </div>
-                </div>
-            </a>
-
-         
-        </div>
-
-        <div class="geodir-category-content">
-            <h3><a href="<?= BASE_URL ?>international-properties/<?= $row["proj_slug"] ?>"><?= $row['proj_name'] ?></a></h3>
-            
-
-            <div class="geodir-category-location mb-2" style="text-align: left">
-                <a href="javascript:void(0)" class="map-item color-b">
-                    <i class="fas fa-map-marker-alt"></i> <?= $row['proj_location'] ?>
-                </a>
-            </div>
-
-             <?php if (is_numeric($row["proj_price"]) && $row["proj_price"] != 0): ?>
-    <div class="price-row" style="display: flex; align-items: center; gap: 10px; ">
-        <!-- Price Output -->
-        <div class="geodir-category-content_price  currency-price"
-             data-price="<?= $row["proj_price"] ?>"
-             data-original-currency="AED"
-             data-original-price="<?= $row["proj_price"] ?>" style="width: 100%;">
-            <img src="<?= BASE_URL ?>images/symbol/currency-symbol.png" alt="Currency"
-                 style="height: 14px; vertical-align: middle;">
-            AED <?= number_format($row["proj_price"]) ?>
-        </div>
+<section style="padding-top: 20px">
+  <div class="wrap">
+    <div class="op-cta glass acc-edge reveal">
+      <div>
+        <span class="eyebrow">Investing abroad?</span>
+        <h2 class="serif">One advisor, <em class="gold-text">every market.</em></h2>
+        <p class="lead">
+          Compare international projects side by side with UAE opportunities — pricing, payment plans and handover —
+          and get honest advice before you commit.
+        </p>
+      </div>
+      <div class="op-cta-b">
+        <a class="btn btn-gold" href="#contact">Talk to an advisor →</a>
+        <a class="btn btn-glass" href="<?= BASE_URL ?>offplan-properties">Explore UAE off-plan</a>
+      </div>
     </div>
-<?php else: ?>
-    <div class="geodir-category-content_price ">
-        Call Us
+  </div>
+</section>
+
+<section id="contact" style="padding-top: 20px">
+  <div class="wrap">
+    <div class="cta glass acc-edge reveal">
+      <div>
+        <span class="eyebrow">Private Consultation</span>
+        <h2 class="serif">Your advisor is<br /><em class="gold-text">one call</em> away.</h2>
+        <p class="lead">Toll free <?= e($toll_free) ?> · Hotline +971 52 754 3243</p>
+      </div>
+      <form class="form" id="ctaForm" novalidate="">
+        <input class="form-control" name="name" placeholder="Full name" autocomplete="name" required="" />
+        <input class="form-control" id="ctaPhone" name="phone" type="tel" placeholder="Phone / WhatsApp"
+          autocomplete="tel" required="" />
+        <input type="hidden" name="phone_full" id="ctaPhoneFull" />
+        <div class="err" id="ctaPhoneErr" role="alert">Please enter a valid phone number.</div>
+        <input class="form-control" name="message" placeholder="What are you looking for?" />
+        <button class="btn btn-gold" style="justify-content: center; margin-top: 6px">Request a call back</button>
+      </form>
     </div>
-<?php endif; ?>
+  </div>
+</section>
 
-
-            <div class="geodir-category-content-details">
-                <ul>
-                    <?php if (!empty($row["proj_bedroom"])): ?>
-                        <li>
-                            <i class="fa-light fa-bed"></i>
-                            <span><?= htmlspecialchars(str_replace(',', ', ', $row["proj_bedroom"])) ?></span>
-                        </li>
-                    <?php endif; ?>
-
-                    <?php if (!empty($row["proj_shower"])): ?>
-                        <li>
-                            <i class="fa-light fa-bath"></i>
-                            <span><?= htmlspecialchars($row["proj_shower"]) ?></span>
-                        </li>
-                    <?php endif; ?>
-
-                    <?php if (!empty($row["proj_area"])): ?>
-                        <li>
-                            <i class="fa-light fa-chart-area"></i>
-                            <span><?= htmlspecialchars($row["proj_area"]) ?> Sqft</span>
-                        </li>
-                    <?php endif; ?>
-                </ul>
-            </div>
-        </div>
-
-        <div class="geodir-category-footer p-list-footer">
-            <!--<a href="<?= BASE_URL ?>developer/<?= $proj_dev['dev_slug'] ?>" class="gcf-company">-->
-            <!--    <img src="<?= BASE_URL_IMG ?>developer/<?= $proj_dev['dev_img'] ?>" alt="">-->
-            <!--</a>-->
-            <a href="<?= BASE_URL ?>international-properties/<?= $row["proj_slug"] ?>" class="gcf-company post-card_link-2">View<i class="fa-solid fa-caret-right"></i></a>
-            <div class="clearfix"></div>
-            <div class="list-contact-icon">
-                <a href="tel:<?=$header_details['header_contact_number']?>" target="_blank" class="pcl_btn">
-                    <img src="images/c-icon/call-icon.png" alt="Call Icon" width="100%" title="Call">
-                </a>
-                <a href="https://wa.me/<?=$header_details['header_contact_number']?>" target="_blank" class="pcl_btn">
-                    <img src="images/c-icon/whatsapp-icon.png" alt="Whatsapp Icon" width="100%" title="Whatsapp">
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-<?php
-    endwhile;
-endif;
-?>
-
-
-                               
-                            </div>
-                            <!--listing-item-container end-->
-                            <!-- pagination-->
-                    <div class="pagination-wrap">
-                        <div class="pagination">
-                    <?php include "pagination/paging_international_property.php"; ?>
-                    </div>
-                    </div>
-                            <!-- pagination end-->
-                        </div>
-                    </div>
-                    <div class="limit-box"></div>
-                </div>
-                <!--boxed-container end-->
-            </div>
-            <!--main-content end-->
-            <div class="to_top-btn-wrap">
-                <div class="to-top to-top_btn"><span>Back to top</span> <i class="fa-solid fa-arrow-up"></i></div>
-                <div class="svg-corner svg-corner_white" style="top:0;left:  -40px; transform: rotate(-90deg)">
-                </div>
-                <div class="svg-corner svg-corner_white" style="top:0;right: -40px; transform: rotate(-180deg)">
-                </div>
-            </div>
-        </div>
-        <!-- container end-->
-    </div>
-    <!--content  end-->
-
-    <?php include 'common/footer.php'; ?>
+<?php include('common/footer.php'); ?>

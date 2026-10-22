@@ -1,763 +1,446 @@
 <?php
+// 1. CONFIG
 include('db/config.php');
 
-
-#$proj_detail = select_project_detail(str_replace('/', '', $_GET['detail']));
-$type = 7;
-$proj_detail = select_project_detail(str_replace('/', '', $_GET['detail']), $type);
-
-if (empty($proj_detail)) {
-    header('Location:' . BASE_URL . 'buy-property');
-    exit();
+// 2. DATA: Buy property project detail (/buy-property/<slug>, see .htaccess) — design: listing-shams-townhouses.html
+// Admin > Manage Buy Projects (tbl_proj, type 7): project, community, gallery, qr, amenities, similar homes
+$slug = trim(str_replace('/', '', (string) ($_GET['detail'] ?? '')));
+if ($slug === '') {
+    $slug = 'shams-townhouses-town-square-dubai';
 }
 
-
-$meta_tags = $proj_detail;
-include('common/header.php');
-
-
-$dev_detail = null;
-
-if (!empty($proj_detail['prj_dev_id']) && is_numeric($proj_detail['prj_dev_id'])) {
-    $dev_detail = select_row('tbl_developer', 'dev_id=' . (int) $proj_detail['prj_dev_id']);
-}
-
-$images = [];
-if (!empty($proj_detail) && isset($proj_detail['prj_id'])) {
-    $query = select_query('tbl_proj_gallery', 'proj_id = "' . $proj_detail['prj_id'] . '" AND is_active = 1');
-    while ($row = mysqli_fetch_array($query)) {
-        $images[] = $row;
+$property = get_buy_project($slug);
+if (!$property) {
+    // Check if it's an Off-plan property (tbl_proj type 1)
+    if ($slug !== '' && get_offplan_project($slug)) {
+        header('Location: ' . BASE_URL . 'property/' . rawurlencode($slug), true, 301);
+        exit;
     }
+    // Check if it's a Rent property (tbl_proj type 8)
+    if ($slug !== '' && get_rent_project($slug)) {
+        header('Location: ' . BASE_URL . 'rent-property/' . rawurlencode($slug), true, 301);
+        exit;
+    }
+    // Check if it's an International property (tbl_proj type 3)
+    if ($slug !== '' && get_international_project($slug)) {
+        header('Location: ' . BASE_URL . 'international-properties/' . rawurlencode($slug), true, 301);
+        exit;
+    }
+    // Check if it's a Ready to move in property (tbl_proj type 2)
+    if ($slug !== '' && get_ready_project($slug)) {
+        header('Location: ' . BASE_URL . 'ready-to-move-in/' . rawurlencode($slug), true, 301);
+        exit;
+    }
+    // Unknown or unpublished project: back to buy properties listing
+    header('Location: ' . BASE_URL . 'buy-property', true, 302);
+    exit;
 }
+
+// 3. SEO: the project's own meta fields (Admin > Manage Buy Projects > SEO); header falls back to photos[0] as og:image
+$meta_tags = $property['meta'];
+$page = [
+    'active' => 'properties',
+    'title' => $property['name'] . ' | DRE Homes',
+    'description' => $property['clean_intro'],
+    'css' => ['assets/css/pages/buy-property-single.css'],
+];
+
+include('common/header.php');
 ?>
-
-
-
-
-<!--warpper-->
-<div class="box-head-bg"></div>
-<div class="wrapper">
-    <div class="content">
-        <div class="container">
-            <div class="breadcrumbs-list bl_flat">
-                <a href="<?= BASE_URL ?>">Home</a>
-                <a href="<?= BASE_URL ?>buy-property">Buy Property</a>
-                <?php
-                if ($proj_detail['proj_name_on_card']) {
-                    ?>
-                    <span><?= $proj_detail['proj_name_on_card'] ?></span>
-                <?php } else { ?>
-                    <span><?= $proj_detail['proj_name'] ?></span>
-
-                <?php } ?>
-                <div class="breadcrumbs-list_dec"><i class="fa-thin fa-arrow-up"></i></div>
-            </div>
+    <!-- ===== PROPERTY DETAIL ===== -->
+    <header class="pd-hero">
+      <div class="wrap">
+        <div class="crumbs" role="navigation" aria-label="Breadcrumb">
+          <a href="<?= BASE_URL ?>">Home</a><span>/</span><a href="<?= BASE_URL ?>buy-property">Buy Property</a><span>/</span
+          ><span aria-current="page"><?= e($property['name']) ?></span>
         </div>
-        <!--section-->
-        <div class="section hero-section">
-            <div class="boxed-content">
-
-
-                 <!--boxed-content-item-->
-                <div class="boxed-content-item">
-                    <div class="container-fluid">
-
-                        <?php if (!empty($images)): ?>
-                            <?php $total = count($images); ?>
-
-                            <div class="row gallery-layout">
-
-                                <!-- RIGHT LARGE IMAGE -->
-                                <div class="col-lg-8 px-1 right-col">
-                                    <div class="right-gallery">
-
-                                        <?php if (isset($images[0])): ?>
-                                            <a data-fancybox="dre-gallery"
-                                                href="<?= BASE_URL_IMG ?>project/gallery/<?= $images[0]['gallery_img'] ?>"
-                                                class="dre-gallery-item">
-
-                                                <img src="<?= BASE_URL_IMG ?>project/gallery/<?= $images[0]['gallery_img'] ?>"
-                                                    alt="<?= htmlspecialchars($proj_detail['proj_name']) ?>">
-                                            </a>
-                                        <?php endif; ?>
-
-                                    </div>
-                                </div>
-
-                                <!-- LEFT SMALL IMAGES -->
-                                <div class="col-lg-4 px-1 left-col">
-                                    <div class="left-gallery">
-
-                                        <?php if (isset($images[1])): ?>
-                                            <div class="gallery-img">
-                                                <a data-fancybox="dre-gallery"
-                                                    href="<?= BASE_URL_IMG ?>project/gallery/<?= $images[1]['gallery_img'] ?>"
-                                                    class="dre-gallery-item">
-
-                                                    <img src="<?= BASE_URL_IMG ?>project/gallery/<?= $images[1]['gallery_img'] ?>"
-                                                        alt="<?= htmlspecialchars($proj_detail['proj_name']) ?>">
-                                                </a>
-                                            </div>
-                                        <?php endif; ?>
-
-                                        <?php if (isset($images[2])): ?>
-                                            <div class="gallery-img">
-                                                <div class="grid-item-holder <?= ($total > 3) ? 'grid-item-holder-ovr' : '' ?>">
-                                                    <a data-fancybox="dre-gallery"
-                                                        href="<?= BASE_URL_IMG . 'project/gallery/' . $images[2]['gallery_img'] ?>"
-                                                        class="dre-gallery-item dre-gallery-more">
-                                                        <img src="<?= BASE_URL_IMG . 'project/gallery/' . $images[2]['gallery_img'] ?>"
-                                                            class="dre-gallery-img" />
-
-                                                        <?php if ($total > 3): ?>
-                                                            <span class="dre-gallery-overlay">
-                                                                +<?= ($total - 3) ?>
-                                                            </span>
-                                                        <?php endif; ?>
-                                                    </a>
-
-                                                </div>
-                                            </div>
-                                        <?php endif; ?>
-
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            <!-- Hidden images for Fancybox -->
-                            <?php for ($i = 3; $i < $total; $i++): ?>
-                                <a data-fancybox="dre-gallery"
-                                    href="<?= BASE_URL_IMG ?>project/gallery/<?= $images[$i]['gallery_img'] ?>"
-                                    data-thumb="<?= BASE_URL_IMG ?>project/gallery/<?= $images[$i]['gallery_img'] ?>"
-                                    style="display:none;"></a>
-                            <?php endfor; ?>
-
-                        <?php else: ?>
-
-                            <div class="text-center py-5">
-                                No gallery images available.
-                            </div>
-
-                        <?php endif; ?>
-
-                    </div>
-                </div>
-                <!--boxed-content-item end-->
-
-
+        <div class="pd-gal">
+          <button class="pg-main" data-g="0" aria-label="Open gallery">
+            <img src="<?= e($property['photos'][0]['src']) ?>" alt="<?= e($property['photos'][0]['title']) ?>" />
+          </button>
+<?php if (!empty($property['side_photos'])) { ?>
+          <div class="pg-side">
+<?php foreach ($property['side_photos'] as $photo) { ?>
+            <button data-g="<?= $photo['index'] ?>" aria-label="Open photo <?= $photo['index'] + 1 ?>">
+              <img src="<?= e($photo['src']) ?>" alt="<?= e($photo['title']) ?>" />
+<?php if (!empty($photo['show_all'])) { ?>
+              <span class="pg-more glass on-img">⤢ View all <?= count($property['photos']) ?> photos</span>
+<?php } ?>
+            </button>
+<?php } ?>
+          </div>
+<?php } ?>
+          <div class="pd-title glass on-img">
+            <div class="pt-tags">
+              <span>For sale</span>
+              <span><?= e($property['type']) ?></span>
+              <span><?= e($property['status']) ?></span>
             </div>
+            <h1 class="serif"><?= $property['title_html'] ?></h1>
+<?php if (!empty($property['features'])) { ?>
+            <p class="pt-sub"><?= e(implode(' · ', array_slice($property['features'], 0, 3))) ?></p>
+<?php } ?>
+            <p>
+              <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                <path d="M12 2a7 7 0 00-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 00-7-7zm0 9.5A2.5 2.5 0 1112 6.5a2.5 2.5 0 010 5z"></path>
+              </svg>
+              <?= e($property['place']) ?>
+            </p>
+          </div>
+          <ul class="pd-photos" id="pdPhotos" hidden="">
+<?php foreach ($property['photos'] as $photo) { ?>
+            <li data-src="<?= e($photo['src']) ?>" data-title="<?= e($photo['title']) ?>"></li>
+<?php } ?>
+          </ul>
         </div>
-        <!--section-end-->
-        <div class="container">
-            <div class="main-content">
-                <div class="boxed-container">
-                    <div class="row buy-property-box">
-                        <div class="col-12 buy-property-title text-left">
-                            <h1><?= htmlspecialchars($proj_detail['proj_name']) ?></h1>
+      </div>
+    </header>
 
-                            <?php if (!empty($proj_detail['proj_sub_heading'])): ?>
-                                <h2><?= htmlspecialchars($proj_detail['proj_sub_heading']) ?></h2>
-                            <?php endif; ?>
+    <section class="pd-body">
+      <div class="wrap pd-grid">
+        <div class="pd-main">
+          <div class="pd-tabs glass" id="pdTabs">
+            <a href="#overview" class="on">Overview</a><a href="#details">Details</a><a href="#amenities">Amenities</a
+            ><a href="#location">Location</a><a href="#mortgage">Mortgage</a><a href="#enquire">Book a viewing</a>
+          </div>
 
-                            <h4><strong>Starting From:</strong>
-                                <span class="pshp_item">
-                                    <?php if (is_numeric($proj_detail["proj_price"]) && $proj_detail["proj_price"] != 0): ?>
-                                        <div class="price-row"
-                                            style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
-                                            <!-- Price Output -->
-                                            <div class="geodir-category-content_price  currency-price"
-                                                data-price="<?= $proj_detail["proj_price"] ?>" data-original-currency="AED"
-                                                data-original-price="<?= $proj_detail["proj_price"] ?>">
-                                                <img src="<?= BASE_URL ?>images/symbol/currency-symbol.png" alt="Currency"
-                                                    style="height: 14px; vertical-align: middle;">
-                                                AED <?= number_format($proj_detail["proj_price"]) ?>
-                                            </div>
-                                        </div>
-                                    <?php else: ?>
-                                        <div class="geodir-category-content_price ">
-                                            Call Us
-                                        </div>
-                                    <?php endif; ?>
+          <div class="facts facts5 reveal">
+            <div class="glass"><small>Price</small><b><?= $property['price'] > 0 ? e($property['price_label']) : 'On request' ?></b></div>
+            <div class="glass"><small>Bedrooms</small><b><?= e($property['beds_label']) ?></b></div>
+            <div class="glass"><small>Bathrooms</small><b><?= e($property['baths_label']) ?></b></div>
+            <div class="glass"><small>Built-up area</small><b><?= $property['area'] > 0 ? e($property['area_label']) : 'On request' ?></b></div>
+            <div class="glass"><small>Price / sq ft</small><b><?= $property['ppf'] > 0 ? e($property['ppf_label']) : '—' ?></b></div>
+          </div>
 
-                            </h4>
-                        </div>
-
-                        <div class="col-xl-8">
-                            <!--boxed-container-->
-                            <div class="scroll-content-wrap">
-
-                                <!--ps-facts-wrapper-->
-                                <div class="ps-facts-wrapper">
-
-                                    <!--ps-facts-item-->
-                                    <?php if (!empty($proj_detail['proj_bedroom'])): ?>
-                                        <div class="ps-facts-item">
-                                            <h4>Bedroom</h4>
-                                            <h5>
-                                                <?php
-                                                $items = array_filter(array_map('trim', explode(',', $proj_detail['proj_bedroom'])), 'strlen');
-
-                                                $text = [];
-                                                $numbers = [];
-
-                                                foreach ($items as $item) {
-                                                    if (is_numeric($item)) {
-                                                        $numbers[] = $item;
-                                                    } else {
-                                                        $text[] = $item;
-                                                    }
-                                                }
-
-                                                // Optional: sort numbers ascending
-                                                sort($numbers, SORT_NUMERIC);
-
-                                                echo htmlspecialchars(implode(', ', array_merge($text, $numbers)));
-                                                ?>
-                                            </h5>
-                                            <i class="fa-light fa-bed"></i>
-                                        </div>
-                                    <?php endif; ?>
-
-
-                                    <!--ps-facts-item-->
-                                    <?php if (!empty($proj_detail['proj_shower'])): ?>
-                                        <div class="ps-facts-item">
-                                            <h4>Bathroom</h4>
-                                            <h5><?= htmlspecialchars($proj_detail['proj_shower']) ?></h5>
-                                            <i class="fa-light fa-bath"></i>
-                                        </div>
-                                    <?php endif; ?>
-
-                                    <?php if (!empty($proj_detail['proj_area'])): ?>
-                                        <div class="ps-facts-item">
-                                            <h4>Area</h4>
-                                            <h5><?= htmlspecialchars($proj_detail['proj_area']) ?> sq ft</h5>
-                                            <i class="fa-light fa-chart-area"></i>
-                                        </div>
-                                    <?php endif; ?>
-
-                                    <!--ps-facts-item end-->
-                                </div>
-                                <!--ps-facts-wrapper end-->
-                                <!--boxed-content-->
-                                <div class="boxed-content">
-                                    <!--boxed-content-title-->
-                                    <div class="boxed-content-title">
-                                        <h3>About this Property</h3>
-
-                                    </div>
-                                    <!--boxed-content-title end-->
-                                    <!--boxed-content-item-->
-                                    <div class="boxed-content-item editor-cont">
-                                        <?= $proj_detail['proj_overview'] ?>
-
-                                    </div>
-                                    <!--boxed-content-item end-->
-                                </div>
-                                <!--boxed-content end-->
-                                <!--boxed-content-->
-
-                                <!--boxed-content-->
-                                <div class="boxed-content">
-                                    <!--boxed-content-title-->
-                                    <div class="boxed-content-title">
-                                        <h3> Property Amenities</h3>
-                                    </div>
-                                    <!--boxed-content-title end-->
-                                    <!--boxed-content-item-->
-                                    <div class="boxed-content-item">
-                                        <div class="pp-single-opt">
-                                            <div class="pp-single-features ">
-                                                <ul>
-                                                    <?php
-                                                    $feat_fac_query = select_query('tbl_proj_featfac', 'is_active=1');
-                                                    $feat_fac_arr = explode(',', $proj_detail['proj_fea_fac_opt']);
-                                                    while ($row = mysqli_fetch_array($feat_fac_query)) {
-                                                        if (in_array($row['featfac_id'], $feat_fac_arr)) {
-                                                            ?>
-                                                            <li>
-                                                                <a href="javascript:void(0)">
-                                                                    <i
-                                                                        class="fa <?= htmlspecialchars($row['featfac_faicon']) ?> me-2"></i>
-                                                                    <?= htmlspecialchars($row['featfac_name']) ?>
-                                                                </a>
-                                                            </li>
-                                                        <?php }
-                                                    } ?>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <!--boxed-content-item end-->
-                                </div>
-
-                                <!--boxed-content-->
-                                <?php if (!empty($proj_detail['proj_map'])): ?>
-                                    <div class="boxed-content">
-                                        <!--boxed-content-title-->
-                                        <div class="boxed-content-title">
-                                            <h3>Property Location</h3>
-                                        </div>
-                                        <!--boxed-content-title end-->
-                                        <!--boxed-content-item-->
-                                        <div class="boxed-content-item">
-                                            <div class="row">
-                                                <div class="col-12">
-                                                    <div class="map-container mapC_vis2">
-                                                        <iframe src="<?= $proj_detail['proj_map'] ?>" width="100%"
-                                                            height="450" style="border:0;" allowfullscreen="" loading="lazy"
-                                                            referrerpolicy="no-referrer-when-downgrade"></iframe>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <!--boxed-content-item end-->
-                                    </div>
-                                <?php endif; ?>
-                                <!--boxed-content end-->
-                                <!--boxed-content-->
-                                <?php if (!empty($proj_detail['proj_qr_img']) || !empty($proj_detail['proj_qr'])): ?>
-                                    <div class="boxed-content">
-                                        <!--boxed-content-item-->
-                                        <div class="boxed-content-item qr-box">
-                                            <div class="row text-left justify-content-center align-items-center ">
-                                                <?php if (!empty($proj_detail['proj_qr_img'])): ?>
-                                                    <div class="col-sm-3 py-2">
-                                                        <a
-                                                            href="<?= !empty($proj_detail['proj_qr_link']) ? $proj_detail['proj_qr_link'] : 'javascript:void(0)' ?>">
-                                                            <img src="<?= BASE_URL_IMG ?>project/qr/<?= htmlspecialchars($proj_detail['proj_qr_img']) ?>"
-                                                                alt="QR Code" width="100%">
-                                                        </a>
-                                                    </div>
-
-                                                <?php endif; ?>
-                                                <?php if (!empty($proj_detail['proj_qr'])): ?>
-                                                    <div class="col-sm-9 py-1 editor-cont">
-                                                        <?= $proj_detail['proj_qr'] ?>
-                                                    </div>
-                                                <?php endif; ?>
-                                            </div>
-                                        </div>
-                                        <!--boxed-content-item end-->
-                                    </div>
-                                <?php endif; ?>
-                                <!--boxed-content end-->
-
-                                <!--boxed-content-->
-                                <div class="boxed-content">
-                                    <!--boxed-content-title-->
-                                    <div class="boxed-content-title">
-                                        <h3>Instant Mortgage Estimate</h3>
-                                    </div>
-                                    <!--boxed-content-title end-->
-
-                                    <div class="boxed-content-item mt-c-box">
-                                        <section class="wpo-payment-section-s2 section-padding">
-                                            <div>
-                                                <div class="wpo-payment-wrap border-design">
-                                                    <div class="row justify-content-center align-items-stretch">
-                                                        <div class="col col-lg-6">
-                                                            <div class="payment-form-area">
-                                                                <div class="form-group">
-                                                                    <label>
-                                                                        Purchase Price:
-                                                                        <img src="<?= BASE_URL ?>images/symbol/currency-symbol.png"
-                                                                            alt="Currency"
-                                                                            style="height:14px; vertical-align:middle; margin-left:4px;">
-                                                                    </label>
-                                                                    <input type="number"
-                                                                        value="<?= $proj_detail['proj_price'] ?>"
-                                                                        id="purchase_price">
-                                                                </div>
-                                                                <div class="form-group">
-                                                                    <label>Down Payment %:</label>
-                                                                    <input type="number" value="20" id="down_payment">
-                                                                </div>
-                                                                <div class="form-group">
-                                                                    <label>Loan Duration (Years):</label>
-                                                                    <input type="number" value="5" id="loan_term">
-                                                                </div>
-                                                                <div class="form-group">
-                                                                    <label>Interest Rate % (Annual):</label>
-                                                                    <input type="number" value="5.5" id="interest_rate">
-                                                                </div>
-                                                                <div class="form-group mt-btn">
-                                                                    <div class="row justify-content-center">
-                                                                        <div
-                                                                            class="col-12 col-lg-12 col-md-6 col-sm-12">
-                                                                            <button type="button"
-                                                                                class="theme-btn theme-btn-me"
-                                                                                onclick="estimatePayment()">Estimate
-                                                                                Payment</button>
-                                                                        </div>
-                                                                        <div
-                                                                            class="col-12 col-lg-12 col-md-6 col-sm-12">
-                                                                            <button type="button"
-                                                                                class="loan-modal-open theme-btn theme-btn-ms">Apply
-                                                                                Loan</button>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <!-- Right Column with Charts -->
-                                                        <div class="col col-lg-6 col-12 payment-result">
-                                                            <div class="text-center">
-                                                                <div class="row align-items-center">
-                                                                    <!-- Canvas Column -->
-                                                                    <div class="col-12 col-lg-12 col-md-6 col-sm-12">
-                                                                        <canvas id="combinedChart"></canvas>
-                                                                    </div>
-
-                                                                    <!-- Text Breakdown Column -->
-                                                                    <div
-                                                                        class="col-12 col-lg-12 col-md-6 col-sm-12 text-start">
-                                                                        <h4 class="pt-3">Loan Breakdown</h4>
-                                                                        <div class="pt-2">
-                                                                            <p class="mc-icon"><span
-                                                                                    style="color:#ffffff;">■</span>
-                                                                                <strong>Down Payment:</strong>
-                                                                                <img src="<?= BASE_URL ?>images/symbol/currency-symbol-w.png"
-                                                                                    alt="AED" style="width:15px;">
-                                                                                <span
-                                                                                    id="down_payment_value">0.00</span>
-                                                                            </p>
-
-                                                                            <p class="mc-icon"><span
-                                                                                    style="color:#f3d7c4;">■</span>
-                                                                                <strong>Loan Amount:</strong>
-                                                                                <img src="<?= BASE_URL ?>images/symbol/currency-symbol-w.png"
-                                                                                    alt="AED" style="width:15px;">
-                                                                                <span id="loan_amount_value">0.00</span>
-                                                                            </p>
-
-                                                                            <p class="mc-icon"><span
-                                                                                    style="color:#4a3b2a;">■</span>
-                                                                                <strong>Annual Payment:</strong>
-                                                                                <img src="<?= BASE_URL ?>images/symbol/currency-symbol-w.png"
-                                                                                    alt="AED" style="width:15px;">
-                                                                                <span
-                                                                                    id="monthly_payment_value">0.00</span>
-                                                                            </p>
-                                                                        </div>
-                                                                    </div>
-
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </section>
-                                    </div>
-                                </div>
-
-                                <!-- MORTGAGE CALCULATOR SCRIPT -->
-                                <script>
-                                    let combinedChart;
-
-                                    function estimatePayment() {
-                                        const purchasePrice = parseFloat(document.getElementById('purchase_price').value) || 0;
-                                        const downPaymentPercent = parseFloat(document.getElementById('down_payment').value) || 0;
-                                        const loanTermYears = parseFloat(document.getElementById('loan_term').value) || 0;
-                                        const interestRate = parseFloat(document.getElementById('interest_rate').value) || 0;
-
-                                        const downPaymentAmount = (downPaymentPercent / 100) * purchasePrice;
-                                        const loanAmount = purchasePrice - downPaymentAmount;
-                                        const annualInterestRate = interestRate / 100;
-                                        const totalYears = loanTermYears;
-
-                                        let annualPayment = 0;
-
-                                        if (annualInterestRate > 0) {
-                                            const pow = Math.pow(1 + annualInterestRate, totalYears);
-                                            annualPayment = loanAmount * ((annualInterestRate * pow) / (pow - 1));
-                                        } else {
-                                            annualPayment = loanAmount / totalYears;
-                                        }
-
-                                        const formatAED = val => ` ${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-                                        document.getElementById('down_payment_value').textContent = formatAED(downPaymentAmount);
-                                        document.getElementById('loan_amount_value').textContent = formatAED(loanAmount);
-                                        document.getElementById('monthly_payment_value').textContent = formatAED(annualPayment);
-
-                                        renderCombinedChart(downPaymentAmount, loanAmount, annualPayment);
-                                    }
-
-                                    function renderCombinedChart(down, loan, annualPay) {
-                                        const ctx = document.getElementById('combinedChart').getContext('2d');
-
-                                        if (combinedChart) {
-                                            combinedChart.destroy();
-                                        }
-
-                                        combinedChart = new Chart(ctx, {
-                                            type: 'doughnut',
-                                            data: {
-                                                labels: ['Down Payment', 'Loan Amount', 'Annual Payment'],
-                                                datasets: [{
-                                                    data: [down, loan, annualPay],
-                                                    backgroundColor: [
-                                                        '#ffffff',
-                                                        '#f3d7c4',
-                                                        '#4a3b2a'
-                                                    ],
-                                                    borderWidth: 0
-                                                }]
-                                            },
-                                            options: {
-                                                cutout: '65%',
-                                                plugins: {
-                                                    legend: { display: false },
-                                                    tooltip: {
-                                                        callbacks: {
-                                                            label: context => {
-                                                                const val = context.raw || 0;
-                                                                return `${context.label}: ${val.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        });
-                                    }
-
-                                    window.addEventListener('DOMContentLoaded', function () {
-                                        estimatePayment();
-                                    });
-                                </script>
-
-
-
-
-                                <!--boxed-content-->
-                                <div class="boxed-content p-manage-box">
-                                    <div class="boxed-content-item">
-                                        <div class="row text-left">
-                                            <div class="col-12">
-                                                <p class="m-head"><i class="fa-solid fa-screwdriver-wrench pe-2"></i>
-                                                    Home
-                                                    Repairs Made Easy</p>
-                                                <p>We take care of everything — quick, reliable, and hassle-free. <a
-                                                        href="<?= BASE_URL ?>property-management.php">Reach out
-                                                        now!</a></p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <!--boxed-content-item end-->
-                                </div>
-                                <!--boxed-content end-->
-                            </div>
-                        </div>
-                        <div class="col-xl-4">
-                            <!--boxed-container-->
-                            <div class="sb-container">
-                                <!--boxed-content-->
-                                <div class="fixed-form-wrap">
-                                    <div class="fixed-form">
-                                        <div class="boxed-content">
-
-                                            <!--boxed-content-item-->
-                                            <div class="boxed-content-item p-4">
-                                                <p class="form-heading">Fill the form. And book a viewing</p>
-                                                <div class="custom-form" id="single_cf">
-                                                    <?php include_once "common/sidebare-form.php"; ?>
-                                                    <!--<div class="log-separator py-3"><span>or</span></div>-->
-
-                                                </div>
-                                                <!--<div class="property-contacts-wrap buy-p-wrap">-->
-                                                <!--    <div class="property-contacts-item sh-links">-->
-                                                <!--        <div-->
-                                                <!--            class="property-contacts_profile d-flex align-items-center">-->
-                                                <!--            <div class=" py-1">-->
-                                                <!--                <a href="javascript:void(0)" class="property-contacts_profile_link">-->
-                                                <!--                    <img src="<?= BASE_URL ?>images/avatar/2.jpg" alt="">-->
-                                                <!--                </a>-->
-                                                <!--            </div>-->
-                                                <!--            <div class="text-left ps-2 buy-p-wrap-h py-1">-->
-                                                <!--                <h3>Dummy Name</h3>-->
-                                                <!--                <h6>Sales Consultant</h6>-->
-                                                <!--            </div>-->
-                                                <!--            <div class="list-contact-icon ms-auto py-1">-->
-                                                <!--                <a href="tel:+18475555555" target="_blank" class=""-->
-                                                <!--                    data-microtip-position="right"><img-->
-                                                <!--                        src="<?= BASE_URL ?>images/c-icon/call-icon.png"-->
-                                                <!--                        alt="Call Icon" width="100%" title="Call">-->
-                                                <!--                </a>-->
-                                                <!--                <a href="https://wa.me/971527543243" target="_blank"-->
-                                                <!--                    class="" data-microtip-position="right"><img-->
-                                                <!--                        src="<?= BASE_URL ?>images/c-icon/whatsapp-icon.png"-->
-                                                <!--                        alt="Whatsapp Icon" width="100%"-->
-                                                <!--                        title="Whatsapp">-->
-                                                <!--                </a>-->
-                                                <!--            </div>-->
-                                                <!--        </div>-->
-
-                                                <!--    </div>-->
-
-                                                <!--</div>-->
-                                            </div>
-                                            <!--boxed-content-item end-->
-                                        </div>
-                                    </div>
-                                </div>
-                                <!--boxed-content end-->
-                            </div>
-                        </div>
-                    </div>
-                    <div class="limit-box"></div>
-                </div>
-                <?php
-                // Similar properties worked out by ai/cron/build_similar.php, with the old list as fallback.
-                require_once __DIR__ . '/ai/SimilarProjects.php';
-                $prop_query = SimilarProjects::forPage($proj_detail['prj_id'], 7);
-                if (!$prop_query) {
-                    $prop_query = db_query("SELECT * FROM tbl_proj WHERE prj_id != ? AND prj_type_id = 7 AND is_active = 1 ORDER BY proj_name", [(int) $proj_detail['prj_id']]);
-                }
-                $proj_count = mysqli_num_rows($prop_query);
-                if ($proj_count > 0): ?>
-
-
-                    <div class="boxed-container">
-                        <div class="boxed-content-title bcst_ca">
-                            <h3>More Like This</h3>
-                        </div>
-                        <div class="single-carousel-wrap">
-                            <div class="single-carousel equal-elc">
-                                <div class="swiper-container">
-                                    <div class="swiper-wrapper">
-                                        <?php while ($row = mysqli_fetch_array($prop_query)):
-                                            $proj_dev = null;
-
-                                            if (!empty($row["prj_dev_id"]) && is_numeric($row["prj_dev_id"])) {
-                                                $proj_dev = select_row("tbl_developer", "dev_id=" . (int) $row["prj_dev_id"]);
-                                            }
-                                            $prj_thumb_arr = explode(",", $row["prj_thumb_img"]);
-                                            $prj_thumb_img = count($prj_thumb_arr) > 1 ? $prj_thumb_arr[0] : $row["prj_thumb_img"];
-                                            ?>
-                                            <div class="swiper-slide">
-                                                <div class="testi-item">
-                                                    <div class="listing-item">
-                                                        <div class="geodir-category-listing">
-                                                            <div class="geodir-category-img">
-                                                                <a href="<?= BASE_URL ?>buy-property/<?= $row["proj_slug"] ?>"
-                                                                    class="geodir-category-img_item">
-                                                                    <div class="sm-prop-thumb">
-                                                                        <img src="<?= BASE_URL_IMG ?>project/thumb/<?= $prj_thumb_img ?>"
-                                                                            alt="">
-                                                                    </div>
-                                                                    <div class="overlay"></div>
-                                                                </a>
-                                                                <div class="geodir-category-location">
-                                                                    <a href="javascript:void(0)" class="map-item">
-                                                                        <i class="fas fa-map-marker-alt"></i>
-                                                                        <?= $row['proj_location'] ?>
-                                                                    </a>
-                                                                </div>
-
-                                                            </div>
-
-                                                            <div class="geodir-category-content prop-gcc eq-ns">
-                                                                <h3><a
-                                                                        href="<?= BASE_URL ?>buy-property/<?= $row["proj_slug"] ?>"><?= $row['proj_name'] ?></a>
-                                                                </h3>
-
-                                                                <?php if (is_numeric($row["proj_price"]) && $row["proj_price"] != 0): ?>
-                                                                    <div class="price-row"
-                                                                        style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
-                                                                        <!-- Price Output -->
-                                                                        <div class="geodir-category-content_price currency-price"
-                                                                            data-price="<?= $row["proj_price"] ?>"
-                                                                            data-original-currency="AED"
-                                                                            data-original-price="<?= $row["proj_price"] ?>">
-                                                                            <img src="<?= BASE_URL ?>images/symbol/currency-symbol.png"
-                                                                                alt="Currency"
-                                                                                style="height: 14px; vertical-align: middle;">
-                                                                            AED <?= number_format($row["proj_price"]) ?>
-                                                                        </div>
-                                                                    </div>
-                                                                <?php else: ?>
-                                                                    <div class="geodir-category-content_price ">
-                                                                        Call Us
-                                                                    </div>
-                                                                <?php endif; ?>
-
-
-                                                                <div class="geodir-category-content-details">
-                                                                    <ul>
-                                                                        <?php if (!empty($row["proj_bedroom"])): ?>
-                                                                            <li><i
-                                                                                    class="fa-light fa-bed"></i><span><?= htmlspecialchars(str_replace(',', ', ', $row["proj_bedroom"])) ?></span>
-                                                                            </li>
-                                                                        <?php endif; ?>
-                                                                        <?php if (!empty($row["proj_shower"])): ?>
-                                                                            <li><i
-                                                                                    class="fa-light fa-bath"></i><span><?= htmlspecialchars($row["proj_shower"]) ?></span>
-                                                                            </li>
-                                                                        <?php endif; ?>
-                                                                        <?php if (!empty($row["proj_area"])): ?>
-                                                                            <li><i class="fa-light fa-chart-area"></i><span><?= htmlspecialchars($row["proj_area"]) ?>
-                                                                                    sq ft</span> </li>
-                                                                        <?php endif; ?>
-                                                                    </ul>
-                                                                </div>
-                                                            </div>
-
-                                                            <div class="geodir-category-footer list-footer eq-ns-f">
-                                                                <a href="<?= BASE_URL ?>buy-property/<?= $row["proj_slug"] ?>"
-                                                                    class="gcf-company post-card_link-2">View<i
-                                                                        class="fa-solid fa-caret-right"></i></a>
-                                                                <div class="clearfix"></div>
-                                                                <div class="list-contact-icon">
-                                                                    <a href="tel:<?= $header_details['header_contact_number'] ?>"
-                                                                        target="_blank" class="pcl_btn">
-                                                                        <img src="<?= BASE_URL ?>images/c-icon/call-icon.png"
-                                                                            alt="Call Icon" width="100%" title="Call">
-                                                                    </a>
-                                                                    <a href="https://wa.me/<?= $header_details['header_contact_number'] ?>"
-                                                                        target="_blank" class="pcl_btn">
-                                                                        <img src="<?= BASE_URL ?>images/c-icon/whatsapp-icon.png"
-                                                                            alt="Whatsapp Icon" width="100%" title="Whatsapp">
-                                                                    </a>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        <?php endwhile; ?>
-                                    </div>
-                                </div>
-                                <div class="ss-carousel-button ss-carousel-button-prev"><i class="fas fa-caret-left"></i>
-                                </div>
-                                <div class="ss-carousel-button ss-carousel-button-next"><i class="fas fa-caret-right"></i>
-                                </div>
-
-                            </div>
-                        </div>
-
-
-                    </div>
-
-                <?php endif; ?>
+          <article id="overview" class="pd-sec reveal">
+            <span class="eyebrow">About this property · REF <?= e($property['reference']) ?></span>
+            <h2 class="serif">A single-row family home, <em class="gold-text">ready today.</em></h2>
+            <p class="lead">
+              <?= e($property['clean_intro']) ?>
+            </p>
+<?php if (!empty($property['features'])) { ?>
+            <div class="feat-chips">
+<?php foreach ($property['features'] as $feat) { ?>
+              <span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M5 12l4 4 10-10"></path>
+                </svg>
+                <?= e($feat) ?>
+              </span>
+<?php } ?>
             </div>
-            <!--main-content end-->
-            <div class="to_top-btn-wrap">
-                <div class="to-top to-top_btn"><span>Back to top</span> <i class="fa-solid fa-arrow-up"></i>
-                </div>
-                <div class="svg-corner svg-corner_white" style="top:0;left:  -40px; transform: rotate(-90deg)">
-                </div>
-                <div class="svg-corner svg-corner_white" style="top:0;right: -40px; transform: rotate(-180deg)">
-                </div>
+<?php } ?>
+          </article>
+
+          <article id="details" class="pd-sec reveal">
+            <span class="eyebrow">Property Details</span>
+            <h2 class="serif">At a <em class="gold-text">glance.</em></h2>
+            <dl class="kv">
+              <div>
+                <dt>Built-up area</dt>
+                <dd><?= $property['area'] > 0 ? e($property['area_label']) : 'On request' ?></dd>
+              </div>
+<?php if ($property['plot_area'] > 0) { ?>
+              <div>
+                <dt>Plot size</dt>
+                <dd><?= e($property['plot_area_label']) ?></dd>
+              </div>
+<?php } ?>
+              <div>
+                <dt>Bedrooms</dt>
+                <dd><?= e($property['beds_label']) ?></dd>
+              </div>
+<?php if ($property['baths_num'] > 0) { ?>
+              <div>
+                <dt>Bathrooms</dt>
+                <dd><?= e($property['baths_label']) ?></dd>
+              </div>
+<?php } ?>
+              <div>
+                <dt>Property Type</dt>
+                <dd><?= e($property['type']) ?></dd>
+              </div>
+              <div>
+                <dt>Furnishing</dt>
+                <dd><?= e($property['furnishing']) ?></dd>
+              </div>
+              <div>
+                <dt>View</dt>
+                <dd><?= e($property['view']) ?></dd>
+              </div>
+              <div>
+                <dt>Community</dt>
+                <dd><?= e($property['community']) ?></dd>
+              </div>
+              <div>
+                <dt>Status</dt>
+                <dd><?= e($property['status']) ?></dd>
+              </div>
+            </dl>
+          </article>
+
+          <article id="amenities" class="pd-sec reveal">
+            <span class="eyebrow">Amenities &amp; Facilities</span>
+            <h2 class="serif">Everything on <em class="gold-text">your doorstep.</em></h2>
+            <ul class="am-list">
+<?php foreach ($property['amenities'] as $am) { ?>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M5 12l4 4 10-10"></path>
+                </svg>
+                <?= e($am) ?>
+              </li>
+<?php } ?>
+            </ul>
+          </article>
+
+          <article id="location" class="pd-sec reveal">
+            <span class="eyebrow">Property Location</span>
+            <h2 class="serif"><?= e($property['location_title']) ?></h2>
+            <div class="loc-grid">
+<?php if ($property['map_url'] !== '') { ?>
+              <div class="map-wrap glass" id="mapWrap">
+                <button class="map-load" id="mapLoad" data-map="<?= e($property['map_url']) ?>">
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
+                    <path d="M12 2a7 7 0 00-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 00-7-7zm0 9.5A2.5 2.5 0 1112 6.5a2.5 2.5 0 010 5z"></path>
+                  </svg>
+                  <b>Load interactive map</b><small>Google Maps</small>
+                </button>
+              </div>
+<?php } ?>
+              <ol class="drive glass">
+<?php foreach ($property['drive_times'] as $drive) { ?>
+                <li>
+                  <b><?= e($drive['time']) ?><small><?= e($drive['unit']) ?></small></b><span><?= e($drive['place']) ?></span>
+                </li>
+<?php } ?>
+                <li class="road"><b>⇄</b><span>Easy access to major roads in Dubai</span></li>
+              </ol>
             </div>
+<?php if ($property['about_community_text'] !== '') { ?>
+            <div class="about2">
+              <div>
+                <h3>About <?= e($property['community']) ?></h3>
+                <p><?= e($property['about_community_text']) ?></p>
+              </div>
+            </div>
+<?php } ?>
+          </article>
+
+          <article id="mortgage" class="pd-sec reveal">
+            <span class="eyebrow">Instant mortgage estimate</span>
+            <h2 class="serif">What could you <em class="gold-text">pay monthly?</em></h2>
+            <div class="mort glass">
+              <div class="mg-in">
+                <label
+                  ><span>Purchase price</span>
+                  <div class="mv"><span>AED</span><input id="mPrice" inputmode="numeric" value="<?= number_format($property['price'] ?: 2000000) ?>" /></div
+                ></label>
+                <label
+                  ><span>Down payment <b id="mDpV">20%</b></span
+                  ><input type="range" id="mDp" min="20" max="80" step="5" value="20"
+                /></label>
+                <label
+                  ><span>Interest rate <b id="mRtV">4.5%</b></span
+                  ><input type="range" id="mRt" min="2" max="9" step="0.1" value="4.5"
+                /></label>
+                <label
+                  ><span>Loan duration <b id="mYrV">25 years</b></span
+                  ><input type="range" id="mYr" min="5" max="25" step="1" value="25"
+                /></label>
+              </div>
+              <div class="m-out">
+                <small>Estimated monthly payment</small>
+                <div class="m-big gold-text" id="mOut">—</div>
+                <ul>
+                  <li><span>Loan amount</span><b id="mLoan">—</b></li>
+                  <li><span>Down payment</span><b id="mDown">—</b></li>
+                  <li><span>Total interest</span><b id="mInt">—</b></li>
+                </ul>
+                <p>Indicative only — excludes DLD fees and bank charges.</p>
+                <a class="btn btn-gold" href="<?= BASE_URL ?>mortgage-advisory">Apply for a loan →</a>
+              </div>
+            </div>
+          </article>
+
+          <span id="contact" aria-hidden="true"></span>
+          <article id="enquire" class="pd-sec reveal">
+            <div class="enq glass acc-edge">
+              <div>
+                <span class="eyebrow">Book a viewing</span>
+                <h2 class="serif">See it <em class="gold-text">in person.</em></h2>
+                <p class="lead">Fill in the form and a DRE advisor will arrange a viewing at a time that suits you.</p>
+              </div>
+              <form class="form" id="ctaForm" novalidate="">
+                <input name="name" placeholder="Your name" autocomplete="name" required="" />
+                <input id="ctaPhone" name="phone" type="tel" placeholder="Your phone" autocomplete="tel" required="" />
+                <input type="hidden" name="phone_full" id="ctaPhoneFull" />
+                <div class="err" id="ctaPhoneErr" role="alert">Please enter a valid phone number.</div>
+                <input name="email" type="email" placeholder="Your email" autocomplete="email" />
+                <input
+                  name="message"
+                  placeholder="Your message"
+                  value="I'd like to view <?= e($property['name']) ?> (REF <?= e($property['reference']) ?>)."
+                />
+                <input
+                  type="hidden"
+                  name="page_url"
+                  value="<?= e($property['url']) ?>"
+                />
+                <button class="btn btn-gold" style="justify-content: center">Request a viewing</button>
+              </form>
+            </div>
+          </article>
+
+          <a class="repair glass reveal" href="<?= BASE_URL ?>property-management">
+            <span class="rp-ic">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path d="M14.7 6.3a4 4 0 00-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 005.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"></path>
+              </svg>
+            </span>
+            <div>
+              <b>Home repairs made easy</b><span>We take care of everything — quick, reliable and hassle-free.</span>
+            </div>
+            <em>Explore →</em>
+          </a>
         </div>
-        <!-- container end-->
-    </div>
-    <!--content  end-->
 
-    <?php include 'common/footer.php'; ?>
+        <aside class="pd-side">
+          <div class="side-card glass acc-edge">
+            <small>Price</small>
+            <div class="sc-price gold-text"><?= $property['price'] > 0 ? e($property['price_label']) : 'Price on request' ?></div>
+            <p class="sc-ppf"><?= $property['ppf'] > 0 ? e($property['ppf_label']) . ' / sq ft · ' : '' ?>REF <?= e($property['reference']) ?></p>
+            <ul class="sc-facts">
+              <li><span>Type</span><b><?= e($property['type']) ?></b></li>
+              <li><span>Community</span><b><?= e($property['community']) ?></b></li>
+              <li><span>Beds / baths</span><b><?= e($property['beds_label']) ?> / <?= e($property['baths_label']) ?></b></li>
+              <li><span>Built-up area</span><b><?= $property['area'] > 0 ? e($property['area_label']) : 'On request' ?></b></li>
+              <li><span>Status</span><b><?= e($property['status']) ?></b></li>
+            </ul>
+            <div class="sc-ct">
+              <a
+                class="btn btn-glass sc-wa"
+                href="<?= e($property['whatsapp']) ?>"
+                target="_blank"
+                rel="noopener"
+                ><svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm4.5 12.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 01-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 2s.8 2.3.9 2.5c.1.2 1.6 2.5 4 3.5 1.5.6 2.1.7 2.8.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.4-.2z"></path>
+                </svg>WhatsApp</a
+              >
+              <button class="btn btn-glass" id="pdVideo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16">
+                  <rect x="2.5" y="6" width="13" height="12" rx="3"></rect>
+                  <path d="M15.5 10.5l6-3.5v10l-6-3.5z"></path></svg
+                >Video tour
+              </button>
+            </div>
+            <a class="btn btn-gold sc-book" href="#enquire">Book a viewing →</a>
+            <a class="sc-call" href="tel:<?= preg_replace('/[^0-9+]/', '', $footer_info['footer_contact_number'] ?? '80037373') ?>">Or call <b><?= e($footer_info['footer_contact_number'] ?? '800 37373') ?></b></a>
+          </div>
+<?php if (!empty($property['qr_img'])) { ?>
+          <div class="verify glass">
+            <a
+              href="<?= !empty($property['qr_link']) ? e($property['qr_link']) : '#' ?>"
+              target="_blank"
+              rel="noopener"
+              class="vq"
+              aria-label="Verify listing permit"
+              ><img
+                src="<?= e($property['qr_img']) ?>"
+                alt="Listing permit QR code"
+            /></a>
+            <div>
+              <b>Verified listing</b>
+              <dl>
+<?php if (!empty($property['zone'])) { ?>
+                <div>
+                  <dt>Zone</dt>
+                  <dd><?= e($property['zone']) ?></dd>
+                </div>
+<?php } ?>
+                <div>
+                  <dt>RERA</dt>
+                  <dd><?= e($property['rera']) ?></dd>
+                </div>
+<?php if (!empty($property['brn'])) { ?>
+                <div>
+                  <dt>BRN</dt>
+                  <dd><?= e($property['brn']) ?></dd>
+                </div>
+<?php } ?>
+              </dl>
+<?php if (!empty($property['qr_link'])) { ?>
+              <a
+                href="<?= e($property['qr_link']) ?>"
+                target="_blank"
+                rel="noopener"
+                >Scan or tap to verify ↗</a
+              >
+<?php } ?>
+            </div>
+          </div>
+<?php } ?>
+        </aside>
+      </div>
+    </section>
+
+<?php if (!empty($property['similar'])) { ?>
+    <section id="similar" style="padding-top: 40px">
+      <div class="wrap">
+        <div class="head-row reveal">
+          <div>
+            <span class="eyebrow">More like this</span>
+            <h2 class="serif">Similar homes <em class="gold-text">for sale</em></h2>
+          </div>
+          <div class="car-nav">
+            <button id="simPrev" aria-label="Previous">←</button><button id="simNext" aria-label="Next">→</button>
+          </div>
+        </div>
+        <div class="sim-track" id="simTrack">
+<?php foreach ($property['similar'] as $sim) { ?>
+          <article class="oc sim">
+            <a class="oc-img" href="<?= e($sim['url']) ?>">
+              <img
+                src="<?= e($sim['img']) ?>"
+                alt="<?= e($sim['name']) ?>"
+                loading="lazy"
+                onerror="this.onerror=null; this.src='<?= BASE_URL ?>admin_nsrdwsc/assets/media/logos/logo-light.png';"
+              />
+              <span class="badge"><?= e($sim['type']) ?></span>
+              <span class="oc-loc"><?= e($sim['community']) ?></span>
+            </a>
+            <div class="oc-b">
+              <h3>
+                <a href="<?= e($sim['url']) ?>"><?= e($sim['name']) ?></a>
+              </h3>
+              <div class="specs">
+                <span><?= e($sim['beds_label']) ?></span>
+                <span><?= e($sim['baths_label']) ?></span>
+<?php if ($sim['area_label'] !== '') { ?>
+                <span><?= e($sim['area_label']) ?></span>
+<?php } ?>
+              </div>
+              <div class="oc-meta">
+                <div class="pr"><small>Price</small><b><?= $sim['price'] > 0 ? e($sim['price_label']) : 'On request' ?></b></div>
+              </div>
+            </div>
+          </article>
+<?php } ?>
+        </div>
+      </div>
+    </section>
+<?php } ?>
+
+    <dialog class="lb" id="lb" aria-label="Photo gallery">
+      <button class="lb-x" id="lbX" aria-label="Close">×</button
+      ><button class="lb-n lb-p" id="lbP" aria-label="Previous">←</button><img id="lbImg" alt="" /><button
+        class="lb-n lb-nx"
+        id="lbN"
+        aria-label="Next"
+      >
+        →
+      </button>
+      <p id="lbC"></p>
+    </dialog>
+
+<?php include('common/footer.php'); ?>

@@ -1,143 +1,209 @@
-<?php 
-include('db/config.php');
-$meta_tags = select_row('tbl_tags','id=11 and is_active=1');
-include('common/header.php');
+<?php
+require_once('db/config.php');
 
-// Get parameters
-$page = isset($_GET['page_id']) && is_numeric($_GET['page_id']) ? (int)$_GET['page_id'] : 1;
-$search_name = isset($_GET['name']) ? trim($_GET['name']) : '';
+$data = get_developers_page_data();
 
-// Build WHERE clause
-$where_clause = "is_active=1";
-if ($search_name !== '') {
-    $safe_name = mysqli_real_escape_string($conn, $search_name);
-    $where_clause .= " AND dev_heading LIKE '%$safe_name%'";
+// SEO & Meta tags (tbl_tags id 11 for Developers)
+$meta_tags = get_seo_tags(11) ?: ($data['meta_tags'] ?? []);
+if (empty($meta_tags['meta_title'])) {
+  $meta_tags['meta_title'] = 'Developers | DRE Homes';
+}
+if (empty($meta_tags['meta_description'])) {
+  $meta_tags['meta_description'] = 'From Emaar and Damac to boutique builders — explore the developers shaping the UAE and beyond, and every project DRE can help you buy.';
 }
 
-$sql = select_query('tbl_developer', $where_clause);
-$count = mysqli_num_rows($sql);
+$page = [
+  'active' => 'developers',
+  'css' => ['assets/css/suggest.css', 'assets/css/pages/developers.css'],
+];
 
-$per_page = 8;
-$no_of_page = ceil($count / $per_page);
-$start = ($page - 1) * $per_page;
-
-// Developer content
-$dev_content = select_row('tbl_developer_content','is_active=1');
-$nonencoded_url = "https://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+include('common/header.php');
 ?>
 
-    <!--warpper-->
-    <div class="wrapper">
-        <!--content-->
-        <div class="content">
-            <!--section-->
-            <div class="section hero-section hero-section_sin">
-                <div class="hero-section-wrap">
-                    <div class="hero-section-wrap-item">
-                        <div class="container">
-                            <div class="hero-section-container">
-                                <div class="hero-section-title">
-                                    <h1>Developers</h1>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="bg-wrap bg-hero bg-parallax-wrap-gradien fs-wrapper" data-scrollax-parent="true">
-                            <div class="bg" data-bg="<?=BASE_URL_IMG?>developer/<?=$dev_content['dev_cont_img']?>"
-                                data-scrollax="properties: { translateY: '30%' }"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!--section-end-->
-            <!--container-->
-            <div class="container">
-                <!--breadcrumbs-list-->
-                <div class="breadcrumbs-list bl_flat">
-                    <a href="<?=BASE_URL?>">Home</a><span>Developers</span>
-                    <div class="breadcrumbs-list_dec"><i class="fa-thin fa-arrow-up"></i></div>
-                </div>
-                <!--breadcrumbs-list end-->
-                <!--main-content-->
-                <div class="main-content">
-                    <div class="boxed-container dev-search-box dsb-box">
-                        
-                        <!-- list-searh-input-wrap-->
-                        <div class="list-searh-input-wrap box_list-searh-input-wrap lws_mobile lsw_mb-btn">
-                            <form autocomplete="off">
-                                <div class="custom-form">
-                                    <div class="row">
-                                        <div class="col-lg-12">
-                                            <div class="autocomplete cs-intputwrap">
-                                                <i class="fa-light fa-search"></i>
-                                                <input id="myInput" type="text" name="search_dev" placeholder="Search Developer" value="<?=$_GET['name']?>">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                    <!--boxed-container-->
-                    <div class="boxed-container dev-pg developer_pos">
-                        <!--listing-item-container-->
-                        <div class="listing-item-container two-columns-grid fw-listing-item fw-listing-item2 mt-5 developer_data">
-                           
-                            <?php
-                        $dev=select_query('tbl_developer',"is_active=1 order by dev_posted_on  desc LIMIT $start,$per_page");
-                        if($count>0)
-                        {
-                        while($row=mysqli_fetch_array($dev))
-                        {
-                        ?> 
-
-                            <div class="listing-item dev-list">
-                                <div class="geodir-category-listing">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="geodir-category-img d-flex justify-content-center align-items-center">
-                                                <a href="<?=BASE_URL?>developer/<?=$row['dev_slug']?>" class="geodir-category-img_item">
-                                                <img src="<?=BASE_URL_IMG?>developer/<?=$row['dev_img']?>" alt="<?=$row['dev_img_alt']?>">
-                                                </a>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="geodir-category-content">
-                                                <h3><a href="<?=BASE_URL?>developer/<?=$row['dev_slug']?>"><?=$row['dev_heading']?></a></h3>
-                                                <p> <?=$row['dev_short_descp']?>
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <?php }}else{?>
-                        <h2>No record found</h2>
-                        <?php } ?>
-                           
-
-                        </div>
-                        <!--listing-item-container end-->
-                       
-                          <div class="pagination-wrap">
-                    <div class="pagination">
-                    <?php include('pagination/paging_developer.php');?>
-                    </div>
-                    </div>
-                      
-                    </div>
-                    <!--boxed-container end-->
-                </div>
-                <!--main-content end-->
-                <div class="to_top-btn-wrap">
-                    <div class="to-top to-top_btn"><span>Back to top</span> <i class="fa-solid fa-arrow-up"></i></div>
-                    <div class="svg-corner svg-corner_white" style="top:0;left:  -40px; transform: rotate(-90deg)">
-                    </div>
-                    <div class="svg-corner svg-corner_white" style="top:0;right: -40px; transform: rotate(-180deg)">
-                    </div>
-                </div>
-            </div>
-            <!-- container end-->
+    <!-- ===== DEVELOPERS: HERO ===== -->
+    <header class="ph-hero dv-hero">
+      <div
+        class="ph-bg"
+        style="
+          background-image: url('<?= htmlspecialchars($data['hero_bg']) ?>');
+          background-position: center 30%;
+        "
+      ></div>
+      <div class="wrap">
+        <div class="crumbs" role="navigation" aria-label="Breadcrumb">
+          <a href="<?= page_link('index') ?>">Home</a><span>/</span><span aria-current="page">Developers</span>
         </div>
-        <!--content  end-->
-        <!--main-footer-->
-        <?php include 'common/footer.php'; ?>
+        <span class="eyebrow">Developer Partners</span>
+        <h1 class="serif">
+          <span class="gold-text" id="devTotal"><?= (int) $data['total_count'] ?></span> developers. <em class="gold-text">One trusted partner.</em>
+        </h1>
+        <p class="sub">
+          From Emaar and Damac to boutique builders — explore the developers shaping the UAE and beyond, and every
+          project DRE can help you buy.
+        </p>
+        <form class="op-search glass" id="dvSearch" role="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="M20 20l-3.5-3.5"></path>
+          </svg>
+          <input
+            id="dvQ"
+            type="search"
+            placeholder="Search a developer — e.g. Emaar, Sobha, Binghatti…"
+            aria-label="Search developers"
+          />
+          <button class="btn btn-gold" type="submit">Search</button>
+        </form>
+      </div>
+    </header>
+
+    <?php if (!empty($data['exclusive_partners'])): ?>
+    <!-- ===== EXCLUSIVE + TOP ===== -->
+    <section style="padding: 60px 0 20px">
+      <div class="wrap">
+        <div class="head-row reveal" style="margin-bottom: 26px">
+          <div>
+            <span class="eyebrow">Strong partnerships. Iconic developments.</span>
+            <h2 class="serif">DRE Exclusive <em class="gold-text">Sales Partners</em></h2>
+          </div>
+        </div>
+        <div class="excl reveal">
+          <?php foreach ($data['exclusive_partners'] as $ep): ?>
+          <a class="ex2 glass" href="<?= htmlspecialchars($ep['url']) ?>">
+            <div class="phw">
+              <div
+                class="ph"
+                style="background-image: url('<?= htmlspecialchars($ep['image']) ?>')"
+              ></div>
+            </div>
+            <div class="tx">
+              <small>Exclusive Sales Partner</small>
+              <?php if (!empty($ep['logo'])): ?>
+              <img src="<?= htmlspecialchars($ep['logo']) ?>" alt="<?= htmlspecialchars($ep['name']) ?>" />
+              <?php endif; ?>
+              <h3><?= htmlspecialchars($ep['name']) ?></h3>
+              <p><?= htmlspecialchars($ep['desc']) ?></p>
+              <em>View developer →</em>
+            </div>
+          </a>
+          <?php endforeach; ?>
+        </div>
+      </div>
+    </section>
+    <?php endif; ?>
+
+    <!-- ===== DIRECTORY ===== -->
+    <section id="directory" style="padding-top: 40px">
+      <div class="wrap">
+        <div class="head-row reveal" style="margin-bottom: 22px">
+          <div>
+            <span class="eyebrow">Directory</span>
+            <h2 class="serif">Browse <em class="gold-text">all developers</em></h2>
+          </div>
+          <label class="fsel sort">
+            <span>Sort</span>
+            <select id="dvSort">
+              <option value="feat">Featured</option>
+              <option value="az">Name: A–Z</option>
+              <option value="za">Name: Z–A</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="az glass" id="azBar">
+          <button class="all on" data-l="">All</button>
+          <?php foreach (range('A', 'Z') as $char): ?>
+          <button data-l="<?= $char ?>" <?= in_array($char, $data['letters'], true) ? '' : 'disabled' ?>><?= $char ?></button>
+          <?php endforeach; ?>
+        </div>
+
+        <p class="dv-count" id="dvCount"></p>
+        <div class="dv-grid" id="dvGrid" aria-live="polite">
+          <?php foreach ($data['developers'] as $idx => $d): 
+            $isHidden = ($idx >= 24) ? 'hidden=""' : '';
+            $isTop = $d['is_top'];
+            $topRankAttr = $d['top'] !== null ? 'data-top="' . (int) $d['top'] . '"' : '';
+          ?>
+          <a class="dv <?= $isTop ? 'top' : '' ?>" href="<?= htmlspecialchars($d['url']) ?>" <?= $topRankAttr ?> data-l="<?= htmlspecialchars($d['letter']) ?>" <?= $isHidden ?>>
+            <div class="dv-logo">
+              <img
+                src="<?= htmlspecialchars($d['logo']) ?>"
+                alt="<?= htmlspecialchars($d['name']) ?> logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3><?= htmlspecialchars($d['name']) ?></h3>
+              <?php if ($d['desc'] !== ''): ?>
+              <p><?= htmlspecialchars($d['desc']) ?></p>
+              <?php endif; ?>
+              <em>View developer →</em>
+            </div>
+          </a>
+          <?php endforeach; ?>
+        </div>
+        <div class="op-empty glass" id="dvEmpty" hidden="">
+          <h3>No developer found.</h3>
+          <p>Try another name — or ask us, we work with many more.</p>
+          <div class="story-cta" style="justify-content: center">
+            <button class="btn btn-glass" id="dvClear">Show all</button>
+            <a class="btn btn-gold" href="#contact">Ask an advisor →</a>
+          </div>
+        </div>
+        <div style="text-align: center; margin-top: 34px">
+          <button class="btn btn-glass" id="dvMore">Show more developers</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PARTNER CTA ===== -->
+    <section style="padding-top: 20px">
+      <div class="wrap">
+        <div class="op-cta glass acc-edge reveal">
+          <div>
+            <span class="eyebrow">Are you a developer?</span>
+            <h2 class="serif">Partner with <em class="gold-text">DRE.</em></h2>
+            <p class="lead">
+              150 dedicated agents, two Dubai offices and 19 years of relationships with buyers and investors worldwide.
+              Let’s launch your next project together.
+            </p>
+          </div>
+          <div class="op-cta-b">
+            <a class="btn btn-gold" href="#contact">Start a conversation →</a>
+            <a class="btn btn-glass" href="<?= page_link('offplan-properties') ?>">See off-plan launches</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== CONTACT ===== -->
+    <section id="contact" style="padding-top: 20px">
+      <div class="wrap">
+        <div class="cta glass acc-edge reveal">
+          <div>
+            <span class="eyebrow">Private Consultation</span>
+            <h2 class="serif">Your advisor is<br /><em class="gold-text">one call</em> away.</h2>
+            <p class="lead">Toll free 800 37373 · Hotline +971 52 754 3243</p>
+          </div>
+          <form class="form" id="ctaForm" novalidate="">
+            <input class="form-control" name="name" placeholder="Full name" autocomplete="name" required="" />
+            <input
+              class="form-control"
+              id="ctaPhone"
+              name="phone"
+              type="tel"
+              placeholder="Phone / WhatsApp"
+              autocomplete="tel"
+              required=""
+            />
+            <input type="hidden" name="phone_full" id="ctaPhoneFull" />
+            <div class="err" id="ctaPhoneErr" role="alert">Please enter a valid phone number.</div>
+            <input class="form-control" name="message" placeholder="What are you looking for?" />
+            <button class="btn btn-gold" style="justify-content: center; margin-top: 6px">Request a call back</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+<?php include('common/footer.php'); ?>
+

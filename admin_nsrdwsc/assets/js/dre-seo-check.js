@@ -16,8 +16,8 @@
 	// ---------------------------------------------------------------
 	// Reading the form
 	// ---------------------------------------------------------------
-	var EDITORS = ['proj_overview', 'proj_fea_fac_cont', 'proj_loc_cont', 'proj_masterplan'];
-	var ALT_FIELDS = ['proj_dev_img_alt', 'proj_loc_img_alt_tag', 'proj_mastrpln_img_alt_tag'];
+	var EDITORS = ['proj_overview', 'proj_fea_fac_cont', 'proj_loc_cont', 'proj_masterplan', 'content', 'serv_sec_content'];
+	var ALT_FIELDS = ['proj_dev_img_alt', 'proj_loc_img_alt_tag', 'proj_mastrpln_img_alt_tag', 'og_image'];
 
 	function field(name) {
 		return form.querySelector('[name="' + name + '"]');
@@ -85,10 +85,11 @@
 	} catch (error) {}
 
 	function readPage() {
+		var activeEditors = EDITORS.filter(function (ed) { return field(ed); });
 		var holder = document.createElement('div');
-		holder.innerHTML = EDITORS.map(value).join('\n');
+		holder.innerHTML = (activeEditors.length ? activeEditors : EDITORS).map(value).join('\n');
 		var first = document.createElement('div');
-		first.innerHTML = value(EDITORS[0]);
+		first.innerHTML = activeEditors.length ? value(activeEditors[0]) : value(EDITORS[0]);
 		var firstParagraph = first.querySelector('p, li, h2, h3');
 		var paragraphs = Array.prototype.map.call(holder.querySelectorAll('p, li'), function (node) { return node.textContent.replace(/\s+/g, ' ').trim(); }).filter(function (text) { return text !== ''; });
 		if (!paragraphs.length && holder.textContent.trim() !== '') {
@@ -96,20 +97,23 @@
 		}
 		var links = Array.prototype.map.call(holder.querySelectorAll('a[href]'), function (link) { return link.getAttribute('href') || ''; });
 		var site = (root.getAttribute('data-url') || '').replace(/^https?:\/\//, '').split('/')[0];
-		var name = value('proj_name');
+		var name = value('proj_name') || value('name') || value('serv_sec_name');
+		var metaTitle = value('meta_title') || value('title');
+		var metaDesc = value('meta_description') || value('description');
+		var slugVal = value('proj_slug') || value('slug') || value('serv_sec_slug');
 		return {
 			focus: value('seo_focus').replace(/\s+/g, ' '),
 			name: name,
-			title: value('meta_title') || name,
-			hasOwnTitle: value('meta_title') !== '',
-			description: value('meta_description').replace(/\s+/g, ' '),
-			slug: value('proj_slug') || slugify(name),
+			title: metaTitle || name,
+			hasOwnTitle: metaTitle !== '',
+			description: metaDesc.replace(/\s+/g, ' '),
+			slug: slugVal || slugify(name),
 			text: paragraphs.join(' '),
 			paragraphs: paragraphs,
 			intro: firstParagraph ? firstParagraph.textContent : (paragraphs[0] || ''),
 			headings: Array.prototype.map.call(holder.querySelectorAll('h1, h2, h3, h4'), function (node) { return node.textContent; }),
 			// Each text box is shown under its own heading on the website (Overview, Amenities, Location, Master plan).
-			longestPartWithoutHeading: Math.max.apply(null, EDITORS.map(function (name) {
+			longestPartWithoutHeading: Math.max.apply(null, (activeEditors.length ? activeEditors : EDITORS).map(function (name) {
 				var part = document.createElement('div');
 				part.innerHTML = value(name);
 				return part.querySelector('h2, h3, h4') ? 0 : wordsOf(part.textContent).length;
@@ -401,6 +405,20 @@
 			render();
 		}
 	});
+
+	document.querySelectorAll('[data-seo-light]').forEach(function (light) {
+		light.addEventListener('click', function () {
+			var targetTab = light.getAttribute('data-seo-light');
+			if (targetTab && (targetTab === 'seo' || targetTab === 'readability')) {
+				tab = targetTab;
+				root.querySelectorAll('[data-seo-tab]').forEach(function (button) {
+					button.classList.toggle('is-on', button.getAttribute('data-seo-tab') === tab);
+				});
+				render();
+			}
+		});
+	});
+
 	// The text editors copy their content to the form only on saving; the scores are worked out just before.
 	form.addEventListener('submit', render, true);
 	render();

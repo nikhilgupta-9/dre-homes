@@ -44,4 +44,12 @@ return [
 
 	// GenieMap (geniemap.net) partner API key, for the admin's "Import from GenieMap" page.
 	'geniemap_api_token' => '',
+
+	// Mobile app database (admin_nsrdwsc/push-app)
+	'app_db' => [
+		'host' => 'localhost',
+		'user' => 'APP_DB_USER',
+		'pass' => 'APP_DB_PASSWORD',
+		'name' => 'APP_DB_NAME',
+	],
 ];

@@ -31,7 +31,8 @@ RewriteEngine on
 # Never serve internal files (config, database layer, AI internals, dumps, logs)
 RewriteRule (^|/)\.(git|env) - [F,L]
 RewriteRule \.(md|log|sql|bak|lock)$ - [F,L,NC]
-RewriteRule ^(config|db)/ - [F,L]
+RewriteRule ^(config|db|vendor|old-html)/ - [F,L]
+RewriteRule ^composer\.(json|lock)$ - [F,L]
 RewriteRule ^ai/(cron|tests|storage)/ - [F,L]
 # Class and settings files in ai/ are included by PHP, never requested
 RewriteRule ^ai/(config|[A-Z][A-Za-z]*)\.php$ - [F,L]
@@ -40,6 +41,51 @@ RewriteRule ^ai/(config|[A-Z][A-Za-z]*)\.php$ - [F,L]
 #RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 #ErrorDocument 404 /404.php
+
+RewriteRule ^community-palm-jumeirah(\.html)?$ /dre-homes-new-ui/community/palm-jumeirah [R=301,L,NC]
+RewriteRule ^developer-emaar(\.html)?$ /dre-homes-new-ui/developer/emaar [R=301,L,NC]
+RewriteRule ^developer-ora-developers(\.html)?$ /dre-homes-new-ui/developer/ora-developers [R=301,L,NC]
+
+RewriteRule ^listing-shams-townhouses(\.html)?$ /dre-homes-new-ui/buy-property/shams-townhouses-town-square-dubai [R=301,L,NC]
+RewriteRule ^property-palace-residences-hillside(\.html)?$ /dre-homes-new-ui/property/palace-residences-hillside [R=301,L,NC]
+RewriteRule ^rent-zahra-apartments-town-square(\.html)?$ /dre-homes-new-ui/rent-property/zahra-apartments-town-square-dubai [R=301,L,NC]
+RewriteRule ^intl-the-address-residence-istanbul(\.html)?$ /dre-homes-new-ui/international-properties/the-address-residence-istanbul [R=301,L,NC]
+RewriteRule ^international-properties\.html$ /dre-homes-new-ui/international-properties [R=301,L,NC]
+RewriteRule ^ready-paradise-view-2-majan(\.html)?$ /dre-homes-new-ui/ready-to-move-in/paradise-view-2-majan [R=301,L,NC]
+RewriteRule ^ready-to-move-in\.html$ /dre-homes-new-ui/ready-to-move-in [R=301,L,NC]
+RewriteRule ^bank-account-opening\.html$ /dre-homes-new-ui/bank-account-opening [R=301,L,NC]
+RewriteRule ^business-licenses\.html$ /dre-homes-new-ui/business-licenses [R=301,L,NC]
+RewriteRule ^relocation-service\.html$ /dre-homes-new-ui/relocation-service [R=301,L,NC]
+RewriteRule ^property-investment-consultancy\.html$ /dre-homes-new-ui/property-investment-consultancy [R=301,L,NC]
+RewriteRule ^mortgage-advisory\.html$ /dre-homes-new-ui/mortgage-advisory [R=301,L,NC]
+RewriteRule ^property-management\.html$ /dre-homes-new-ui/property-management [R=301,L,NC]
+RewriteRule ^blogs\.html$ /dre-homes-new-ui/blogs [R=301,L,NC]
+RewriteRule ^buyer-guide\.html$ /dre-homes-new-ui/buyer-guide [R=301,L,NC]
+RewriteRule ^communities\.html$ /dre-homes-new-ui/communities [R=301,L,NC]
+RewriteRule ^company-news\.html$ /dre-homes-new-ui/company-news [R=301,L,NC]
+RewriteRule ^developers\.html$ /dre-homes-new-ui/developers [R=301,L,NC]
+RewriteRule ^golden-visa\.html$ /dre-homes-new-ui/golden-visa [R=301,L,NC]
+RewriteRule ^landlord-guide\.html$ /dre-homes-new-ui/landlord-guide [R=301,L,NC]
+RewriteRule ^podcast\.html$ /dre-homes-new-ui/podcast [R=301,L,NC]
+RewriteRule ^privacy-policy\.html$ /dre-homes-new-ui/privacy-policy [R=301,L,NC]
+RewriteRule ^seller-guide\.html$ /dre-homes-new-ui/seller-guide [R=301,L,NC]
+RewriteRule ^tenant-guide\.html$ /dre-homes-new-ui/tenant-guide [R=301,L,NC]
+RewriteRule ^terms-conditions\.html$ /dre-homes-new-ui/terms-conditions [R=301,L,NC]
+RewriteRule ^news-sobha-top-channel-partner(\.html)?$ /dre-homes-new-ui/company-news/dre-homes-recognised-as-a-top-performing-channel-partner-sobha-realty [R=301,L,NC]
+RewriteRule ^brand-video\.html$ /dre-homes-new-ui/brand-video [R=301,L,NC]
+RewriteRule ^dre-brand-video(\.html)?$ /dre-homes-new-ui/brand-video [R=301,L,NC]
+RewriteRule ^team-qurat-ul-ain(\.html)?$ /dre-homes-new-ui/our-team/qurat-ul-ain [R=301,L,NC]
+RewriteCond %{QUERY_STRING} (?:^|&)u=([^&]+)
+RewriteRule ^team-member\.html$ /dre-homes-new-ui/our-team/%1 [R=301,L,NC,QSD]
+RewriteRule ^team-member\.html$ /dre-homes-new-ui/our-team [R=301,L,NC]
+RewriteRule ^team-member/?$ agent-single.php [NC,L,QSA]
+
+## New UI: a page.html that has a dynamic page.php twin is served by the PHP (URL stays .html)
+RewriteRule ^blog-freehold-vs-leasehold(\.html)?$ /dre-homes-new-ui/our-blogs/freehold-vs-leasehold-property-in-dubai [R=301,L,NC]
+
+RewriteCond %{REQUEST_FILENAME} ^(.+)\.html$
+RewriteCond %1.php -f
+RewriteRule ^(.+)\.html$ $1.php [L,QSA]
 
 ## If the request is for a valid directory
 RewriteCond %{REQUEST_FILENAME} -d [OR]
@@ -56,6 +102,18 @@ RewriteRule ^developer-sitemap\.xml$ developer-sitemap.php [L,QSA]
 RewriteRule ^community-sitemap\.xml$ community-sitemap.php [L,QSA]
 RewriteRule ^property-sitemap\.xml$ property-sitemap.php [L,QSA]
 RewriteRule ^property2-sitemap\.xml$ property2-sitemap.php [L,QSA]
+
+## New UI clean URLs: /page/ -> 301 to /page (keeps relative asset paths working)
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} ^(.+)/$
+RewriteRule ^[A-Za-z0-9-]+/$ %1 [R=301,L]
+## /page -> page.php (dynamic) or page.html (still static)
+RewriteCond %{REQUEST_FILENAME} ^(.+?)/?$
+RewriteCond %1.php -f
+RewriteRule ^([A-Za-z0-9-]+)/?$ $1.php [L,QSA]
+RewriteCond %{REQUEST_FILENAME} ^(.+?)/?$
+RewriteCond %1.html -f
+RewriteRule ^([A-Za-z0-9-]+)/?$ $1.html [L,QSA]
 
 
 
@@ -94,8 +152,7 @@ RewriteRule   ^404/?$   404.php  [NC]
 RewriteRule   ^our-media?$   gallery.php  [NC]
 RewriteRule   ^our-media/?$   gallery.php  [NC]
 
-RewriteRule   ^about-us?$   about-us.php  [NC]
-RewriteRule   ^about-us/?$   about-us.php  [NC]
+RewriteRule   ^about-us/?$   about.php  [NC,L,QSA]
 
 RewriteRule   ^clients-testimonials?$   clients-testimonials.php  [NC]
 RewriteRule   ^clients-testimonials/?$   clients-testimonials.php  [NC]
@@ -128,18 +185,35 @@ RewriteRule   ^company-news/(.*)?$   company-news-single.php?detail=$1  [L]
 
 RewriteRule   ^our-blogs?$   blogs.php  [NC]
 RewriteRule   ^our-blogs/?$   blogs.php  [NC]
-
 RewriteRule   ^our-blogs/(.*)?$   blog-single.php?detail=$1  [L]
+
+RewriteRule   ^blogs?$   blogs.php  [NC]
+RewriteRule   ^blogs/?$   blogs.php  [NC]
+RewriteRule   ^blogs/(.*)?$   blog-single.php?detail=$1  [L]
+
+RewriteRule   ^blog/(.*)?$   blog-single.php?detail=$1  [L]
+RewriteRule   ^blog-freehold-vs-leasehold(\.html)?$   our-blogs/freehold-vs-leasehold-property-in-dubai  [R=301,L,NC]
+RewriteRule   ^blogs\.html$   blogs  [R=301,L,NC]
 
 RewriteRule   ^community?$   communities.php  [NC]
 RewriteRule   ^community/?$   communities.php  [NC]
+RewriteRule   ^communities?$   communities.php  [NC]
+RewriteRule   ^communities/?$   communities.php  [NC]
 
 RewriteRule   ^community/(.*)?$   community-single.php?detail=$1  [L]
+RewriteRule   ^community-palm-jumeirah(\.html)?$   community/palm-jumeirah  [R=301,L,NC]
+RewriteRule   ^community-single(\.html)?$   community/palm-jumeirah  [R=301,L,NC]
 
 RewriteRule   ^developer?$   developers.php  [NC]
 RewriteRule   ^developer/?$   developers.php  [NC]
+RewriteRule   ^developers?$   developers.php  [NC]
+RewriteRule   ^developers/?$   developers.php  [NC]
+
+RewriteRule   ^developer-emaar(\.html)?$   developer/emaar  [R=301,L,NC]
+RewriteRule   ^developer-ora-developers(\.html)?$   developer/ora-developers  [R=301,L,NC]
 
 RewriteRule   ^developer/(.*)?$   developers-single.php?detail=$1  [L]
+RewriteRule   ^developers/(.*)?$   developers-single.php?detail=$1  [L]
 
 RewriteRule   ^residential-properties?$   residential-properties.php  [NC]
 RewriteRule   ^residential-properties/?$   residential-properties.php  [NC]
@@ -194,8 +268,8 @@ Redirect /career https://drehomes.com/404
 RewriteRule   ^careers?$   careers.php  [NC]
 RewriteRule   ^careers/?$   careers.php  [NC]
 
-RewriteRule   ^buy-property?$   buy.php  [NC]
-RewriteRule   ^buy-property/?$  buy.php  [NC]
+RewriteRule   ^buy-property?$   buy-property.php  [NC]
+RewriteRule   ^buy-property/?$  buy-property.php  [NC]
 
 RewriteRule   ^rent-property?$   rent.php  [NC]
 RewriteRule   ^rent-property/?$  rent.php  [NC]
@@ -203,6 +277,7 @@ RewriteRule   ^rent-property/?$  rent.php  [NC]
 RewriteRule   ^project-internal?$   project-internal.php  [NC]
 RewriteRule   ^project-internal/?$  project-internal.php  [NC]
 
+RewriteRule   ^golden-visa\.html$   golden-visa  [R=301,L,NC]
 RewriteRule   ^golden-visa?$   golden-visa.php  [NC]
 RewriteRule   ^golden-visa/?$  golden-visa.php  [NC]
 
@@ -218,25 +293,50 @@ RewriteRule   ^tenant-guide/?$  tenant-guide.php  [NC]
 RewriteRule   ^landlord-guide?$   landlord-guide.php  [NC]
 RewriteRule   ^landlord-guide/?$  landlord-guide.php  [NC]
 
+RewriteRule   ^mortgage-advisory\.html$   mortgage-advisory  [R=301,L,NC]
+RewriteRule   ^mortgage-advisory?$   mortgage-advisory.php  [NC]
+RewriteRule   ^mortgage-advisory/?$  mortgage-advisory.php  [NC]
+
 RewriteRule   ^mortgage-calculator?$   mortgage-calculator.php  [NC]
 RewriteRule   ^mortgage-calculator/?$  mortgage-calculator.php  [NC]
 
-RewriteRule   ^message-from-co-founder-and-clo?$   message-from-co-founder-and-clo.php  [NC]
-RewriteRule   ^message-from-co-founder-and-clo/?$  message-from-co-founder-and-clo.php  [NC]
+RewriteRule   ^bank-account-opening?$   bank-account-opening.php  [NC]
+RewriteRule   ^bank-account-opening/?$  bank-account-opening.php  [NC]
 
-RewriteRule   ^message-from-co-founder-and-ceo?$   message-from-co-founder-and-ceo.php  [NC]
-RewriteRule   ^message-from-co-founder-and-ceo/?$  message-from-co-founder-and-ceo.php  [NC]
+RewriteRule   ^business-licenses?$   business-licenses.php  [NC]
+RewriteRule   ^business-licenses/?$  business-licenses.php  [NC]
+
+RewriteRule   ^relocation-service?$   relocation-service.php  [NC]
+RewriteRule   ^relocation-service/?$  relocation-service.php  [NC]
+
+RewriteRule   ^property-investment-consultancy?$   property-investment-consultancy.php  [NC]
+RewriteRule   ^property-investment-consultancy/?$  property-investment-consultancy.php  [NC]
+RewriteRule   ^property-and-investment-consultancy/?$  /dre-homes-new-ui/property-investment-consultancy  [R=301,L,NC]
+
+# New UI: the founders' notes keep their v2 URLs
+RewriteRule   ^message-from-co-founder-and-clo/?$  founders-note-clo.php  [NC,L]
+
+RewriteRule   ^message-from-co-founder-and-ceo/?$  founders-note-ceo.php  [NC,L]
 
 RewriteRule   ^message-from-managing-partner?$   message-from-managing-partner.php  [NC]
 RewriteRule   ^message-from-managing-partner/?$  message-from-managing-partner.php  [NC]
 
 
+RewriteRule   ^services/bank-account-opening/?$  /dre-homes-new-ui/bank-account-opening  [R=301,L,NC]
+RewriteRule   ^services/business-licenses/?$  /dre-homes-new-ui/business-licenses  [R=301,L,NC]
+RewriteRule   ^services/relocation-service/?$  /dre-homes-new-ui/relocation-service  [R=301,L,NC]
+RewriteRule   ^services/property-and-investment-consultancy/?$  /dre-homes-new-ui/property-investment-consultancy  [R=301,L,NC]
+RewriteRule   ^services/property-investment-consultancy/?$  /dre-homes-new-ui/property-investment-consultancy  [R=301,L,NC]
+RewriteRule   ^services/mortgage-advisory/?$  /dre-homes-new-ui/mortgage-advisory  [R=301,L,NC]
+RewriteRule   ^services/property-management/?$  /dre-homes-new-ui/property-management  [R=301,L,NC]
 RewriteRule   ^services/(.*)?$   services.php?detail=$1  [L]
 
 
+RewriteRule   ^privacy-policy\.html$   privacy-policy  [R=301,L,NC]
 RewriteRule   ^privacy-policy?$   privacy-policy.php  [NC]
 RewriteRule   ^privacy-policy/?$  privacy-policy.php  [NC]
 
+RewriteRule   ^terms-conditions\.html$   terms-conditions  [R=301,L,NC]
 RewriteRule   ^terms-conditions?$   terms-conditions.php  [NC]
 RewriteRule   ^terms-conditions/?$  terms-conditions.php  [NC]
 
@@ -248,9 +348,6 @@ RewriteRule   ^dre-brand-video/?$   dre-brand-video.php  [NC]
 
 RewriteRule   ^dubai-evolution?$   dubai-evolution.php  [NC]
 RewriteRule   ^dubai-evolution/?$   dubai-evolution.php  [NC]
-
-RewriteRule   ^property-management?$   property-management.php  [NC]
-RewriteRule   ^property-management/?$   property-management.php  [NC]
 
 <Files 403.shtml>
 order allow,deny

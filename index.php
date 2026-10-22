@@ -1,1199 +1,592 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 include('db/config.php');
 $meta_tags = select_row("tbl_tags", "id=7 and is_active=1");
+
+// Hero media (desktop row decides video or image)
+$hero = ['desktop' => null, 'tablet' => null, 'mobile' => null];
+foreach (select_all('tbl_hero_section', 'is_active=1 ORDER BY display_order') as $row) {
+  $hero[$row['img_screen_size']] = $row;
+}
+
+// Hot property launches, with their community and emirate
+$home_projects = [];
+$res = mysqli_query($conn, "SELECT p.*, c.comm_location FROM tbl_proj p
+  LEFT JOIN tbl_community c ON c.comm_id = p.prj_comm_id
+  WHERE p.proj_showonhomepage=1 AND p.is_active=1
+  ORDER BY p.home_card_order_no IS NULL, p.home_card_order_no ASC");
+while ($res && $row = mysqli_fetch_assoc($res)) {
+  $home_projects[] = $row;
+}
+foreach ($home_projects as &$p) {
+  $p['card_name'] = !empty($p['proj_name_on_card']) ? $p['proj_name_on_card'] : $p['proj_name'];
+  $p['card_city'] = !empty($p['emirate']) ? $p['emirate'] : (!empty($p['comm_location']) ? $p['comm_location'] : 'Dubai');
+  $loc = trim($p['proj_location']);
+  $p['card_loc'] = ($loc === '' ? $p['card_city'] : (stripos($loc, $p['card_city']) === false ? $loc . ', ' . $p['card_city'] : $loc));
+  $p['card_price'] = (is_numeric($p['proj_price']) && $p['proj_price'] != 0) ? 'AED ' . number_format($p['proj_price']) : 'On request';
+  $p['card_handover'] = trim(preg_replace('/^\s*handover\s*:?\s*/i', '', (string) $p['proj_handover']));
+  if ($p['card_handover'] === '') $p['card_handover'] = '—';
+  $p['card_img'] = !empty($p['home_card_img'])
+    ? BASE_URL_IMG . 'project/home-card-img/' . $p['home_card_img']
+    : BASE_URL_IMG . 'project/thumb/' . explode(',', $p['prj_thumb_img'])[0];
+}
+unset($p);
+$hero_project = $home_projects[0] ?? null;
+
+// Signature neighbourhoods: the grid holds 5 tiles, the first one is tall
+$home_comms = select_all('tbl_community', 'comm_showonhomepage=1 AND is_active=1');
+foreach ($home_comms as &$c) {
+  $c['proj_count'] = count(select_all('tbl_proj', 'is_active=1 AND prj_comm_id=' . (int) $c['comm_id']));
+}
+unset($c);
+usort($home_comms, fn($a, $b) => $b['proj_count'] <=> $a['proj_count']);
+$home_comms = array_slice($home_comms, 0, 5);
+
+$home_counters = select_all('tbl_abt_counter', 'is_active=1 ORDER BY abt_countr_id DESC');
+$home_devs = select_all('tbl_developer', 'dev_showonhomepage=1 AND is_active=1 ORDER BY dev_order_no ASC');
+$insta_items = select_all('tbl_instagram_content', 'is_active=1 ORDER BY display_order ASC');
+
+$page = [
+  'active' => 'home',
+  'title' => 'DRE Homes Real Estate | Dubai Property Brokerage',
+  'description' => 'Curated off-plan launches, signature resales and premium residences — guided by RERA-certified advisors.',
+  'css' => ['assets/css/suggest.css'],
+  'js' => ['assets/js/suggest.js'],
+];
 include('common/header.php');
 ?>
-<!--warpper-->
-<div class="wrapper">
-    <div class="content">
-        <!--section-->
-        <!--section-->
-                <?php
-                $hero_data = select_all('tbl_hero_section', 'is_active=1 ORDER BY display_order');
-                $hero = [
-                    'desktop' => null,
-                    'tablet' => null,
-                    'mobile' => null
-                ];
-
-                foreach ($hero_data as $row) {
-                    $hero[$row['img_screen_size']] = $row;
-                }
-                    ?>
-                <div class="index-sec section hero-section hero-section_sin">
-                    <div class="hero-section-wrap">
-                        <div class="hero-section-wrap-item hero-sec-vh">
-                            <div class="container dre-search-f">
-                                <div class="hero-section-container hsc2">
-                                    <div class="row align-items-center">
-                                        <div class="col-lg-4">
-                                            <h1>Find Your <span class="dre-gradient-text">DRE</span>am Property</h1>
-                                            <p class="pb-0 mb-0">Search the best properties across the prime location
-                                            </p>
-                                        </div>
-                                        <div class="col-lg-8">
-                                            <form class="dre-search-form" id="residentialSearchForm1">
-
-                                                <!-- Purpose -->
-                                                <div class="dre-search-item">
-                                                    <div class="dre-search-icon">
-                                                        <i class="fa-solid fa-house"></i>
-                                                    </div>
-
-                                                    <div class="dre-search-content">
-                                                        <select name="type" id="propertyType" class="chosen-select">
-                                                            <option value="Offplan" data-id="1">Off Plan</option>
-                                                            <option value="Buy" data-id="7">Buy</option>
-                                                            <option value="Rent" data-id="8">Rent</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                <!-- Property Type -->
-                                                <!-- `<div class="dre-search-item">
-                                                    <div class="dre-search-icon">
-                                                        <i class="fa-regular fa-building"></i>
-                                                    </div>
-
-                                                    <div class="dre-search-content" style="z-index: 10;">
-                                                        <select name="unitType" id="propertyTypeSuggestions" class="chosen-select">
-                                                            
-                                                        </select>
-                                                    </div>
-                                                </div>` -->
-
-                                                <!-- Location -->
-                                                <div class="dre-search-item">
-                                                    <div class="dre-search-icon">
-                                                        <i class="fa-solid fa-location-dot"></i>
-                                                    </div>
-
-                                                    <div class="dre-search-content">
-                                                        <input type="text" name="location" id="locationInput1" placeholder="Enter Location" autocomplete="off">
-
-                                                        <span id="clearLocationInput" class="clear-input-btn">
-                                                            &times;
-                                                        </span>
-                                                        
-                                                        <div id="locationSuggestions"></div>
-                                                    </div>
-                                                </div>
-
-                                                <!-- Property -->
-                                                <div class="dre-search-item">
-                                                    <div class="dre-search-icon">
-                                                        <i class="fa-regular fa-building"></i>
-                                                    </div>
-
-                                                    <div class="dre-search-content">
-                                                        <input type="text" name="property" id="propertyInput1"
-                                                            placeholder="Enter Project Name" autocomplete="off">
-
-                                                            <span id="clearPropertyInput" class="clear-input-btn">
-                                                            &times;
-                                                        </span>
-
-                                                        <div id="propertySuggestions"></div>    
-                                                    </div>
-                                                </div>
-
-                                                <!-- Button -->
-                                                <button type="submit" class="dre-search-btn">
-                                                    <i class="fa-solid fa-magnifying-glass"></i>
-                                                </button>
-
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <?php if (!empty($hero['desktop']) && $hero['desktop']['media_type'] == 'video') { ?>
-
-                                <!-- VIDEO -->
-                                <div class="bg-wrap bg-hero fs-wrapper">
-                                    <?php
-                                    // Lighter copy and poster of the hero video, used when they exist next to the upload
-                                    $hero_video = $hero['desktop']['media_path'];
-                                    $hero_base = preg_replace('/\.[a-z0-9]+$/i', '', $hero_video);
-                                    $hero_dir = __DIR__ . '/admin_nsrdwsc/assets/media/';
-                                    if (is_file($hero_dir . $hero_base . '.web.mp4')) {
-                                        $hero_video = $hero_base . '.web.mp4';
-                                    }
-                                    $hero_poster = is_file($hero_dir . $hero_base . '.poster.jpg') ? BASE_URL_IMG . $hero_base . '.poster.jpg' : '';
-                                    ?>
-                                    <video class="hero-video" muted loop playsinline webkit-playsinline preload="none"<?= $hero_poster ? ' poster="' . $hero_poster . '"' : '' ?>
-                                        data-src="<?= BASE_URL_IMG . $hero_video ?>">
-                                    </video>
-                                    <script>
-                                        // The video starts downloading only after the page itself has finished loading
-                                        window.addEventListener('load', function () {
-                                            var v = document.querySelector('.hero-video[data-src]');
-                                            if (!v) return;
-                                            v.src = v.getAttribute('data-src');
-                                            var p = v.play();
-                                            if (p && p.catch) p.catch(function () {});
-                                        });
-                                    </script>
-                                    <div class="hero-overlay"></div>
-                                </div>
-
-                            <?php } else { ?>
-
-                                <!-- DESKTOP -->
-                                <div class="bg bg-desktop"
-                                    data-bg="<?= BASE_URL_IMG . ($hero['desktop']['media_path'] ?? '') ?>">
-                                </div>
-
-                                <!-- TABLET -->
-                                <div class="bg bg-tablet"
-                                    data-bg="<?= BASE_URL_IMG . ($hero['tablet']['media_path'] ?? '') ?>">
-                                </div>
-
-                                <!-- MOBILE -->
-                                <div class="bg bg-mobile"
-                                    data-bg="<?= BASE_URL_IMG . ($hero['mobile']['media_path'] ?? '') ?>">
-                                </div>
-
-                            <?php } ?>
-                        </div>
-                    </div>
-                </div>
-                <!--section-end-->
-        <!--section-end-->
-        <!--container-->
-        <div class="container">
-
-            <!--main-content-->
-            <div class="main-content ms_vir_height" id="sec1">
-                <!--boxed-container-->
-                <div class="new-dre">
-                    <div class="listing-grid_heroheader mt-5">
-                        <h3>Browse Hot Properties</h3>
-                        <div class="home-btn-slider">
-                                <div class="tc-button tc-button-prev"><i class="fas fa-caret-left"></i></div>
-                                <div class="tc-button tc-button-next"><i class="fas fa-caret-right"></i></div>
-
-                        </div>
-                    </div>
-                    <!-- exclusive listing carousel starts -->
-                    <div class="testimonilas-carousel-wrap">
-                        <div class="  exc-listing-carousel-dre ">
-                            <div class="swiper-container">
-                                <div class="swiper-wrapper">
-
-                                    <?php
-                                    $query = select_query('tbl_proj', 'proj_showonhomepage=1 and is_active=1 order by home_card_order_no IS NULL, home_card_order_no ASC');
-                                    while ($row = mysqli_fetch_array($query)) {
-                                        $proj_dev = select_row("tbl_developer", "dev_id=" . $row["prj_dev_id"]);
-
-                                        if (!empty($row['home_card_img'])) {
-
-                                            $proj_thumb_mg =
-                                                BASE_URL_IMG . "project/home-card-img/" . $row['home_card_img'];
-
-                                        } else {
-
-                                            $prj_thumb_arr = explode(",", $row['prj_thumb_img']);
-
-                                            $proj_thumb_img1 =
-                                                !empty($prj_thumb_arr[0])
-                                                ? $prj_thumb_arr[0]
-                                                : '';
-
-                                            $proj_thumb_mg =
-                                                BASE_URL_IMG . "project/thumb/" . $proj_thumb_img1;
-
-                                        }
-                                        ?>
-                                        <div class="swiper-slide">
-                                            <div class="testi-item">
-                                                <div class="listing-item">
-                                                    <div class="geodir-category-listing">
-                                                        <div class="geodir-category-img">
-                                                            <a href="<?= BASE_URL ?>property/<?= $row["proj_slug"] ?>"
-                                                                class="geodir-category-img_item">
-                                                                <div class="off-plan-thumb">
-                                                                    <img loading="lazy" decoding="async" src="<?= dre_img($proj_thumb_mg, 700) ?>" alt="">
-                                                                </div>
-                                                                <div class="overlay"></div>
-                                                            </a>
-                                                            <div class="geodir-category-location">
-                                                                <div class="geodir-category-location-item">
-                                                                    <?php if (!empty($row['proj_name_on_card'])) { ?>
-                                                                        <h3>
-                                                                            <a
-                                                                                href="<?= BASE_URL ?>property/<?= $row["proj_slug"] ?>">
-                                                                                <?= $row['proj_name_on_card'] ?>
-                                                                            </a>
-                                                                        </h3>
-                                                                    <?php } else { ?>
-                                                                        <h3>
-                                                                            <a
-                                                                                href="<?= BASE_URL ?>property/<?= $row["proj_slug"] ?>">
-                                                                                <?= $row['proj_name'] ?>
-                                                                            </a>
-                                                                        </h3>
-                                                                    <?php } ?>
-                                                                    <!-- <h5>
-                                                                        <span class="off-n-sp1">By</span>
-                                                                        <span class="off-n-sp2"><?= getDeveloper($row["prj_dev_id"]) ?></span>
-                                                                    </h5> -->
-                                                                    <a href="<?= BASE_URL ?>property/<?= $row["proj_slug"] ?>"
-                                                                        class="map-item"><i
-                                                                            class="fas fa-map-marker-alt"></i>
-                                                                        <?= $row["proj_location"] ?>
-                                                                    </a>
-                                                                    <div class="dre-op-f">
-                                                                        <div class="dre-op-f-item">
-                                                                            <div class="text-muted off-f-h">Starting Price: </div>
-                                                                            <div>
-                                                                                <?php if (is_numeric($row["proj_price"]) && $row["proj_price"] != 0): ?>
-                                                                                    <div class="price-row"
-                                                                                        style="display: flex; align-items: flex-end; flex-direction: column; gap: 0; font-size:1em;">
-
-                                                                                        <!-- Price Output -->
-                                                                                        <div class="geodir-category-content_price text-muted      currency-price off-f-b" "
-                                                                                                                                                                                                                data-price="
-                                                                                        <?= $row["proj_price"] ?>"
-                                                                                            data-original-currency="AED"
-                                                                                            data-original-price="<?= $row["proj_price"] ?>">
-                                                                                            <img loading="lazy" decoding="async" src="<?= BASE_URL ?>images/symbol/currency-symbol-w.png"
-                                                                                                alt="Currency"
-                                                                                                style="height: 16px; vertical-align: middle;">
-                                                                                            AED
-                                                                                            <?= number_format($row["proj_price"]) ?>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                <?php else: ?>
-                                                                                    <div class="geodir-category-content_price text-muted "
-                                                                                        style="font-size:1em; flex-direction: column; align-items: flex-end;">
-
-                                                                                        <div class="off-f-b " ">Call Us</div>
-                                                                                    </div>
-                                                                                <?php endif; ?>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                
-                                                                
-                                                            </div>
-                                                                <ul class="list-single-opt_header_cat off-n">
-                                                                    <?php if (!empty($row['proj_handover'])): ?>
-                                                                        <li>
-                                                                            <a href="javascript:void(0)"  class="cat-opt">
-                                                                                <?= $row['proj_handover'] ?></a>
-                                                                        </li>
-                                                                    <?php endif; ?>
-                                                                </ul>
-                                                        </div>
-                                                                                    <!-- <div class="geodir-category-content prop-gcc off-n">
-
-                                                                                        <?php if (!empty($row['proj_name_on_card'])) { ?>
-                                                                                            <h3>
-                                                                                                <a href="<?= BASE_URL ?>property/<?= $row["proj_slug"] ?>">
-                                                                                                    <?= $row['proj_name_on_card'] ?>
-                                                                                                </a>
-                                                                                            </h3>
-                                                                                        <?php } else { ?>
-                                                                                            <h3>
-                                                                                                <a href="<?= BASE_URL ?>property/<?= $row["proj_slug"] ?>">
-                                                                                                    <?= $row['proj_name'] ?>
-                                                                                                </a>
-                                                                                            </h3>
-                                                                                        <?php } ?>
-                                                                                        <h5>
-                                                                                            <span class="off-n-sp1">By</span>
-                                                                                            <span class="off-n-sp2"><?= getDeveloper($row["prj_dev_id"]) ?></span>
-                                                                                        </h5>
-
-                                                                                    </div> -->
-
-
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php } ?>
-
-                                </div>
-                                        </div>
-                                        
-                                </div>
-                            </div>
-                            <!-- exclusive listing carousel ends -->
-                            <!-- <a href="buy-property.php" class="commentssubmit csb-no-align">View All Properties <i
-                                class="fa-solid fa-caret-right"></i></a> -->
-                        </div>
-                        <!--boxed-container end-->
-                    </div>
-                    <!--main-content end-->
-                </div>
-                <!--container end-->
-
-                <!-- featured communities -->
-                <!-- <div class="modal-box-cr animated-button1 " data-modal="modal-feedback">
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                            Give Us Your Valuable Feedback
-                            
-                        </div> -->
-                <div class="container">
-                    <div class="boxed-content-item city-box-c">
-                        
-                    <div class=" half-carousel-container" >
-                        <div class="city-carousel-wrap ">
-                            <span class="span-1"></span>
-                            <span class="span-2"></span>
-                            <span class="span-3"></span>
-                            <span class="span-4"></span>
-                            <?php
-                                                            $home_comm = select_row('tbl_community_content', 'is_active=1');
-                                                            $commun_header = $home_comm['comm_header_home'] ?? 'Explore Signature
-                                                                        Neighborhoods';
-                                                            $commun_content = $home_comm['comm_content_home'] ?? 'Discover Dubai’s most
-                                                                        desirable communities, each offering a unique
-                                                                        lifestyle, prime location, and modern living
-                                                                        experience.';
-                                                            $commun_img = BASE_URL_IMG . "community/home-bg/" . $home_comm['comm_img_home'];
-                                                            ?>
-                                                            <div class="half-carousel-title-wrap">
-                                                                <div class="half-carousel-title">
-                                                                    <h2 style="color:#5f574c;"><?= $commun_header ?>
-                                                                    </h2>
-                                                                    <p style="color:#5f574c;"><?= $commun_content ?></p>
-                                                                    <a href="https://drehomes.com/community" class="commentssubmit"
-                                                                        style="margin-top: 20px; background:#5f574c;">Explore
-                                                                        All<i class="fa-solid fa-caret-right"></i></a>
-                                                                </div>
-                                                                <div class="abs_bg"
-                                                                    style="background-image: url(<?= $commun_img ?>);">
-                                                                </div>
-                                                            </div>
-                            <div class="city-carousel">
-                                <div class="swiper-container">
-                                    <div class="swiper-wrapper">
-                                        <!--city-carousel-item-->
-                                        <?php
-                                                                        $home_comm_card = select_all('tbl_community', 'comm_showonhomepage=1 AND is_active=1');
-
-                                                                        if (!empty($home_comm_card)) {
-
-                                                                            foreach ($home_comm_card as $key => $values) {
-
-                                                                                $comm_img = !empty($values['comm_home_img'])
-                                                                                    ? BASE_URL_IMG . 'community/home/' . $values['comm_home_img']
-                                                                                    : BASE_URL_IMG . 'community/thumb/' . $values['comm_thumb_img'];
-                                                                                ?>
-
-                                                                                <div class="swiper-slide">
-                                                                                    <a href="<?=BASE_URL ."community/". $values['comm_slug']?>">
-                                                                                    <div class="city-carousel-item">
-
-                                                                                        <div class="bg-wrap fs-wrapper">
-
-                                                                                            <div class="img-box">
-
-                                                                                                <img decoding="async" src="<?= dre_img($comm_img, 700) ?>"
-                                                                                                    alt="<?= $values['comm_heading'] ?>"
-                                                                                                    width="100%" loading="lazy">
-
-                                                                                            </div>
-
-                                                                                            <div class="overlay"></div>
-
-                                                                                        </div>
-
-                                                                                        <div class="city-carousel-content">
-                                                                                            <div class="hc-counter"><?=count(select_all('tbl_proj', 'prj_comm_id='.$values['comm_id'].''))?> Properties</div>
-                                                                                            <h3>
-                                                                                                
-                                                                                                    <?= $values['comm_heading'] ?>
-                                                                                                
-                                                                                            </h3>
-
-                                                                                            <p>
-                                                                                                <?= $values['comm_home_card_content'] ?>
-                                                                                            </p>
-
-                                                                                            <!--<a href="<?=BASE_URL ."community/". $values['comm_slug']?>" class="arrow-btn">-->
-                                                                                            <!--    <span class="arrow-wrap">-->
-                                                                                            <!--        <i-->
-                                                                                            <!--            class="fa-solid fa-arrow-right-long"></i>-->
-                                                                                            <!--    </span>-->
-                                                                                            <!--</a>-->
-
-                                                                                        </div>
-
-                                                                                    </div>
-                                                                                    </a>
-                                                                                </div>
-
-                                                                                <?php
-                                                                            }
-                                                                        }
-                                                                        ?>
-                                        <!--city-carousel-item end-->
-                                    </div>
-                                </div>
-                                <div class="sc-controls city-pag-init"></div>
-                            </div>
-                        </div>
-                        <div class="city-carousel_controls">
-                            <div class="csc-button csc-button-prev"><i class="fas fa-caret-left"></i></div>
-                            <div class="csc-button csc-button-next"><i class="fas fa-caret-right"></i></div>
-                        </div>
-                    </div>
-                    </div>
-                </div>
-
-                <!-- featured communities -->
-
-
-                <!-- linking section starts -->
-                <div class="container desk-link">
-                    <div class="row">
-                        <!-- boxed-content -->
-                        <div class="col-12">
-                            <div class="">
-                                <div class="boxed-content-item ">
-                                    <div class="row link-sec-container">
-                                        <div class="col-lg-4 col-sm-6 py-4 link-detail-box ldb-1">
-                                            <!-- listing-item -->
-                                            <div class="listing-item">
-                                                <div class="geodir-category-listing">
-                                                    <div class="geodir-category-img">
-                                                        <a href="<?= BASE_URL ?>offplan-properties" class="geodir-category-img_item">
-                                                            <div class="home-bg" data-bg="">
-                                                                <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/home-sec/offplan-property.jpg', 900) ?>" alt="" width="100%">
-                                                                <div class="home-bg-h">
-                                                                    <h4>OFF-PLAN PROPERTY</h4>
-                                                                    <!--<i class="fa-solid fa-arrow-right-long"></i>-->
-                                                                </div>
-                                                            </div>
-                                                            <div class="overlay"></div>
-                                                        </a>
-                                                    </div>
-                                                    <div class="geodir-category-content">
-                                                        <h3><a href="<?= BASE_URL ?>offplan-properties">Hot Property Launches</a></h3>
-                                                        <p>Discover the newest and most sought-after projects fresh on the Dubai market.</p>
-                                                        <!-- <p><a href="<?= BASE_URL ?>offplan-properties" class="home-s-btn">Explore <i class="fa-solid fa-arrow-right-long"></i></a></p> -->
-                                                    </div>
-                                                    <!-- <div class="geodir-category-footer">
-                                                <a href="<?= BASE_URL ?>offplan-properties" class="commentssubmit ">Learn More</a>
-                                            </div> -->
-                                                </div>
-                                            </div>
-                                            <!-- listing-item end-->
-                                        </div>
-                                        <div class="col-lg-4 col-sm-6 py-4 link-detail-box ldb-2">
-                                            <!-- listing-item -->
-                                            <div class="listing-item">
-                                                <div class="geodir-category-listing">
-                                                    <div class="geodir-category-img">
-                                                        <a href="<?= BASE_URL ?>buy-property" class="geodir-category-img_item">
-                                                            <div class="home-bg" data-bg="">
-                                                                <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/home-sec/buy-property.jpg', 900) ?>" alt="" width="100%">
-                                                                <div class="home-bg-h">
-                                                                    <h4>BUY PROPERTY</h4>
-                                                                    <!--<i class="fa-solid fa-arrow-right-long"></i>-->
-                                                                </div>
-                                                            </div>
-                                                            <div class="overlay"></div>
-                                                        </a>
-                                                    </div>
-                                                    <div class="geodir-category-content">
-                                                        <h3><a href="<?= BASE_URL ?>buy-property">Top Resale Deals</a></h3>
-                                                        <p>Unlock unbeatable value with handpicked pre-owned homes across prime locations.</p>
-                                                        <!-- <p><a href="<?= BASE_URL ?>buy-property" class="home-s-btn">Explore <i class="fa-solid fa-arrow-right-long"></i></a></p> -->
-                                                    </div>
-                                                    <!-- <div class="geodir-category-footer">
-                                                <a href="javascript:void(0)" class="commentssubmit ">Learn More</a>
-                                            </div> -->
-                                                </div>
-                                            </div>
-                                            <!-- listing-item end-->
-                                        </div>
-                                        <div class="col-lg-4 col-sm-6 py-4 link-detail-box ldb-3">
-                                            <!-- listing-item -->
-                                            <div class="listing-item">
-                                                <div class="geodir-category-listing">
-                                                    <div class="geodir-category-img">
-                                                        <a href="<?= BASE_URL ?>rent-property" class="geodir-category-img_item">
-                                                            <div class="home-bg" data-bg="">
-                                                                <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/home-sec/rent-property-1.jpg', 900) ?>" alt="" width="100%">
-                                                                <div class="home-bg-h">
-                                                                    <h4>RENT PROPERTY</h4>
-                                                                    <!--<i class="fa-solid fa-arrow-right-long"></i>-->
-                                                                </div>
-                                                            </div>
-                                                            <div class="overlay"></div>
-                                                        </a>
-                                                    </div>
-                                                    <div class="geodir-category-content">
-                                                        <h3><a href="<?= BASE_URL ?>rent-property">Trending Rental Homes</a></h3>
-                                                        <p>Browse the most in-demand rental listings tailored to your lifestyle and budget.</p>
-                                                        <!-- <p><a href="<?= BASE_URL ?>rent-property" class="home-s-btn">Explore <i class="fa-solid fa-arrow-right-long"></i></a></p> -->
-                                                    </div>
-                                                    <!-- <div class="geodir-category-footer">
-                                                <a href="<?= BASE_URL ?>rent-property" class="commentssubmit ">Learn More</a>
-                                            </div> -->
-                                                </div>
-                                            </div>
-                                            <!-- listing-item end-->
-                                        </div>
-                                        
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- boxed-content end-->
-
-                    </div>
-                    <div class="limit-box"></div>
-                </div>
-                <!-- linking section ends -->
-
-                <!-- linking caraousel -->
-                                    <div class="container mob-link">
-                                        <div class="links-caraousel-box">
-
-                                            <!-- clients-carousel-wrap-->
-                                            <div class="links-carousel-wrap">
-                                                <div class="links-carousel">
-                                                    <div class="swiper-container">
-                                                        <div class="swiper-wrapper">
-                                                            <div class="swiper-slide">
-                                                                <div class="listing-item">
-                                                                    <div class="geodir-category-listing">
-                                                                        <div class="geodir-category-img">
-                                                                            <a href="<?= BASE_URL ?>offplan-properties"
-                                                                                class="geodir-category-img_item">
-                                                                                <div class="home-bg" data-bg="">
-                                                                                    <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/home-sec/offplan-property.jpg', 900) ?>"
-                                                                                        alt="" width="100%">
-                                                                                    <div class="home-bg-h">
-                                                                                        <h4>OFF-PLAN PROPERTY</h4>
-                                                                                        <!--<i class="fa-solid fa-arrow-right-long"></i>-->
-                                                                                    </div>
-                                                                                </div>
-                                                                                <div class="overlay"></div>
-                                                                            </a>
-                                                                        </div>
-                                                                        <div class="geodir-category-content">
-                                                                            <h3><a
-                                                                                    href="<?= BASE_URL ?>offplan-properties">Hot
-                                                                                    Property Launches</a></h3>
-                                                                            <p>Discover the newest and most sought-after
-                                                                                projects fresh on the Dubai market.</p>
-                                                                            <!-- <p><a href="<?= BASE_URL ?>offplan-properties" class="home-s-btn">Explore <i class="fa-solid fa-arrow-right-long"></i></a></p> -->
-                                                                        </div>
-                                                                        <!-- <div class="geodir-category-footer">
-                                                <a href="<?= BASE_URL ?>offplan-properties" class="commentssubmit ">Learn More</a>
-                                            </div> -->
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="swiper-slide">
-                                                                <div class="listing-item">
-                                                                    <div class="geodir-category-listing">
-                                                                        <div class="geodir-category-img">
-                                                                            <a href="<?= BASE_URL ?>buy-property"
-                                                                                class="geodir-category-img_item">
-                                                                                <div class="home-bg" data-bg="">
-                                                                                    <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/home-sec/buy-property.jpg', 900) ?>"
-                                                                                        alt="" width="100%">
-                                                                                    <div class="home-bg-h">
-                                                                                        <h4>BUY PROPERTY</h4>
-                                                                                        <!--<i class="fa-solid fa-arrow-right-long"></i>-->
-                                                                                    </div>
-                                                                                </div>
-                                                                                <div class="overlay"></div>
-                                                                            </a>
-                                                                        </div>
-                                                                        <div class="geodir-category-content">
-                                                                            <h3><a href="<?= BASE_URL ?>buy-property">Top
-                                                                                    Resale Deals</a></h3>
-                                                                            <p>Unlock unbeatable value with handpicked
-                                                                                pre-owned homes across prime locations.
-                                                                            </p>
-                                                                            <!-- <p><a href="<?= BASE_URL ?>buy-property" class="home-s-btn">Explore <i class="fa-solid fa-arrow-right-long"></i></a></p> -->
-                                                                        </div>
-                                                                        <!-- <div class="geodir-category-footer">
-                                                <a href="javascript:void(0)" class="commentssubmit ">Learn More</a>
-                                            </div> -->
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="swiper-slide">
-                                                                <div class="listing-item">
-                                                                    <div class="geodir-category-listing">
-                                                                        <div class="geodir-category-img">
-                                                                            <a href="<?= BASE_URL ?>rent-property"
-                                                                                class="geodir-category-img_item">
-                                                                                <div class="home-bg" data-bg="">
-                                                                                    <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/home-sec/rent-property-1.jpg', 900) ?>"
-                                                                                        alt="" width="100%">
-                                                                                    <div class="home-bg-h">
-                                                                                        <h4>RENT PROPERTY</h4>
-                                                                                        <!--<i class="fa-solid fa-arrow-right-long"></i>-->
-                                                                                    </div>
-                                                                                </div>
-                                                                                <div class="overlay"></div>
-                                                                            </a>
-                                                                        </div>
-                                                                        <div class="geodir-category-content">
-                                                                            <h3><a href="<?= BASE_URL ?>rent-property">Trending
-                                                                                    Rental Homes</a></h3>
-                                                                            <p>Browse the most in-demand rental listings
-                                                                                tailored to your lifestyle and budget.
-                                                                            </p>
-                                                                            <!-- <p><a href="<?= BASE_URL ?>rent-property" class="home-s-btn">Explore <i class="fa-solid fa-arrow-right-long"></i></a></p> -->
-                                                                        </div>
-                                                                        <!-- <div class="geodir-category-footer">
-                                                <a href="<?= BASE_URL ?>rent-property" class="commentssubmit ">Learn More</a>
-                                            </div> -->
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                        </div>
-                                                    </div>
-                                                    <!--<div class="cc-button cc-button-next"><i-->
-                                                    <!--        class="fal fa-angle-right"></i></div>-->
-                                                    <!--<div class="cc-button cc-button-prev"><i-->
-                                                    <!--        class="fal fa-angle-left"></i></div>-->
-                                                </div>
-                                            </div>
-                                            <!-- clients-carousel-wrap end-->
-                                        </div>
-                                    </div>
-                                    <!--linking caraousel end-->
-
-                
-
-                <!-- golden visa section -->
-                <div class="container-full"> 
-                    <div class="golden-visa-dre">
-                        <div class="row gvd-box">
-                            <div class="col-lg-6 gvd-item-1">
-                                <h4>Unlock Your Golden Visa With DRE</h4>
-                                <p>Invest in Dubai real estate and unlock exclusive Golden Visa benefits for a secure future, premium lifestyle, and long-term UAE residency.</p>
-                                <a href="<?= BASE_URL ?>golden-visa#golden-visa-box" class="gvd-btn">Get Golden Visa Consultation</a>
-                            </div>
-                            <div class="col-lg-6 gvd-item-2">
-                                <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/bg/Golden-Visa-14.png', 1920) ?>" alt="" width="100%">
-                            </div>
-                        </div>
-
-                        <!-- <img loading="lazy" decoding="async" src="images/bg/golden-visa-updated.jpg" alt="" width="100%"> -->
-                    </div>
-                </div>
-                 
-                
-                <!-- golden visa section ends-->
-                 
-                
-
-                
-
-                
-
-                <!-- parallex section  -->
-                <!-- <div class="container">
-                    <div class="parallax-section-wrap">
-                        <div class="bg-wrap    fs-wrapper" data-scrollax-parent="true">
-                            <div class="bg" data-bg="" data-scrollax="properties: { translateY: '20%' }"></div>
-                            <div class="overlay"></div>
-                        </div>
-                    </div>
-                </div> -->
-
-                <!-- about section 2-->
-                <div class="container dre-ab">
-                    <div class="boxed-content ">
-                        <div class="about-wrap boxed-content-item">
-                            <div class="row mb-3 justify-content-center align-items-center about-boxn">
-                                
-                                <div class="col-lg-6 about-img1">
-                                    <div class="about-img">
-                                        <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/dre-tree.jpg', 900) ?>" class="respimg" alt="">
-                                        <div class="about-img-hotifer">
-                                            <p>Your Gateway to Premium Dubai Real Estate Opportunities.</p>
-                                            <!-- <h4>DRE Real Estate</h4> -->
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-lg-6 px-0">
-                                    <div class="about-title ab-hero">
-                                        <p>About DRE</p>
-                                        <h2>Elevating Real Estate with Trust and Excellence. </h2>
-                                        <p class="mb-4">Connecting clients to Dubai’s premium properties through trusted real estate expertise, strategic market insight, and personalized property solutions.</p>
-                                        <a href="<?= BASE_URL ?>about-us">About Us</a>
-                                    </div>
-                                    
-                                </div>
-                            </div>
-                            <div class="row about-box-counter">
-                             <?php
-                            $counter=select_query('tbl_abt_counter','is_active=1 order by abt_countr_id desc');
-                            while($row=mysqli_fetch_array($counter))
-                            {
-                            ?>  
-                            <div class="col-lg-3">
-                                <div class="inline-facts">
-                                    <i class="fa-light <?=$row['abt_countr_faicon']?>"></i>
-                                    <div class="milestone-counter">
-                                        <div class="stats animaper">
-                                            <div class="num plus-sign" data-content="0" data-num="<?=$row['abt_countr_counter']?>">0</div>
-                                        </div>
-                                    </div>
-                                    <h6><?=$row['abt_countr_heading']?></h6>
-                                </div>
-                            </div>
-                        <?php }?>
-                           
-                        </div>
-                        </div>
-                    </div>
-                </div>    
-                <!-- about section  2-->
-
-                <!-- about section -->
-                <div class="container dre-fd">
-                    <div class="boxed-content ">
-                        <div class="about-wrap boxed-content-item">
-                            <div class="row justify-content-center align-items-center about-boxn">
-                                <div class="col-lg-6 ab-space">
-                                    <div class="about-title ab-hero">
-                                        <p>Meet the vision behind DRE</p>
-                                        <h2>Built on relationships, driven by results.</h2>
-                                        <p class="mb-4">Founded on trust and expertise, DRE’s founders are committed to helping clients make confident real estate decisions through honest guidance and deep market knowledge.</p>
-
-                                        <a href="<?= BASE_URL ?>dre-brand-video">Watch Our Story</a>
-                                    </div>
-                                    
-                                </div>
-                                <div class="col-lg-6 ab-space">
-                                    <div class="about-img">
-                                        <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/qurat-and-mudi.jpg', 900) ?>" class="respimg" alt="">
-                                        <!-- <div class="about-img-hotifer">
-                                            <p>Your trusted partner for buying, renting, and investing in Dubai real estate.</p>
-                                            <h4>DRE Real Estate</h4>
-                                        </div> -->
-                                    </div>
-                                </div>
-                            </div>
-                            
-                        </div>
-                    </div>
-                </div>    
-                <!-- about section  -->
-
-                <!-- Town Square Branch -->
-                <div class="container dre-fd">
-                    <div class="boxed-content ">
-                        <div class="about-wrap boxed-content-item">
-                            <div class="row justify-content-center align-items-center about-boxn">
-                                <div class="col-lg-6 tsb-item-1">
-                                    <div class="about-img">
-                                        <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/town-square-office.jpg', 900) ?>" class="respimg" alt="">
-                                        <!-- <div class="about-img-hotifer">
-                                            <p>Your trusted partner for buying, renting, and investing in Dubai real estate.</p>
-                                            <h4>DRE Real Estate</h4>
-                                        </div> -->
-                                    </div>
-                                </div>
-                                <div class="col-lg-6 tsb-item-2">
-                                    <div class="about-title ab-hero">
-                                        <p>Town Square Branch</p>
-                                        <h2>Making Property Decisions Easier Across Dubai.</h2>
-                                        <p class="mb-4">With a strong understanding of the Town Square community, our team is here to connect you with opportunities that truly match your needs.</p>
-
-                                        <a href="<?= BASE_URL ?>town-square-team">Connect With Our Team</a>
-                                    </div>
-                                    
-                                </div>
-                                
-                            </div>
-                            
-                        </div>
-                    </div>
-                </div>    
-                <!-- Town Square Branch  -->
-                
-                <!--main-content-->
-                <div class=" ms_vir_height">
-                    <!--container -->
-                    <div class="container">
-                        <div class="dre-newc">
-
-                            <!-- clients-carousel-wrap-->
-                            <div class="clients-carousel-wrap">
-                                <div class="dev-carousel">
-                                    <div class="dev-sec-h">
-                                    <div class="clients-carousel-title">Leading Developer Partners</div>
-                                    <p>Backed by trusted developers shaping Dubai’s most iconic real estate destinations.</p>
-                                    </div>
-                                    <div class="dev-sec-b"><a href="<?= BASE_URL ?>developer">View All <i class="fa-solid fa-arrow-right-long"></i></a></div>
-                                </div>
-                                <div class="clients-carousel">
-                                    <div class="swiper-container">
-                                        <div class="swiper-wrapper">
-
-                                                                        <?php
-                                                                        $query = select_query('tbl_developer', 'dev_showonhomepage=1 AND is_active=1 ORDER BY dev_order_no ASC');
-
-                                                                        while ($row = mysqli_fetch_array($query)) {
-                                                                            ?>
-                                                                            <div class="swiper-slide">
-                                                                                <a href="<?= BASE_URL ?>developer/<?= $row['dev_slug'] ?>"
-                                                                                    class="client-item"><img loading="lazy" decoding="async"
-                                                                                        src="<?= BASE_URL_IMG ?>developer/homepage-image/<?= $row['dev_homp_img'] ?>"
-                                                                                        alt="<?= $row['dev_homp_img_alt'] ?>"></a>
-                                                                            </div>
-                                                                        <?php } ?>
-
-                                                                    </div>
-                                    </div>
-                                    <div class="cc-button cc-button-next"><i class="fal fa-angle-right"></i></div>
-                                    <div class="cc-button cc-button-prev"><i class="fal fa-angle-left"></i></div>
-                                </div>
-                            </div>
-                            <!-- clients-carousel-wrap end-->
-                        </div>
-                    </div>
-                    <!--container end-->
-                </div>
-                <!--main-content end-->
-
-                <!-- award section -->
-                <div class="container-full">
-                    <div class="dre-new-awrd">
-                        
-                         <div><img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/award-image.png', 1400) ?>" alt="" width="100%"></div>
-                    </div>
-                </div>
-                <!-- award section -->
-
-                
-                <!-- DRE Developer Partnership Section -->
-
-                <section class="dre-partner-sec">
-                    <div class="container">
-
-                        <!-- Heading -->
-                        <div class="dre-partner-head text-center">
-                            <p><img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/home-partner/DRE-X-BLACK-GOLD-cc.png', 900) ?>" alt="" width="150px" style="display: block; margin: auto; padding-bottom:15px;"></p>
-                            <p class="dre-partner-subtitle">
-                                STRONG PARTNERSHIPS. ICONIC DEVELOPMENTS.
-                            </p>
-
-                            <h2>
-                                <span>DRE Exclusive Sales Partners</span>
-                            </h2>
-                        </div>
-
-                        <!-- Cards -->
-                        <div class="row g-4">
-
-                            <!-- EMAAR -->
-                            <div class="col-lg-6">
-                                <div class="dre-dev-card">
-
-                                    <!-- Image -->
-                                    <div class="dre-dev-img">
-                                        <a href="https://drehomes.com/company-news/sharafi-development-unveils-marea-residences-with-dre-x-as-exclusive-sales-partner"><img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/home-partner/Sharafi-deal1.jpeg', 900) ?>" alt=""></a>
-                                    </div>
-
-                                    <!-- Content -->
-                                    <div class="dre-dev-content">
-
-                                        <!-- Logo -->
-                                        <div class="dre-dev-logo">
-                                            <a href="https://drehomes.com/developer/sharafi-development"><img loading="lazy" decoding="async" src="images/home-partner/sharafi-logo1.png" alt=""></a>
-                                        </div>
-
-                                        <!-- Text -->
-                                        <div class="dre-dev-text">
-                                            <a href="https://drehomes.com/company-news/sharafi-development-unveils-marea-residences-with-dre-x-as-exclusive-sales-partner"><h3>
-                                                 Shaping Coastal Living with
-                                                Sharafi Developments
-                                            </h3></a>
-                                            <!-- <a href="https://drehomes.com/company-news/sharafi-development-unveils-marea-residences-with-dre-x-as-exclusive-sales-partner" class="dre-dev-btn">
-                                                Learn More
-                                            </a> -->
-
-                                        </div>
-
-                                    </div>
-
-                                </div>
-                            </div>
-
-                            <!-- NAKHEEL -->
-                            <div class="col-lg-6">
-                                <div class="dre-dev-card">
-
-                                    <!-- Image -->
-                                    <div class="dre-dev-img">
-                                        <a href="https://drehomes.com/company-news/dubai-tonino-lamborghini-residences-unveils-final-phase"><img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/home-partner/gulf-deal1.jpeg', 900) ?>" alt=""></a>
-                                    </div>
-
-                                    <!-- Content -->
-                                    <div class="dre-dev-content">
-
-                                        <!-- Logo -->
-                                        <div class="dre-dev-logo">
-                                            <a href="https://drehomes.com/developer/gulf-land-property"><img loading="lazy" decoding="async" src="images/home-partner/gulf-logo1.png" alt=""></a>
-                                        </div>
-
-                                        <!-- Text -->
-                                        <div class="dre-dev-text">
-                                            <a href="https://drehomes.com/company-news/dubai-tonino-lamborghini-residences-unveils-final-phase"><h3>
-                                               Elevating Luxury Living
-                                                with Gulf Land Property Developers
-                                            </h3></a>
-                                            <!-- <a href="https://drehomes.com/company-news/dubai-tonino-lamborghini-residences-unveils-final-phase" class="dre-dev-btn">
-                                                Learn More
-                                            </a> -->
-                                        </div>
-
-                                    </div>
-
-                                </div>
-                            </div>
-
-                        </div>
-
-                    </div>
-                </section>
-                <!-- end -->
-                
-                <div class="container-full">
-                    <div class="pm-h-parallax">
-                        <div class="pm-h-container">
-                            <div class="pm-hc-item">
-                                <div class="pm-h-cont">
-                                    <h4>Smart Property Care</h4>
-                                    <p>DRE handles everything from tenant management and maintenance to rent collection and reporting, ensuring your property stays profitable, protected, and stress-free.</p>
-                                </div>
-                                <div class="pm-h-btn">
-                                    <a href="<?= BASE_URL ?>property-management">Discover More Services</a>
-                                    <a href="<?= BASE_URL ?>property-management#contact-frm">Get Free Consultation</a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="pm-icon-bg"><img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/pm-sec-bg.png', 900) ?>" alt="" width="450px"></div>
-                    </div>
-                </div>
-                <!-- parallex section  -->
-
-                <div class="container">
-                    <div class="customer-testi">
-                        
-                        <div class="row d-flex align-items-center justify-content-center">
-                            <div  class="col-lg-4 col-12  ">
-                                <div class="crb-item-1">
-                                    <img loading="lazy" decoding="async" src="<?= dre_img(BASE_URL . 'images/why-c.jpg', 900) ?>" alt="" width="100%">
-                                    <div class="overlay"></div>
-                                    <div class="review-ot">
-                                        <div class="customer-review-box">
-                                            <div><script defer async src='https://cdn.trustindex.io/loader.js?5e862a8729ae637df016bbd0ae2'></script></div>
-                                            <h4>Words That Build Trust</h4>
-                                            <p>We take pride in creating smooth and rewarding real estate experiences across Dubai.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-7 col-12 "><script defer async src='https://cdn.trustindex.io/loader.js?e5ad343727cf637b4d36c8ac53d'></script></div>
-                        </div>
-                    </div>
-                </div>
-
-
-                <div class="container">
-                                                <div class="insta-post-box">
-                                                    <div class="insta-post-h">
-                                                        <a href="https://www.instagram.com/drehomes_realestate/"
-                                                            target="_blank" class="me-2"><i
-                                                                class="fa-brands fa-instagram"></i></a>
-                                                        <a href="https://www.instagram.com/drehomes_realestate/"
-                                                            target="_blank">
-                                                            <h4>Follow us on Instagram</h4>
-                                                        </a>
-
-                                                    </div>
-                                                    <div class="insta-post-f">
-                                                        <div class="insta-layout">
-                                                            <?php
-                                                            // Fetch Instagram content from database
-                                                            $insta_query = "SELECT * FROM tbl_instagram_content WHERE is_active = 1 ORDER BY display_order ASC";
-                                                            $insta_result = mysqli_query($conn, $insta_query);
-
-                                                            // Store all items in array
-                                                            $insta_items = [];
-                                                            while ($item = mysqli_fetch_assoc($insta_result)) {
-                                                                $insta_items[] = $item;
-                                                            }
-
-                                                            // Define the exact structure pattern from your original code
-                                                            // Original had specific items in specific positions
-                                                            $structure = [
-                                                                'col1' => [0, 1],     // Column 1: positions 0 and 1
-                                                                'col2' => [2, 3],     // Column 2: positions 2 and 3  
-                                                                'col3' => [4, 5],     // Column 3: positions 4 and 5
-                                                                'col4' => [6, 7],     // Column 4: positions 6 and 7
-                                                                'col5' => [8, 9]      // Column 5: positions 8 and 9
-                                                            ];
-                                                            ?>
-
-                                                            <!-- COLUMN 1 -->
-                                                            <div class="insta-column">
-                                                                <?php if (isset($insta_items[0])): ?>
-                                                                    <?php $item = $insta_items[0]; ?>
-                                                                    <a href="<?= !empty($item['instagram_url']) ? htmlspecialchars($item['instagram_url']) : '#' ?>"
-                                                                        target="_blank"
-                                                                        class="insta-item insta-square-card">
-                                                                        <img decoding="async" src="<?= dre_img(BASE_URL_IMG . $item['media_url'], 600) ?>"
-                                                                            alt="" loading="lazy">
-                                                                            <i
-                                                                class="fa-brands fa-instagram"></i>
-                                                                    </a>
-                                                                <?php endif; ?>
-
-                                                                <?php if (isset($insta_items[1])): ?>
-                                                                    <?php $item = $insta_items[1]; ?>
-                                                                    <a href="<?= !empty($item['instagram_url']) ? htmlspecialchars($item['instagram_url']) : '#' ?>"
-                                                                        target="_blank" class="insta-item insta-reel-card">
-                                                                        <img decoding="async" src="<?= dre_img(BASE_URL_IMG . $item['media_url'], 600) ?>"
-                                                                            alt="" loading="lazy">
-                                                                            <i
-                                                                class="fa-brands fa-instagram"></i>
-                                                                    </a>
-                                                                <?php endif; ?>
-                                                            </div>
-
-                                                            <!-- COLUMN 2 -->
-                                                            <div class="insta-column">
-                                                                <?php if (isset($insta_items[2])): ?>
-                                                                    <?php $item = $insta_items[2]; ?>
-                                                                    <a href="<?= !empty($item['instagram_url']) ? htmlspecialchars($item['instagram_url']) : '#' ?>"
-                                                                        target="_blank" class="insta-item insta-reel-card">
-                                                                        <img decoding="async" src="<?= dre_img(BASE_URL_IMG . $item['media_url'], 600) ?>"
-                                                                            alt="" loading="lazy">
-                                                                            <i
-                                                                class="fa-brands fa-instagram"></i>
-                                                                    </a>
-                                                                <?php endif; ?>
-
-                                                                <?php if (isset($insta_items[3])): ?>
-                                                                    <?php $item = $insta_items[3]; ?>
-                                                                    <a href="<?= !empty($item['instagram_url']) ? htmlspecialchars($item['instagram_url']) : '#' ?>"
-                                                                        target="_blank"
-                                                                        class="insta-item insta-square-card">
-                                                                        <img decoding="async" src="<?= dre_img(BASE_URL_IMG . $item['media_url'], 600) ?>"
-                                                                            alt="" loading="lazy">
-                                                                            <i
-                                                                class="fa-brands fa-instagram"></i>
-                                                                    </a>
-                                                                <?php endif; ?>
-                                                            </div>
-
-                                                            <!-- COLUMN 3 -->
-                                                            <div class="insta-column">
-                                                                <?php if (isset($insta_items[4])): ?>
-                                                                    <?php $item = $insta_items[4]; ?>
-                                                                    <a href="<?= !empty($item['instagram_url']) ? htmlspecialchars($item['instagram_url']) : '#' ?>"
-                                                                        target="_blank"
-                                                                        class="insta-item insta-square-card">
-                                                                        <img decoding="async" src="<?= dre_img(BASE_URL_IMG . $item['media_url'], 600) ?>"
-                                                                            alt="" loading="lazy">
-                                                                            <i
-                                                                class="fa-brands fa-instagram"></i>
-                                                                    </a>
-                                                                <?php endif; ?>
-
-                                                                <?php if (isset($insta_items[5])): ?>
-                                                                    <?php $item = $insta_items[5]; ?>
-                                                                    <a href="<?= !empty($item['instagram_url']) ? htmlspecialchars($item['instagram_url']) : '#' ?>"
-                                                                        target="_blank" class="insta-item insta-reel-card">
-                                                                        <img decoding="async" src="<?= dre_img(BASE_URL_IMG . $item['media_url'], 600) ?>"
-                                                                            alt="" loading="lazy">
-                                                                            <i
-                                                                class="fa-brands fa-instagram"></i>
-                                                                    </a>
-                                                                <?php endif; ?>
-                                                            </div>
-
-                                                            <!-- COLUMN 4 -->
-                                                            <div class="insta-column">
-                                                                <?php if (isset($insta_items[6])): ?>
-                                                                    <?php $item = $insta_items[6]; ?>
-                                                                    <a href="<?= !empty($item['instagram_url']) ? htmlspecialchars($item['instagram_url']) : '#' ?>"
-                                                                        target="_blank" class="insta-item insta-reel-card">
-                                                                        <img decoding="async" src="<?= dre_img(BASE_URL_IMG . $item['media_url'], 600) ?>"
-                                                                            alt="" loading="lazy">
-                                                                            <i
-                                                                class="fa-brands fa-instagram"></i>
-                                                                    </a>
-                                                                <?php endif; ?>
-
-                                                                <?php if (isset($insta_items[7])): ?>
-                                                                    <?php $item = $insta_items[7]; ?>
-                                                                    <a href="<?= !empty($item['instagram_url']) ? htmlspecialchars($item['instagram_url']) : '#' ?>"
-                                                                        target="_blank"
-                                                                        class="insta-item insta-square-card">
-                                                                        <img decoding="async" src="<?= dre_img(BASE_URL_IMG . $item['media_url'], 600) ?>"
-                                                                            alt="" loading="lazy">
-                                                                            <i
-                                                                class="fa-brands fa-instagram"></i>
-                                                                    </a>
-                                                                <?php endif; ?>
-                                                            </div>
-
-                                                            <!-- COLUMN 5 -->
-                                                            <div class="insta-column">
-                                                                
-
-                                                                <?php if (isset($insta_items[9])): ?>
-                                                                    <?php $item = $insta_items[9]; ?>
-                                                                    <a href="<?= !empty($item['instagram_url']) ? htmlspecialchars($item['instagram_url']) : '#' ?>"
-                                                                        target="_blank"
-                                                                        class="insta-item insta-square-card">
-                                                                        <img decoding="async" src="<?= dre_img(BASE_URL_IMG . $item['media_url'], 600) ?>"
-                                                                            alt="" loading="lazy">
-                                                                            <i
-                                                                class="fa-brands fa-instagram"></i>
-                                                                    </a>
-                                                                <?php endif; ?>
-                                                                <?php if (isset($insta_items[8])): ?>
-                                                                    <?php $item = $insta_items[8]; ?>
-                                                                    <a href="<?= !empty($item['instagram_url']) ? htmlspecialchars($item['instagram_url']) : '#' ?>"
-                                                                        target="_blank" class="insta-item insta-reel-card">
-                                                                        <img decoding="async" src="<?= dre_img(BASE_URL_IMG . $item['media_url'], 600) ?>"
-                                                                            alt="" loading="lazy">
-                                                                            <i
-                                                                class="fa-brands fa-instagram"></i>
-                                                                    </a>
-                                                                <?php endif; ?>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                
+    <header class="hero" id="hero" data-bg="video">
+      <div class="hero-bg" aria-hidden="true">
+        <img class="hm" src="https://drehomes.com/images/home-sec/offplan-property.jpg" alt="" />
+        <!-- HERO VIDEO: change the src below to use a different video (MP4, ideally < 8 MB, 1920px wide) -->
+<?php if (!empty($hero['desktop']) && $hero['desktop']['media_type'] == 'video') { ?>
+        <!-- HERO VIDEO: managed from the admin (Hero Section) -->
+        <video
+          class="hm"
+          id="heroVideo"
+          muted=""
+          loop=""
+          playsinline=""
+          webkit-playsinline=""
+          preload="metadata"
+          poster="https://drehomes.com/images/home-sec/offplan-property.jpg"
+        >
+          <source src="<?= BASE_URL_IMG . e($hero['desktop']['media_path']) ?>" type="video/mp4" />
+        </video>
+<?php } ?>
+      </div>
+      <button class="vid-ctl" id="vidCtl" aria-label="Pause background video"></button>
+      <div class="wrap hero-grid">
+        <div>
+          <span class="eyebrow">Dubai · Abu Dhabi · Sharjah</span>
+          <h1 class="serif">Find your <em class="gold-text">DREam</em><br />address in Dubai.</h1>
+          <p class="sub">
+            Curated off-plan launches, signature resales and premium residences — guided by RERA-certified advisors.
+          </p>
+          <div class="search glass">
+            <div class="tabs"><button class="on">Off Plan</button><button>Buy</button><button>Rent</button></div>
+            <div class="fields">
+              <div class="field">
+                <label>Location</label
+                ><input
+                  id="heroLoc"
+                  placeholder="Palm Jumeirah, Dubai Hills…"
+                  aria-label="Location"
+                  data-suggest="heroLocList"
+                  data-pop-title="Popular areas"
+                  data-min-w="360"
+                  data-per="8"
+                  data-max="8"
+                /><datalist id="heroLocList">
+                  <option value="Palm Jumeirah">Waterfront icon</option>
+                  <option value="Downtown Dubai">Burj Khalifa &amp; Dubai Mall</option>
+                  <option value="Dubai Hills Estate">Golf-front green community</option>
+                  <option value="Business Bay">Canal-side skyline living</option>
+                  <option value="Emaar Beachfront">Sea views &amp; private beach</option>
+                  <option value="Jumeirah Village Circle">Family-friendly &amp; great value</option>
+                  <option value="Dubai Creek Harbour">Creek-side towers</option>
+                  <option value="Town Square">Nshama family community</option>
+                  <option value="Damac Hills 2">Resort-style living</option>
+                  <option value="Damac Lagoons">Lagoon villas</option>
+                  <option value="Dubai Islands">New waterfront destination</option>
+                  <option value="Dubai Marina">Marina &amp; JBR living</option>
+                  <option value="Arabian Ranches">Villa community</option>
+                  <option value="Emaar South">Golf community near Expo</option>
+                  <option value="The Valley">Townhouse community</option>
+                  <option value="Dubai Science Park">Affordable apartments</option>
+                  <option value="Saadiyat Island">Abu Dhabi culture &amp; beaches</option>
+                  <option value="Yas Island">Abu Dhabi leisure hub</option>
+                </datalist>
+              </div>
+              <div class="field">
+                <label>Residence</label
+                ><select>
+                  <option>Any type</option>
+                  <option>Apartment</option>
+                  <option>Villa</option>
+                  <option>Penthouse</option>
+                  <option>Mansion</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Budget</label
+                ><select>
+                  <option>Any budget</option>
+                  <option>AED 1M – 3M</option>
+                  <option>AED 3M – 10M</option>
+                  <option>AED 10M – 30M</option>
+                  <option>AED 30M+</option>
+                </select>
+              </div>
+              <button class="go">Search <span>→</span></button>
             </div>
-            <!--content  end-->
-            <!-- <div class="whatsapp-icon-fixed">
-            <a href="https://wa.me/+971527543243" target="_blank">
-            <img loading="lazy" decoding="async" src="images/wa-chat-logo.png" alt="Whatsapp Logo" width="80px">
+          </div>
+          <div class="hero-stats glass">
+            <div><strong class="gold-text">2,400+</strong>Live listings</div>
+            <div><strong class="gold-text">650+</strong>Off-plan projects</div>
+            <div><strong class="gold-text">4.9★</strong>Google rating</div>
+          </div>
+        </div>
+        <div style="position: relative">
+<?php if ($hero_project) { ?>
+          <div class="feature glass acc-edge">
+            <div class="ph" style="background-image: url(<?= e($hero_project['card_img']) ?>)"><span class="badge">Featured · Off plan</span></div>
+            <div class="info">
+              <div>
+                <h3 class="serif"><?= e($hero_project['card_name']) ?></h3>
+                <small><?= e($hero_project['card_loc']) ?></small>
+              </div>
+              <div class="price"><span>From</span><b class="gold-text"><?= e($hero_project['card_price']) ?></b></div>
+            </div>
+          </div>
+          <div class="mini-stat glass"><strong class="gold-text"><?= e($hero_project['card_handover']) ?></strong>Handover</div>
+<?php } ?>
+        </div>
+      </div>
+    </header>
+
+    <section id="props">
+      <div class="wrap">
+        <div class="head-row reveal">
+          <div>
+            <span class="eyebrow">The Collection</span>
+            <h2 class="serif">Hot property <em class="gold-text">launches</em></h2>
+            <p class="lead">The newest and most sought-after projects, fresh on the UAE market.</p>
+          </div>
+          <div class="chips glass">
+            <button class="chip on">All</button><button class="chip">Dubai</button
+            ><button class="chip">Abu Dhabi</button><button class="chip">Sharjah</button>
+          </div>
+        </div>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3" id="cards">
+<?php foreach ($home_projects as $p) { ?>
+          <div class="col" data-c="<?= e($p['card_city']) ?>">
+            <article class="pcard">
+              <div class="bg" style="background-image: url(<?= e($p['card_img']) ?>)"></div>
+              <span class="badge">Off plan</span><span class="fav">♡</span>
+              <div class="pinfo glass on-img">
+                <h3><?= e($p['card_name']) ?></h3>
+                <p class="loc"><?= e($p['card_loc']) ?></p>
+                <div class="prow">
+                  <div>Starting from<strong><?= e($p['card_price']) ?></strong></div>
+                  <div style="text-align: right">Handover<strong><?= e($p['card_handover']) ?></strong></div>
+                </div>
+              </div>
+            </article>
+          </div>
+<?php } ?>
+        </div>
+        <div style="text-align: center; margin-top: 56px">
+          <a class="btn btn-glass" href="<?= page_link('offplan-properties') ?>">View the full collection →</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="areas" style="padding-top: 20px">
+      <div class="wrap">
+        <div class="head-row reveal">
+          <div>
+            <span class="eyebrow">Signature Neighborhoods</span>
+            <h2 class="serif">Addresses that <em class="gold-text">define</em> you</h2>
+          </div>
+          <a class="btn btn-glass" href="<?= page_link('communities') ?>">All communities →</a>
+        </div>
+        <div class="areas reveal">
+<?php foreach ($home_comms as $i => $c) {
+  $comm_img = !empty($c['comm_home_img'])
+    ? BASE_URL_IMG . 'community/home/' . $c['comm_home_img']
+    : BASE_URL_IMG . 'community/thumb/' . $c['comm_thumb_img']; ?>
+          <a class="area<?= $i === 0 ? ' tall' : '' ?>" href="<?= BASE_URL ?>community/<?= e($c['comm_slug']) ?>"
+            ><div class="bg" style="background-image: url(<?= e($comm_img) ?>)"></div>
+            <div class="lbl glass on-img">
+              <div>
+                <h3><?= e($c['comm_heading']) ?></h3>
+                <p><?= (int) $c['proj_count'] ?> residences</p>
+              </div>
+              <span class="arrow">→</span>
+            </div></a
+          >
+<?php } ?>
+        </div>
+      </div>
+    </section>
+
+    <section id="paths" style="padding-top: 20px">
+      <div class="wrap">
+        <div class="head-row reveal">
+          <div>
+            <span class="eyebrow">Your Journey</span>
+            <h2 class="serif">Three ways <em class="gold-text">in</em></h2>
+          </div>
+        </div>
+        <div class="paths reveal">
+          <div class="path glass">
+            <span class="num gold-text">i.</span>
+            <h3>Off-plan launches</h3>
+            <p>Priority access to new projects, with flexible developer payment plans.</p>
+            <a href="<?= page_link('offplan-properties') ?>">Explore launches →</a>
+          </div>
+          <div class="path glass">
+            <span class="num gold-text">ii.</span>
+            <h3>Signature resales</h3>
+            <p>Handpicked ready homes with verified pricing and full DLD transfer support.</p>
+            <a href="<?= page_link('buy-property') ?>">View resales →</a>
+          </div>
+          <div class="path glass">
+            <span class="num gold-text">iii.</span>
+            <h3>Premium rentals</h3>
+            <p>In-demand residences across prime communities, matched to your lifestyle.</p>
+            <a href="#">Find a rental →</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="visa" style="padding-top: 20px">
+      <div class="wrap">
+        <div class="visa-box glass acc-edge reveal">
+          <div>
+            <span class="eyebrow">Golden Visa</span>
+            <h2 class="serif">Own a home.<br />Earn a <em class="gold-text">decade</em> in the UAE.</h2>
+            <p class="lead">
+              Property investments of AED 2M and above can qualify you and your family for 10-year residency. We manage
+              it end to end.
+            </p>
+            <ul class="checks">
+              <li>10-year renewable residency for your family</li>
+              <li>Off-plan &amp; mortgaged properties may qualify</li>
+              <li>No local sponsor required</li>
+            </ul>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap">
+              <a class="btn btn-gold" href="#contact">Free Golden Visa consultation →</a
+              ><a class="btn btn-glass" href="<?= page_link('golden-visa') ?>">Learn more</a>
+            </div>
+          </div>
+          <div class="calc glass">
+            <h4>Eligibility check</h4>
+            <small>Slide to your planned investment</small>
+            <div class="val gold-text" id="bval">AED 2,500,000</div>
+            <input type="range" id="budget" min="500000" max="10000000" step="50000" value="2500000" />
+            <div class="scale"><span>AED 0.5M</span><span>AED 10M+</span></div>
+            <div class="result" id="bres"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="about">
+      <div class="wrap about">
+        <div class="about-img reveal">
+          <a class="play glass on-img" href="<?= page_link('about') ?>"><i>→</i>More about DRE</a>
+        </div>
+        <div class="reveal">
+          <span class="eyebrow">About DRE</span>
+          <h2 class="serif">Built on trust.<br />Defined by <em class="gold-text">excellence</em>.</h2>
+          <p class="lead">
+            From our headquarters in Dubai Hills Estate and our Town Square branch, we connect buyers, investors and
+            tenants with the UAE's finest properties.
+          </p>
+          <div class="stats">
+<?php foreach ($home_counters as $row) { ?>
+            <div class="stat glass">
+              <strong class="gold-text" data-n="<?= (int) $row['abt_countr_counter'] ?>">0</strong><span><?= e($row['abt_countr_heading']) ?></span>
+            </div>
+<?php } ?>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="vision" style="padding-top: 20px">
+      <div class="wrap duo">
+        <article class="dcard reveal">
+          <div class="bg" style="background-image: url(https://drehomes.com/images/qurat-and-mudi.jpg)"></div>
+          <div class="dc-in glass on-img">
+            <span class="eyebrow">Meet the vision behind DRE</span>
+            <h3>Built on relationships, <em class="gold-text">driven by results.</em></h3>
+            <p>
+              Founded on trust and expertise, DRE’s founders are committed to helping clients make confident real estate
+              decisions through honest guidance and deep market knowledge.
+            </p>
+            <a class="btn btn-gold" href="<?= page_link('brand-video') ?>"><i>▶</i>&nbsp; Watch our story</a>
+          </div>
+        </article>
+        <article class="dcard reveal">
+          <div class="bg" style="background-image: url(https://drehomes.com/images/town-square-office.jpg)"></div>
+          <div class="dc-in glass on-img">
+            <span class="eyebrow">Town Square Branch</span>
+            <h3>Making property decisions <em class="gold-text">easier across Dubai.</em></h3>
+            <p>
+              With a strong understanding of the Town Square community, our team is here to connect you with
+              opportunities that truly match your needs.
+            </p>
+            <a class="btn btn-gold" href="<?= page_link('town-square-team') ?>">Connect with our team →</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section style="padding-top: 20px">
+      <div class="wrap">
+        <div class="head-row reveal">
+          <div>
+            <span class="eyebrow">Beyond the Sale</span>
+            <h2 class="serif">A complete <em class="gold-text">concierge</em></h2>
+          </div>
+          <a class="btn btn-glass" href="#">All services →</a>
+        </div>
+        <div class="svc-grid reveal">
+          <div class="svc glass">
+            <div class="ic">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+                <path d="M3 11l9-7 9 7v9H3z"></path>
+                <path d="M9 20v-6h6v6"></path>
+              </svg>
+            </div>
+            <h3>Property management</h3>
+            <p>Tenants, maintenance, rent collection and reporting — handled.</p>
+          </div>
+          <div class="svc glass">
+            <div class="ic">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+                <path d="M3 17l6-6 4 4 8-8"></path>
+                <path d="M15 7h6v6"></path>
+              </svg>
+            </div>
+            <h3>Investment advisory</h3>
+            <p>Yield analysis and market insight before you commit.</p>
+          </div>
+          <div class="svc glass">
+            <div class="ic">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+                <path d="M3 10l9-6 9 6"></path>
+                <path d="M5 10v8M10 10v8M14 10v8M19 10v8M3 20h18"></path>
+              </svg>
+            </div>
+            <h3>Mortgage support</h3>
+            <p>Pre-approvals and preferred rates from leading UAE banks.</p>
+          </div>
+          <div class="svc glass">
+            <div class="ic">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+                <rect x="5" y="3" width="14" height="18" rx="2"></rect>
+                <circle cx="12" cy="10" r="3"></circle>
+                <path d="M8.5 17h7"></path>
+              </svg>
+            </div>
+            <h3>Golden Visa</h3>
+            <p>Document preparation and submission, start to finish.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="padding-top: 20px">
+      <div class="wrap">
+        <div class="reviews reveal">
+          <div class="rv-intro glass acc-edge">
+            <span class="eyebrow">Words That Build Trust</span>
+            <h2 class="serif">Our clients, <em class="gold-text">in their words</em></h2>
+            <p class="lead">We take pride in creating smooth and rewarding real estate experiences across Dubai.</p>
+            <!-- Trustindex rating badge (same as live site) -->
+            <div class="rv-badge">
+              <script defer="" async="" src="https://cdn.trustindex.io/loader.js?5e862a8729ae637df016bbd0ae2"></script>
+            </div>
+          </div>
+          <!-- Trustindex Google reviews widget (same as live site) -->
+          <div class="rv-widget glass">
+            <script defer="" async="" src="https://cdn.trustindex.io/loader.js?e5ad343727cf637b4d36c8ac53d"></script>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="devs" id="developers">
+      <div class="wrap">
+        <div class="head-row reveal" style="margin-bottom: 40px">
+          <div>
+            <span class="eyebrow">Leading Developer Partners</span>
+            <h2 class="serif">Backed by Dubai's most <em class="gold-text">iconic</em> developers</h2>
+          </div>
+          <a class="btn btn-glass" href="<?= page_link('developers') ?>">View all developers →</a>
+        </div>
+      </div>
+      <div class="dev-track reveal">
+        <div class="dev-row">
+<?php
+          // The row is printed twice so the marquee loops seamlessly; the copy is hidden from screen readers
+          foreach ([false, true] as $dup) {
+            foreach ($home_devs as $row) {
+              $dev_name = $row['dev_homp_img_alt'] ?: $row['dev_heading']; ?>
+          <a
+            class="dev glass"
+            href="<?= BASE_URL ?>developer/<?= e($row['dev_slug']) ?>"
+            <?= $dup ? 'aria-hidden="true" tabindex="-1"' : '' ?>
+            title="<?= e($dev_name) ?> projects"
+            ><img
+              src="<?= BASE_URL_IMG ?>developer/homepage-image/<?= e($row['dev_homp_img']) ?>"
+              alt="<?= $dup ? '' : e($dev_name) ?>"
+              loading="lazy"
+            /><span>View projects →</span></a
+          >
+<?php }
+          } ?>
+        </div>
+      </div>
+      <div class="wrap">
+        <div class="excl reveal">
+          <a
+            class="ex glass"
+            href="https://drehomes.com/company-news/sharafi-development-unveils-marea-residences-with-dre-x-as-exclusive-sales-partner"
+          >
+            <div class="phw">
+              <div
+                class="ph"
+                style="background-image: url(https://drehomes.com/images/home-partner/Sharafi-deal1.jpeg)"
+              ></div>
+            </div>
+            <div class="tx">
+              <small>Exclusive Sales Partner</small
+              ><img src="https://drehomes.com/images/home-partner/sharafi-logo1.png" alt="Sharafi Developments" />
+              <h3>Shaping coastal living with Sharafi Developments</h3>
+              <em>Read the story →</em>
+            </div>
+          </a>
+          <a
+            class="ex glass"
+            href="https://drehomes.com/company-news/dubai-tonino-lamborghini-residences-unveils-final-phase"
+          >
+            <div class="phw">
+              <div
+                class="ph"
+                style="background-image: url(https://drehomes.com/images/home-partner/gulf-deal1.jpeg)"
+              ></div>
+            </div>
+            <div class="tx">
+              <small>Exclusive Sales Partner</small
+              ><img src="https://drehomes.com/images/home-partner/gulf-logo1.png" alt="Gulf Land Property Developers" />
+              <h3>Elevating luxury living with Gulf Land Property Developers</h3>
+              <em>Read the story →</em>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="instagram" style="padding-top: 20px">
+      <div class="wrap">
+        <div class="head-row reveal">
+          <div>
+            <span class="eyebrow">Follow Along</span>
+            <h2 class="serif">Life at <em class="gold-text">DRE</em>, on Instagram</h2>
+            <a class="ig-handle" href="https://www.instagram.com/drehomes_realestate/" target="_blank" rel="noopener">
+              <span class="ig-av"
+                ><span><span class="logo-mark"></span></span
+              ></span>
+              <span
+                ><b>@drehomes_realestate</b><small>New launches, market updates &amp; behind the scenes</small></span
+              >
             </a>
-        </div> -->
-        
-        <?php include 'common/footer.php'; ?>
+          </div>
+          <a class="btn btn-gold" href="https://www.instagram.com/drehomes_realestate/" target="_blank" rel="noopener">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="3" y="3" width="18" height="18" rx="5"></rect>
+              <circle cx="12" cy="12" r="4"></circle>
+              <circle cx="17.5" cy="6.5" r="1" fill="currentColor"></circle>
+            </svg>
+            Follow us
+          </a>
+        </div>
+        <div class="ig-grid reveal" id="igGrid">
+<?php
+          // 5 columns of 2; tall (reel) and short (post) tiles alternate from column to column
+          $ig_svg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.5" cy="6.5" r="1" fill="currentColor"></circle></svg>';
+          foreach (array_chunk(array_slice($insta_items, 0, 10), 2) as $col => $pair) { ?>
+          <div class="ig-col">
+<?php foreach ($pair as $k => $item) {
+              $tall = ($col + $k) % 2 === 0;
+              $img = !empty($item['thumbnail_url']) ? $item['thumbnail_url'] : $item['media_url'];
+              $img = preg_match('#^https?://#', $img) ? $img : BASE_URL_IMG . $img; ?>
+            <a
+              class="ig <?= $tall ? 'reel' : 'post' ?>"
+              href="<?= e($item['instagram_url'] ?: 'https://www.instagram.com/drehomes_realestate/') ?>"
+              target="_blank"
+              rel="noopener"
+              aria-label="<?= $tall ? 'Watch reel' : 'View post' ?> on Instagram"
+            >
+              <img src="<?= e($img) ?>" alt="<?= e($item['caption']) ?>" loading="lazy" />
+<?php if ($tall) { ?>
+              <span class="type"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg></span>
+              <span class="hov glass on-img">Watch reel<?= $ig_svg ?></span>
+<?php } else { ?>
+              <span class="type"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle></svg></span>
+              <span class="hov glass on-img">View post<?= $ig_svg ?></span>
+<?php } ?>
+            </a>
+<?php } ?>
+          </div>
+<?php } ?>
+        </div>
+        <a
+          class="btn btn-gold ig-more"
+          href="https://www.instagram.com/drehomes_realestate/"
+          target="_blank"
+          rel="noopener"
+          style="display: none; justify-content: center; margin-top: 20px"
+          ><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="3" width="18" height="18" rx="5"></rect>
+            <circle cx="12" cy="12" r="4"></circle>
+            <circle cx="17.5" cy="6.5" r="1" fill="currentColor"></circle></svg
+          >Follow @drehomes_realestate</a
+        >
+      </div>
+    </section>
+
+    <section id="contact" style="padding-top: 20px">
+      <div class="wrap">
+        <div class="cta glass acc-edge reveal">
+          <div>
+            <span class="eyebrow">Private Consultation</span>
+            <h2 class="serif">Your advisor is<br /><em class="gold-text">one call</em> away.</h2>
+            <p class="lead">Toll free 800 37373 · Hotline +971 52 754 3243</p>
+          </div>
+          <form class="form" id="ctaForm" novalidate="">
+            <input class="form-control" name="name" placeholder="Full name" autocomplete="name" required="" />
+            <input
+              class="form-control"
+              id="ctaPhone"
+              name="phone"
+              type="tel"
+              placeholder="Phone / WhatsApp"
+              autocomplete="tel"
+              required=""
+            />
+            <input type="hidden" name="phone_full" id="ctaPhoneFull" />
+            <div class="err" id="ctaPhoneErr" role="alert">Please enter a valid phone number.</div>
+            <input class="form-control" name="message" placeholder="What are you looking for?" />
+            <button class="btn btn-gold" style="justify-content: center; margin-top: 6px">Request a call back</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+<?php include('common/footer.php'); ?>

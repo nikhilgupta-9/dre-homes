@@ -1,0 +1,3136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="From Emaar and Damac to boutique builders — explore the developers shaping the UAE and beyond, and every project DRE can help you buy."
+    />
+    <title>Developers | DRE Homes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,200;0,300;0,400;0,500;0,600;1,200;1,300&amp;display=swap"
+      rel="stylesheet"
+    />
+    <meta name="theme-color" content="#5f574c" />
+    <script>
+      /* apply saved night mode before paint (no flash) */ try {
+        if (localStorage.getItem("dre-mode") === "night") {
+          document.documentElement.dataset.mode = "night";
+          document.querySelector("meta[name=theme-color]").content = "#14110e";
+        }
+      } catch (e) {}
+    </script>
+    <!-- Bootstrap 5.3 — loaded into a cascade layer so the DRE theme below always takes priority -->
+    <style>
+      @layer reset, bootstrap;
+      @import url("https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css") layer(bootstrap);
+    </style>
+    <link rel="stylesheet" href="assets/css/main.css" />
+    <link rel="stylesheet" href="assets/css/suggest.css" />
+    <link rel="stylesheet" href="assets/css/pages/developers.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/21.2.7/css/intlTelInput.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/21.2.7/js/intlTelInput.min.js"></script>
+  </head>
+  <body>
+    <div class="ambient">
+      <div class="orb o1"></div>
+      <div class="orb o2"></div>
+      <div class="orb o3"></div>
+    </div>
+    <div class="grain"></div>
+
+    <nav>
+      <div class="wrap">
+        <div class="nav-in glass">
+          <div class="brand">
+            <a
+              href="our-awards.html"
+              class="gptw"
+              aria-label="Great Place To Work® Certified — Best Workplaces in Real Estate, Middle East 2026. View our awards"
+            >
+              <span class="gptw-rib" aria-hidden="true"></span>
+              <span class="gptw-badge"
+                ><img
+                  src="https://drehomes.com/admin_nsrdwsc/assets/media/header/greate_place_logo_2803_Great-place-to-work-middle-east-website.png"
+                  alt="Great Place To Work — Best Workplaces in Real Estate, Middle East 2026" /><i
+                  class="gptw-shine"
+                  aria-hidden="true"
+                ></i
+              ></span>
+              <span class="gptw-pop glass" aria-hidden="true"
+                ><img
+                  src="https://drehomes.com/admin_nsrdwsc/assets/media/header/greate_place_logo_2803_Great-place-to-work-middle-east-website.png"
+                  alt=""
+                /><span
+                  ><small>Certified</small><b>Great Place To Work®</b
+                  ><span>Best Workplaces™ in Real Estate · Middle East 2026</span><em>View our awards →</em></span
+                ></span
+              > </a
+            ><span class="sep"></span
+            ><a href="index.html" class="logo" aria-label="DRE Homes — home"
+              ><img
+                class="site-logo"
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/header/header_logo_7708_dre-logo-b.png"
+                alt="DRE Real Estate logo"
+                width="250"
+                height="110"
+            /></a>
+          </div>
+          <ul class="menu" role="menubar">
+            <li><a class="mi" href="index.html">Home</a></li>
+            <li class="has-dd dropdown">
+              <button
+                type="button"
+                class="mi dropdown-toggle"
+                data-bs-toggle="dropdown"
+                data-bs-display="static"
+                aria-expanded="false"
+              >
+                Properties<svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M3 4.5l3 3 3-3"></path>
+                </svg>
+              </button>
+              <div class="dd dropdown-menu">
+                <div class="dd-in">
+                  <a class="dropdown-item" href="offplan-properties.html"
+                    ><b>Off Plan Property</b><small>New launches &amp; payment plans</small></a
+                  ><a class="dropdown-item" href="buy-property.html"
+                    ><b>Buy Property</b><small>Ready homes for sale</small></a
+                  ><a class="dropdown-item" href="https://drehomes.com/rent-property"
+                    ><b>Rent Property</b><small>Apartments, villas &amp; more</small></a
+                  ><a class="dropdown-item" href="international-properties.html"
+                    ><b>International Properties</b><small>Beyond the UAE</small></a
+                  ><a class="dropdown-item" href="https://drehomes.com/ready-to-move-in"
+                    ><b>Ready To Move In</b><small>Keys on transfer</small></a
+                  >
+                </div>
+              </div>
+            </li>
+            <li><a class="mi active" href="developers.html">Developers</a></li>
+            <li><a class="mi" href="communities.html">Communities</a></li>
+            <li><a class="mi" href="blogs.html">Blogs</a></li>
+            <li class="has-dd dropdown">
+              <button
+                type="button"
+                class="mi dropdown-toggle"
+                data-bs-toggle="dropdown"
+                data-bs-display="static"
+                aria-expanded="false"
+              >
+                Services<svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M3 4.5l3 3 3-3"></path>
+                </svg>
+              </button>
+              <div class="dd wide dropdown-menu">
+                <div class="dd-in">
+                  <a class="dropdown-item" href="property-management.html"><b>Property Management</b></a
+                  ><a class="dropdown-item" href="https://drehomes.com/services/property-and-investment-consultancy"
+                    ><b>Property &amp; Investment Consultancy</b></a
+                  ><a class="dropdown-item" href="mortgage-advisory.html"><b>Mortgage Advisory</b></a
+                  ><a class="dropdown-item" href="relocation-service.html"><b>Relocation Service</b></a
+                  ><a class="dropdown-item" href="bank-account-opening.html"><b>Bank Account Opening</b></a
+                  ><a class="dropdown-item" href="business-licenses.html"><b>Business Licenses</b></a
+                  ><a class="dropdown-item" href="book-valuation.html"><b>Book Your Valuation</b></a
+                  ><a class="dropdown-item" href="mortgage-calculator.html"><b>Mortgage Calculator</b></a
+                  ><a class="dropdown-item" href="golden-visa.html"><b>Golden Visa</b></a>
+                </div>
+              </div>
+            </li>
+            <li class="has-dd dropdown">
+              <button
+                type="button"
+                class="mi dropdown-toggle"
+                data-bs-toggle="dropdown"
+                data-bs-display="static"
+                aria-expanded="false"
+              >
+                Guide<svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M3 4.5l3 3 3-3"></path>
+                </svg>
+              </button>
+              <div class="dd dropdown-menu">
+                <div class="dd-in">
+                  <a class="dropdown-item" href="buyer-guide.html"><b>Buyer Guide</b></a
+                  ><a class="dropdown-item" href="seller-guide.html"><b>Seller Guide</b></a
+                  ><a class="dropdown-item" href="tenant-guide.html"><b>Tenant Guide</b></a
+                  ><a class="dropdown-item" href="landlord-guide.html"><b>Landlord Guide</b></a>
+                </div>
+              </div>
+            </li>
+            <li class="has-dd dropdown">
+              <button
+                type="button"
+                class="mi dropdown-toggle"
+                data-bs-toggle="dropdown"
+                data-bs-display="static"
+                aria-expanded="false"
+              >
+                About<svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M3 4.5l3 3 3-3"></path>
+                </svg>
+              </button>
+              <div class="dd wide dropdown-menu">
+                <div class="dd-in">
+                  <a class="dropdown-item" href="about.html"><b>About Us</b></a
+                  ><a class="dropdown-item" href="our-media.html"><b>Media</b></a
+                  ><a class="dropdown-item" href="podcast.html"><b>Podcast</b></a
+                  ><a class="dropdown-item" href="company-news.html"><b>Company News</b></a
+                  ><a class="dropdown-item" href="our-team.html"><b>Our Team</b></a
+                  ><a class="dropdown-item" href="clients-testimonials.html"><b>Client Testimonial</b></a
+                  ><a class="dropdown-item" href="our-awards.html"><b>Our Awards</b></a
+                  ><a class="dropdown-item" href="careers.html"><b>Careers</b></a
+                  ><a class="dropdown-item" href="founders-note-clo.html"><b>Message From CLO</b></a
+                  ><a class="dropdown-item" href="founders-note-ceo.html"><b>Message From CEO</b></a>
+                </div>
+              </div>
+            </li>
+          </ul>
+          <div class="nav-r">
+            <select class="cur" aria-label="Currency">
+              <option>AED</option>
+              <option>USD</option>
+              <option>EUR</option>
+              <option>INR</option>
+              <option>GBP</option>
+              <option>AUD</option>
+              <option>CAD</option>
+              <option>CHF</option>
+              <option>CNY</option>
+              <option>JPY</option>
+              <option>NZD</option>
+              <option>ZAR</option>
+              <option>SGD</option>
+              <option>MYR</option>
+              <option>KRW</option>
+              <option>BRL</option>
+              <option>MXN</option>
+              <option>RUB</option>
+              <option>TRY</option>
+              <option>SAR</option>
+              <option>EGP</option>
+              <option>THB</option>
+              <option>IDR</option>
+              <option>PLN</option>
+            </select>
+            <a href="#contact" class="btn btn-gold nav-cta" style="padding: 12px 22px">Private Viewing</a>
+            <button
+              class="burger"
+              id="burger"
+              type="button"
+              data-bs-toggle="offcanvas"
+              data-bs-target="#mmenu"
+              aria-label="Open menu"
+              aria-expanded="false"
+              aria-controls="mmenu"
+            >
+              <span></span><span></span><span></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <div class="mmenu glass offcanvas offcanvas-top" id="mmenu" tabindex="-1" aria-label="Menu">
+      <div class="mm-list accordion" id="mmList">
+        <a class="mm-link" href="index.html">Home</a>
+        <div class="mm-acc">
+          <button
+            type="button"
+            class="mm-sum collapsed"
+            data-bs-toggle="collapse"
+            data-bs-target="#mmProperties"
+            aria-expanded="false"
+            aria-controls="mmProperties"
+          >
+            Properties<svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M3 4.5l3 3 3-3"></path>
+            </svg>
+          </button>
+          <div class="collapse" id="mmProperties" data-bs-parent="#mmList">
+            <div class="mm-sub">
+              <a href="offplan-properties.html"><b>Off Plan Property</b></a
+              ><a href="buy-property.html"><b>Buy Property</b></a
+              ><a href="https://drehomes.com/rent-property"><b>Rent Property</b></a
+              ><a href="international-properties.html"><b>International Properties</b></a
+              ><a href="https://drehomes.com/ready-to-move-in"><b>Ready To Move In</b></a>
+            </div>
+          </div>
+        </div>
+        <a class="mm-link" href="developers.html">Developers</a
+        ><a class="mm-link" href="communities.html">Communities</a><a class="mm-link" href="blogs.html">Blogs</a>
+        <div class="mm-acc">
+          <button
+            type="button"
+            class="mm-sum collapsed"
+            data-bs-toggle="collapse"
+            data-bs-target="#mmServices"
+            aria-expanded="false"
+            aria-controls="mmServices"
+          >
+            Services<svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M3 4.5l3 3 3-3"></path>
+            </svg>
+          </button>
+          <div class="collapse" id="mmServices" data-bs-parent="#mmList">
+            <div class="mm-sub">
+              <a href="property-management.html"><b>Property Management</b></a
+              ><a href="https://drehomes.com/services/property-and-investment-consultancy"
+                ><b>Property &amp; Investment Consultancy</b></a
+              ><a href="mortgage-advisory.html"><b>Mortgage Advisory</b></a
+              ><a href="relocation-service.html"><b>Relocation Service</b></a
+              ><a href="bank-account-opening.html"><b>Bank Account Opening</b></a
+              ><a href="business-licenses.html"><b>Business Licenses</b></a
+              ><a href="book-valuation.html"><b>Book Your Valuation</b></a
+              ><a href="mortgage-calculator.html"><b>Mortgage Calculator</b></a
+              ><a href="golden-visa.html"><b>Golden Visa</b></a>
+            </div>
+          </div>
+        </div>
+        <div class="mm-acc">
+          <button
+            type="button"
+            class="mm-sum collapsed"
+            data-bs-toggle="collapse"
+            data-bs-target="#mmGuide"
+            aria-expanded="false"
+            aria-controls="mmGuide"
+          >
+            Guide<svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M3 4.5l3 3 3-3"></path>
+            </svg>
+          </button>
+          <div class="collapse" id="mmGuide" data-bs-parent="#mmList">
+            <div class="mm-sub">
+              <a href="buyer-guide.html"><b>Buyer Guide</b></a
+              ><a href="seller-guide.html"><b>Seller Guide</b></a
+              ><a href="tenant-guide.html"><b>Tenant Guide</b></a
+              ><a href="landlord-guide.html"><b>Landlord Guide</b></a>
+            </div>
+          </div>
+        </div>
+        <div class="mm-acc">
+          <button
+            type="button"
+            class="mm-sum collapsed"
+            data-bs-toggle="collapse"
+            data-bs-target="#mmAbout"
+            aria-expanded="false"
+            aria-controls="mmAbout"
+          >
+            About<svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M3 4.5l3 3 3-3"></path>
+            </svg>
+          </button>
+          <div class="collapse" id="mmAbout" data-bs-parent="#mmList">
+            <div class="mm-sub">
+              <a href="about.html"><b>About Us</b></a
+              ><a href="our-media.html"><b>Media</b></a
+              ><a href="podcast.html"><b>Podcast</b></a
+              ><a href="company-news.html"><b>Company News</b></a
+              ><a href="our-team.html"><b>Our Team</b></a
+              ><a href="clients-testimonials.html"><b>Client Testimonial</b></a
+              ><a href="our-awards.html"><b>Our Awards</b></a
+              ><a href="careers.html"><b>Careers</b></a
+              ><a href="founders-note-clo.html"><b>Message From CLO</b></a
+              ><a href="founders-note-ceo.html"><b>Message From CEO</b></a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mm-foot">
+        <a class="btn btn-gold" href="#contact" style="justify-content: center">Private Viewing</a>
+        <div class="mm-row">
+          <select class="cur mm-cur" aria-label="Currency">
+            <option>AED</option>
+            <option>USD</option>
+            <option>EUR</option>
+            <option>INR</option>
+            <option>GBP</option>
+            <option>AUD</option>
+            <option>CAD</option>
+            <option>CHF</option>
+            <option>CNY</option>
+            <option>JPY</option>
+            <option>NZD</option>
+            <option>ZAR</option>
+            <option>SGD</option>
+            <option>MYR</option>
+            <option>KRW</option>
+            <option>BRL</option>
+            <option>MXN</option>
+            <option>RUB</option>
+            <option>TRY</option>
+            <option>SAR</option>
+            <option>EGP</option>
+            <option>THB</option>
+            <option>IDR</option>
+            <option>PLN</option></select
+          ><a class="btn btn-glass" href="tel:80037373" style="flex: 1; justify-content: center">Call 800 37373</a>
+        </div>
+      </div>
+    </div>
+    <!-- ===== DEVELOPERS: HERO ===== -->
+    <header class="ph-hero dv-hero">
+      <div
+        class="ph-bg"
+        style="
+          background-image: url(https://drehomes.com/images/home-sec/offplan-property.jpg);
+          background-position: center 30%;
+        "
+      ></div>
+      <div class="wrap">
+        <div class="crumbs" role="navigation" aria-label="Breadcrumb">
+          <a href="index.html">Home</a><span>/</span><span aria-current="page">Developers</span>
+        </div>
+        <span class="eyebrow">Developer Partners</span>
+        <h1 class="serif">
+          <span class="gold-text" id="devTotal">149</span> developers. <em class="gold-text">One trusted partner.</em>
+        </h1>
+        <p class="sub">
+          From Emaar and Damac to boutique builders — explore the developers shaping the UAE and beyond, and every
+          project DRE can help you buy.
+        </p>
+        <form class="op-search glass" id="dvSearch" role="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="M20 20l-3.5-3.5"></path>
+          </svg>
+          <input
+            id="dvQ"
+            type="search"
+            placeholder="Search a developer — e.g. Emaar, Sobha, Binghatti…"
+            aria-label="Search developers"
+          />
+          <button class="btn btn-gold" type="submit">Search</button>
+        </form>
+      </div>
+    </header>
+
+    <!-- ===== EXCLUSIVE + TOP ===== -->
+    <section style="padding: 60px 0 20px">
+      <div class="wrap">
+        <div class="head-row reveal" style="margin-bottom: 26px">
+          <div>
+            <span class="eyebrow">Strong partnerships. Iconic developments.</span>
+            <h2 class="serif">DRE Exclusive <em class="gold-text">Sales Partners</em></h2>
+          </div>
+        </div>
+        <div class="excl reveal">
+          <a class="ex2 glass" href="https://drehomes.com/developer/sharafi-development">
+            <div class="phw">
+              <div
+                class="ph"
+                style="background-image: url(https://drehomes.com/images/home-partner/Sharafi-deal1.jpeg)"
+              ></div>
+            </div>
+            <div class="tx">
+              <small>Exclusive Sales Partner</small
+              ><img src="https://drehomes.com/images/home-partner/sharafi-logo1.png" alt="Sharafi Developments" />
+              <h3>Shaping coastal living with Sharafi Developments</h3>
+              <p>A UAE-based developer built on a legacy of trust and excellence dating back to 1924.</p>
+              <em>View developer →</em>
+            </div>
+          </a>
+          <a class="ex2 glass" href="https://drehomes.com/developer/gulf-land-property">
+            <div class="phw">
+              <div
+                class="ph"
+                style="background-image: url(https://drehomes.com/images/home-partner/gulf-deal1.jpeg)"
+              ></div>
+            </div>
+            <div class="tx">
+              <small>Exclusive Sales Partner</small
+              ><img src="https://drehomes.com/images/home-partner/gulf-logo1.png" alt="Gulf Land Property Developers" />
+              <h3>Elevating luxury living with Gulf Land</h3>
+              <p>A key player in the UAE’s real estate market, behind Tonino Lamborghini Residences Dubai.</p>
+              <em>View developer →</em>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="directory" style="padding-top: 40px">
+      <div class="wrap">
+        <div class="head-row reveal" style="margin-bottom: 22px">
+          <div>
+            <span class="eyebrow">Directory</span>
+            <h2 class="serif">Browse <em class="gold-text">all developers</em></h2>
+          </div>
+          <label class="fsel sort"
+            ><span>Sort</span
+            ><select id="dvSort">
+              <option value="feat">Featured</option>
+              <option value="az">Name: A–Z</option>
+              <option value="za">Name: Z–A</option>
+            </select></label
+          >
+        </div>
+        <p class="dv-count" id="dvCount"></p>
+        <div class="dv-grid" id="dvGrid" aria-live="polite">
+          <a class="dv top" href="developer-emaar.html" data-top="0" data-l="E"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_8220_emaar.png"
+                alt="Emaar Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Emaar Properties</h3>
+              <p>Emaar Properties is one of the world’s most leading property developer in the United Arab Emirates.</p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv top" href="https://drehomes.com/developer/damac-properties" data-top="1" data-l="D"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_8915_Damac_345_261.png"
+                alt="Damac Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Damac Properties</h3>
+              <p>
+                DAMAC Properties is one of the Middle East’s leading luxury real estate developers, renowned for
+                delivering iconic residential, commercial, and leisure destinations.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv top" href="https://drehomes.com/developer/nakheel" data-top="2" data-l="N"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_6805_nakheel345x261.png"
+                alt="Nakheel logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Nakheel</h3>
+              <p>
+                Nakheel is a unique developer in the UAE that promises to provide staying, playing, entertaining,
+                shopping, dining, working, and all at one place.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv top" href="https://drehomes.com/developer/meraas" data-top="3" data-l="M"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_7286_meraas345-261.png"
+                alt="Meraas logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Meraas</h3>
+              <p>
+                Meraas is a privately held holding company with headquarters in Dubai and assets in the United Arab
+                Emirates.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv top" href="https://drehomes.com/developer/sobha-realty" data-top="4" data-l="S"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_8864_sobha-345x261-1.png"
+                alt="Sobha Realty logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Sobha Realty</h3>
+              <p>
+                Sobha Realty is an international luxury developer committed to redefining the art of living through
+                sustainable communities.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv top" href="https://drehomes.com/developer/aldar" data-top="5" data-l="A"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_4662_aldar-l.png"
+                alt="Aldar logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Aldar</h3>
+              <p>
+                Aldar Properties PJSC is a real estate development, management and investment company with headquarters
+                in Abu Dhabi, United Arab Emirates.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv top" href="https://drehomes.com/developer/binghatti-developers" data-top="6" data-l="B"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_5540_Binghatti logo.png"
+                alt="Binghatti Developers logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Binghatti Developers</h3>
+              <p>
+                Binghatti Developers is a premier Dubai-based, family-owned real estate company established in 2008,
+                recognised for delivering architecturally distinctive, contemporary, and branded residential projects at
+                a rapid pace.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv top" href="https://drehomes.com/developer/danube-properties" data-top="7" data-l="D"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_6041_danube-properties-345-261.png"
+                alt="Danube Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Danube Properties</h3>
+              <p>
+                Danube Properties is the real estate development arm of the Danube Group, one of the Middle East’s most
+                trusted and recognised business groups.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="developer-ora-developers.html" data-l="O"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_5331_ora-developments-logo.png"
+                alt="ORA Developers logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>ORA Developers</h3>
+              <p>
+                ORA Developers is a global luxury real estate developer founded by Egyptian businessman Naguib Sawiris,
+                known for creating distinctive destinations that bring together exceptional design, thoughtful planning,
+                and elevated living.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/sol-properties" data-l="S"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_9392_sol-properties-logo.png"
+                alt="SOL Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>SOL Properties</h3>
+              <p>
+                SOL Properties, the real estate arm of the BHATIA GROUP, has been shaping Dubai's property landscape
+                with exceptional developments that reflect luxury, innovation, and quality.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/origami-development" data-l="O"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_2089_origami-developer-logo.png"
+                alt="Origami Development logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Origami Development</h3>
+              <p>
+                Origami Development is a forward-thinking real estate developer dedicated to creating design-led
+                residences that place people, wellbeing, and everyday experiences at the heart of every project.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/tarrad-development" data-l="T"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_8679_tarran-development-c-logo.png"
+                alt="Tarrad Development logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Tarrad Development</h3>
+              <p>
+                Tarrad Development is a forward-thinking real estate developer committed to delivering premium
+                residential and mixed-use developments that combine innovation, quality, and lasting value.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/sharafi-development" data-l="S"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_3753_SH-developer-logo.png"
+                alt="Sharafi Development logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Sharafi Development</h3>
+              <p>
+                Sharafi Development is a UAE-based developer built on a legacy of trust and excellence that dates back
+                to 1924.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/gulf-land-property" data-l="G"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_5308_gulfland-property-logo.png"
+                alt="Gulf Land Property Developers logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Gulf Land Property Developers</h3>
+              <p>
+                Gulf Land Property Developers has established itself as a key player in the UAE’s real estate market.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/amwaj-development" data-l="A"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_1061_amwaj-development-logo.png"
+                alt="Amwaj Development logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Amwaj Development</h3>
+              <p>
+                A premier boutique real estate developer in Dubai, Amwaj Development is committed to delivering
+                innovative and eco-friendly property solutions that enhance modern lifestyles.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/nshama" data-l="N"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_3275_nshama-logo.png"
+                alt="Nshama logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Nshama</h3>
+              <p>Nshama is a privately-held property development company based in Dubai, United Arab Emirates.</p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/beyond" data-l="B"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_634_beyond-logo.png"
+                alt="BEYOND logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>BEYOND</h3>
+              <p>
+                BEYOND is an exclusive real estate brand under OMNIYAT GROUP, dedicated to the luxury market and
+                creating residences that harmonize innovation, nature, and luxury.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/bnw-developments" data-l="B"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_783_bnw-logo.png"
+                alt="BNW Developments logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>BNW Developments</h3>
+              <p>
+                BNW Developments is a top real estate developer based in the UAE, known for its upcoming ultra-luxury
+                projects in Ras Al Khaimah and Dubai.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/asak-development" data-l="A"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_1536_asak-development.png"
+                alt="ASAK Development logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>ASAK Development</h3>
+              <p>
+                ASAK Development is a premium real estate developer delivering high-end residential projects across the
+                UAE and Saudi Arabia.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/modon" data-l="M"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_560_modon-logo.png"
+                alt="MODON logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>MODON</h3>
+              <p>
+                Modon Holding is a leading international holding company headquartered in Abu Dhabi, United Arab
+                Emirates.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/ama-holding" data-l="A"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_4394_Ama-Holding-Developer.png"
+                alt="AMA Holding logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>AMA Holding</h3>
+              <p>
+                AMA Holding is a distinguished real estate and investment development company headquartered in Dubai,
+                recognised for its forward-thinking vision and commitment to excellence.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/emirates-developments" data-l="E"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_4053_Emirates-Developments.png"
+                alt="Emirates Developments logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Emirates Developments</h3>
+              <p>
+                Emirates Developments is a premier Abu Dhabi-based real estate company celebrated for its unwavering
+                commitment to excellence, innovation, and sustainability.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/nuri-living" data-l="N"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_5100_nuri-living.png"
+                alt="Nuri Living logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Nuri Living</h3>
+              <p>
+                Nuri Living is a modern real estate developer focused on redefining luxury through harmony, well-being,
+                and sustainability.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/al-huzaifa-properties" data-l="A"
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_6915_al-huzaifa-properties-logo.png"
+                alt="Al Huzaifa Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Al Huzaifa Properties</h3>
+              <p>
+                Al Huzaifa Properties marks the brand’s evolution from luxury interiors into real estate development.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/alain" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_6150_alain-developer-logo.png"
+                alt="Alain Development logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Alain Development</h3>
+              <p>
+                ALAIN has established itself as a leading asset management and development company headquartered in Abu
+                Dhabi.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/maaia" data-l="M" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_4617_maaia-logo.png"
+                alt="Maaia Developer logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Maaia Developer</h3>
+              <p>
+                MAAIA is a boutique developer with European roots and a growing presence across the UAE, Middle East,
+                and Asia. They have built their reputation on consistency: delivering well-designed, well-built spaces
+                that meet real needs and stand the test of time.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/gulf-house-real-estate" data-l="G" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_2141_dev_img_7196_Gulf House real estate logo.png"
+                alt="Gulf House Real Estate logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Gulf House Real Estate</h3>
+              <p>
+                Gulf House Real Estate is an emerging developer in the UAE, dedicated to delivering high-quality
+                residential and commercial properties that blend modern design with strategic locations.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/amaal-emirates" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_4851_amaal-developer.png"
+                alt="Amaal Emirates logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Amaal Emirates</h3>
+              <p>
+                Amaal Emirates is a visionary real estate developer reshaping Dubai’s skyline with a strong focus on
+                community-driven and elevated
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/richmind" data-l="R" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_2845_richmind-developer-logo.png"
+                alt="Richmind logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Richmind</h3>
+              <p>
+                Richmind is a premium real estate developer creating spaces where design, nature, and human connection
+                come together.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/al-seeb-development" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_9373_Al-Seeb-Real-Estate-Development-logo.png"
+                alt="Al Seeb Real Estate Development logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Al Seeb Real Estate Development</h3>
+              <p>
+                Al Seeb Developers bring luxury living to every doorstep with exceptional service, top-tier real estate
+                expertise, and a commitment
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/arista-properties" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_6461_arista-properties-logo.png"
+                alt="Arista Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Arista Properties</h3>
+              <p>
+                Arista Properties is a leader in real estate and is known for creating exceptional spaces that blend
+                style, quality, and innovation.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/pinnacle-developers" data-l="P" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_728_Pinnacle-developers-logo.png"
+                alt="Pinnacle Developers logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Pinnacle Developers</h3>
+              <p>
+                Pinnacle Developers is a luxury real estate developer committed to crafting exceptional living
+                experiences.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/amaya-properties" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_8696_amaya-properties-logo.png"
+                alt="Amaya Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Amaya Properties</h3>
+              <p>
+                Amaya Properties is dedicated to advancing residential, commercial, and plotted real estate with a
+                strong emphasis on practical design, superior construction quality, and ongoing maintenance support.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/lmduae" data-l="L" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_1141_LMD-Dubai-logo.png"
+                alt="LMD Real Estate logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>LMD Real Estate</h3>
+              <p>
+                LMD, established in 2007, focuses on creating transformative living spaces with projects in Dubai,
+                Spain, and Greece.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/swank-development" data-l="S" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_9044_swank-developments-logo.png"
+                alt="Swank Development logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Swank Development</h3>
+              <p>
+                Swank Development commenced decades ago, resonating through time from the cobblestone streets of Lisbon
+                to the sun-kissed shores of the Algarve.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/soho-developments" data-l="S" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_9661_Soho development.png"
+                alt="Soho Developments logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Soho Developments</h3>
+              <p>
+                Soho Developments has over 11 years of experience in construction and site management. They excel at
+                everything from laying foundations to installing smart systems, always delivering on time and within
+                budget.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/heilbronn-properties" data-l="H" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_7500_heilbronn-properties-logo.png"
+                alt="Heilbronn Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Heilbronn Properties</h3>
+              <p>
+                Heilbronn is a premier construction and property development firm based in Dubai, specializing in the
+                creation of luxury and premium freehold properties throughout the UAE since its inception in 2002.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/riviera-group" data-l="R" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_5808_Rivera-Group.png"
+                alt="Riviera Group logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Riviera Group</h3>
+              <p>
+                Riviera Group is a renowned bespoke property developer with an impressive array of developments designed
+                to reflect people's lifestyles, providing ease, comfort, and a sense of security.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/shamal-holding" data-l="S" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_7513_Shamal-Holding-logo.png"
+                alt="Shamal Holding logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Shamal Holding</h3>
+              <p>
+                Shamal Holding is a diversified investment firm based in Dubai, managing a unique portfolio of
+                investments, assets, and experiences.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/aba-group" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_1_aba-group-b-logo.png"
+                alt="ABA Group logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>ABA Group</h3>
+              <p>
+                ABA Group is a prominent real estate developer in Dubai, UAE, recognized for its commitment to
+                excellence, innovation, and sustainable development.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/townx" data-l="T" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_5000_townx-logo.png"
+                alt="TownX logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>TownX</h3>
+              <p>
+                TownX is a renowned real estate developer based in Dubai, UAE, dedicated to delivering the best
+                experience to its clients.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/mashriq-elite-developments" data-l="M" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_36_Mashriq-Elite-Developments-logo.png"
+                alt="Mashriq Elite Developments logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Mashriq Elite Developments</h3>
+              <p>
+                Al Mashriq Group, a reputable name in Real Estate, Project Development, and Telecommunication, boasts
+                over two decades of expertise.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/prestige-one" data-l="P" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_5822_prestige-one-logo.png"
+                alt="Prestige One logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Prestige One</h3>
+              <p>
+                Prestige One Developments stands as a reputable force in Dubai's vibrant real estate landscape, renowned
+                for crafting residences that epitomize the same opulence and sophistication as exclusive hotels.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/eastandwest-properties" data-l="E" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_5767_east-&amp;-west-properties-logo.png"
+                alt="East &amp; West Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>East &amp; West Properties</h3>
+              <p>
+                East and West Properties (EWP) is a top-tier developer renowned for creating luxurious real estate
+                experiences in the UAE and beyond.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/marquis" data-l="M" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_8322_marquis-dubai-logo.png"
+                alt="Marquis logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Marquis</h3>
+              <p>
+                As the premier real estate developer in Dubai, Marquis stands out for its commitment to creating not
+                just living spaces but a lifestyle experience.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/hre-developments" data-l="H" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_9372_HRE-Development.png"
+                alt="HRE Development logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>HRE Development</h3>
+              <p>
+                HRE, a distinguished development company in the United Arab Emirates, stands at the forefront of the
+                industry with an exemplary portfolio that showcases its commitment to excellence.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/wowresorts" data-l="W" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_9248_wow-resorts-logo.png"
+                alt="WOW Resorts logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>WOW Resorts</h3>
+              <p>
+                WOW Resorts stands as a leading developer committed to curating unique experiences, emphasizing
+                excellent service and premium amenities across its global properties.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/aark-developers" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_7100_aark-developer.png"
+                alt="Aark Developers logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Aark Developers</h3>
+              <p>
+                Aark Developers, a real estate developer based in Dubai, UAE, boasts a rich legacy of over 25 years of
+                shaping iconic residential and hospitality projects.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/ginco-properties" data-l="G" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_477_ginco-properties-logo.png"
+                alt="Ginco Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Ginco Properties</h3>
+              <p>
+                Ginco Properties began its journey in 1975, led by the visionary chairman, Mr. Gheyath Mohammad Gheyath.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/iman-developers" data-l="I" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_8754_iman-developer.png"
+                alt="Iman Developers logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Iman Developers</h3>
+              <p>
+                In 2016, Iman Developers stepped into the UAE real estate landscape, marking the beginning of a
+                sustained journey.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/amis-properties" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_215_amis-properties-logo.png"
+                alt="AMIS Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>AMIS Properties</h3>
+              <p>
+                Amis Properties is a construction-related company operating in Dubai and is dedicated to redefining
+                luxury living.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/london-gate" data-l="L" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_3091_London-Gate.png"
+                alt="London Gate logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>London Gate</h3>
+              <p>
+                London Gate, a tribute to the vibrant city of London, introduces a new paradigm of extraordinary living
+                in Dubai.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/difc" data-l="D" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_7435_Difc.png"
+                alt="DIFC logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>DIFC</h3>
+              <p>
+                The Dubai International Financial Centre (DIFC) is a special area in Dubai created in 2004 to serve as a
+                financial hub for companies in the Middle East, Africa, and South Asia (MEASA) regions.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/rsg-group" data-l="R" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_7872_RSG-GROUP.png"
+                alt="RSG Group logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>RSG Group</h3>
+              <p>
+                RSG Group stands out through its commitment to innovation, unwavering integrity, and unwavering
+                dedication to unmatched quality.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/octa-properties" data-l="O" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_3570_Octa-Properties.png"
+                alt="Octa Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Octa Properties</h3>
+              <p>
+                OCTA Properties is a top-notch development management company in Dubai, with over 20 years of experience
+                and a highly...
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/r-evolution" data-l="R" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_7014_R.EVOLUTION.png"
+                alt="R.EVOLUTION logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>R.EVOLUTION</h3>
+              <p>
+                R.Evolution is a boutique real estate developer renowned for crafting exceptional properties in Latvia,
+                Spain, and Germany.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/fortimo" data-l="F" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_5881_fortimo-developer-logo-345-261.png"
+                alt="Fortimo logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Fortimo</h3>
+              <p>
+                Fortimo, a prominent name in Swiss property development, is gearing up for a significant venture into
+                Dubai.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/durar-group" data-l="D" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_4089_durar-group-logo-345-261-.png"
+                alt="Durar Group logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Durar Group</h3>
+              <p>
+                Durar Group is a prominent real estate company based in Dubai. With a vision to redefine the landscape
+                of the metropolis and beyond, Durar Group has emerged as
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/the-luxe-developers" data-l="T" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_5821_the-luxe-developers-logo-345-261.png"
+                alt="The Luxe Developers logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>The Luxe Developers</h3>
+              <p>
+                The Luxe Developers is a leading property development company in the United Arab Emirates, specializing
+                in the creation of exceptional ultra-luxury residential buildings.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/fortune-5" data-l="F" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_4392_fortune5-logo-345-261.png"
+                alt="Fortune 5 logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Fortune 5</h3>
+              <p>
+                Fortune 5 was established in 2008 by the merger of three passionate and prominent businessmen, each with
+                a major interest in Dubai's real estate industry.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/swiss-property" data-l="S" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_1408_swiss-property-345-261-logo.png"
+                alt="Swiss Property logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Swiss Property</h3>
+              <p>
+                Swiss Property strives for nothing less than excellence. The company operates within a core culture of
+                craftsmanship and innovation to provide the highest level of service.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/leos-international" data-l="L" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_1012_leos-international-345-261-logo.png"
+                alt="Leos International logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Leos International</h3>
+              <p>
+                Leos International is a well-known property investment and development company, established in the year
+                2012, with a presence in the UK and internationally.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/darglobal" data-l="D" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_25_Dar-Global.png"
+                alt="Darglobal logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Darglobal</h3>
+              <p>
+                Established in 2017 to revolutionize the global luxury real estate market, DarGlobal combines experience
+                and innovation to offer properties of the highest quality.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/me-do-re-properties" data-l="M" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_6821_Me-Do-RE.png"
+                alt="Me Do Re Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Me Do Re Properties</h3>
+              <p>
+                As a renowned developer in the Middle East, Me Do Re Properties has developed a number of projects for
+                residents by providing the best-in-class facilities and amenities for a luxurious modern lifestyle.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/srg-holding-limited" data-l="S" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_321_srg-holding-logo-345-261.png"
+                alt="SRG Holding Limited logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>SRG Holding Limited</h3>
+              <p>
+                SRG Holding Limited is a private investment firm based in the United Arab Emirates. It was founded in
+                2002 and focuses on investments in various industries.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/al-mazaya-holding" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_8544_Al-Mazaya-Holding.png"
+                alt="Al Mazaya Holding logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Al Mazaya Holding</h3>
+              <p>
+                With a number of impressive projects, Al Mazaya is widely recognized as one of the largest and most
+                thoughtful real estate development companies in the Middle East market.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/prescott" data-l="P" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_7408_Prescott.png"
+                alt="Prescott logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Prescott</h3>
+              <p>
+                Prescott Real Estate is one of the renowned developers in Dubai, established in 2005, its main focus on
+                developing residential and commercial projects of the highest standards and designs in Dubai's most
+                strategic locations.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/expo-city-dubai" data-l="E" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_9137_expo-city-dubai-logo-345-261.png"
+                alt="Expo City Dubai logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Expo City Dubai</h3>
+              <p>
+                Expo City Dubai is a major development project that includes the construction of the Dubai Exhibition
+                Centre (DEC) and various other facilities that hosted the Expo 2020 Dubai.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/keymaven" data-l="K" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_6490_KeyMavens.png"
+                alt="Keymaven logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Keymaven</h3>
+              <p>
+                KeyMaven has been designing, building, and operating development projects for over 15 years as part of a
+                fully integrated real estate group.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/hmb-developments" data-l="H" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_6868_HMB-DEVELOPMENTS.png"
+                alt="HMB Developments logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>HMB Developments</h3>
+              <p>
+                HMB Developments is a distinguished luxury real estate developer in Dubai, dedicated to creating
+                exceptional living environments that go beyond traditional residential spaces.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/alef-group" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_2792_alef.png"
+                alt="Alef Group logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Alef Group</h3>
+              <p>
+                Alef Group is a real estate developer based in the United Arab Emirates, with a focus on creating
+                sustainable and community-centric projects.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/alta-developers" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_5285_alta-developers-345-261.png"
+                alt="Alta Developers logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Alta Developers</h3>
+              <p>
+                The Alta Group, headquartered in Dubai, specializes in residential and commercial real estate
+                development. With Abdulla Al Tayer as the founder and leader.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/kempinski-hotels" data-l="K" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_3030_kempinski-logo-345-261.png"
+                alt="Kempinski Hotels logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Kempinski Hotels</h3>
+              <p>
+                Kempinski Hotels is a renowned luxury hotel group with a long history and a global presence. Kempinski
+                Hotels was founded in 1897 by Berthold Kempinski.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/taraf-holding" data-l="T" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_9141_taraf-holding-345-261.png"
+                alt="Taraf Holding logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Taraf Holding</h3>
+              <p>
+                Taraf Holding specializes in boutique property development and asset management in the United Arab
+                Emirates.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/emerald-palace-group" data-l="E" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_3535_epg-hotels-resorts-logo-345-261.png"
+                alt="Emerald Palace Group logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Emerald Palace Group</h3>
+              <p>
+                Emerald Palace Group is a luxury real estate development company known for creating prestigious
+                residential and commercial projects.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/rak-properties" data-l="R" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_7788_rak-properties.png"
+                alt="Rak Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Rak Properties</h3>
+              <p>Since 2005, RAK Properties has been among the leading developer of the property.</p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/naseeb-group" data-l="N" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_5760_naseeb-group-345-261.png"
+                alt="Naseeb Group logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Naseeb Group</h3>
+              <p>Naseeb Group of Holdings is owned by the Naseeb family established in the year 1982.</p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/fakhruddin-properties" data-l="F" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_5307_Fakhruddin Properties.png"
+                alt="Fakhruddin Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Fakhruddin Properties</h3>
+              <p>
+                Fakhruddin Properties has established itself as one of the most reputable developers of residential,
+                commercial, and industrial properties in the United Arab Emirates
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/ifa-hotels-and-resorts" data-l="I" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_7963_ifa-345-261-logo.png"
+                alt="IFA Hotels &amp; Resorts logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>IFA Hotels &amp; Resorts</h3>
+              <p>
+                IFA Hotels &amp; Resorts is a global hospitality company that operates and manages hotels, resorts, and
+                residences in various locations around the world.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/markaz" data-l="M" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_315_markaz-logo-365-261.png"
+                alt="Markaz logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Markaz</h3>
+              <p>
+                Markaz was founded in 1974 and has since grown to become one of the largest asset management and
+                investment banking firms in the Middle East.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/imtiaz-developments" data-l="I" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_6548_imtiaz-developments-logo.png"
+                alt="Imtiaz Developments logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Imtiaz Developments</h3>
+              <p>
+                Headquartered in Dubai, United Arab Emirates, Imtiaz Developments is one of the country's leading
+                full-service development and real estate companies.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/kleindienst-group" data-l="K" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_4007_kleindienst-group-345-261.png"
+                alt="Kleindienst Group logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Kleindienst Group</h3>
+              <p>
+                Kleindienst Group is a Dubai-based real estate and property development company that specializes in
+                creating unique and innovative luxury properties.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/ahs-properties" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_9661_AHS-Properties.png"
+                alt="AHS Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>AHS Properties</h3>
+              <p>AHS Properties is a real estate company based in Dubai, United Arab Emirates.</p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/al-hamra" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_2448_al-hamra-345-261-1.png"
+                alt="Al Hamra logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Al Hamra</h3>
+              <p>
+                Al Hamra is a leading real estate developer based in the United Arab Emirates, with a focus on creating
+                world-class communities that provide residents with the ultimate in luxury and convenience.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/mama-shelter" data-l="M" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_276_mama-shelter-345-261.png"
+                alt="Mama Shelter logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Mama Shelter</h3>
+              <p>
+                Mama Shelter is a hotel chain that was developed by the Trigano family, known for their involvement in
+                the Club Med resort chain.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/zaya" data-l="Z" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_3225_zaya-logo-345-261.png"
+                alt="Zaya logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Zaya</h3>
+              <p>
+                Zaya is a distinguished UAE-based boutique real estate developer founded in 2008, known for creating
+                highly exclusive and luxury residential and hospitality communities.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/tiger-group" data-l="T" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_8007_tiger-properties-345-261.png"
+                alt="Tiger Group logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Tiger Group</h3>
+              <p>
+                TIGER GROUP was founded in the year 1976 with an inspiring vision of the founders to effectively
+                participate in the building of the United Arab Emirates.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/qetaifan-projects" data-l="Q" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_7088_qetaifan-logo-345-261.png"
+                alt="Qetaifan Projects logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Qetaifan Projects</h3>
+              <p>
+                Qetaifan Projects is the first and main development in Qetaifan Island North; a distinct island
+                featuring a state-of-the-art waterpark, luxurious hotels, unrivalled accommodations.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/q-properties" data-l="Q" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_179_q-properties-345-261.png"
+                alt="Q Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Q Properties</h3>
+              <p>
+                Q Properties is a renowned developer based in the Emirate of Abu Dhabi. With several residential,
+                commercial and retail projects currently underway, the company...
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/five-holdings" data-l="F" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_8140_five-holdings-logo-1.png"
+                alt="Five Holdings logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Five Holdings</h3>
+              <p>
+                Five Holdings is a Dubai-based real estate venture that builds a range of services in four key
+                verticals-development, hospitality, restructuring, and investment.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/forum-group" data-l="F" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_7058_forum-group.png"
+                alt="Forum Group logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Forum Group</h3>
+              <p>
+                Forum Group is a highly respected international real estate developer focusing on high-end luxury
+                residential developments as well as mixed-use commercial properties.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/gco" data-l="G" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_7423_G-&amp;-co.png"
+                alt="G &amp; Co logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>G &amp; Co</h3>
+              <p>
+                As a boutique real estate developer, at G&amp;Co adopt a customer-centric approach in everything we do.
+                This has helped us gain a reputation for quality, reliability and integrity.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/green-group" data-l="G" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_4309_Green-Group.png"
+                alt="Green Group logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Green Group</h3>
+              <p>
+                Green Group, a prestigious sustainable driven &amp; client-focused real estate development in Dubai,
+                UAE.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/imkan" data-l="I" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_944_imkan-developer-logo-1-1.png"
+                alt="Imkan Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Imkan Properties</h3>
+              <p>
+                Abu-Dhabi based real estate developer Imkan Properties, a pioneer player in the Middle East that offers
+                world-class developments.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/invest-group-overseas" data-l="I" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_1897_Invest-group-overseas.png"
+                alt="Invest Group Overseas logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Invest Group Overseas</h3>
+              <p>
+                Invest Group Overseas invests and develops real estate in emerging and mature markets. In addition to
+                providing platforms for real estate development, Invest Group Overseas offers platforms for lucrative
+                strategies.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/ithra-dubai" data-l="I" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_1892_ithra-logo-345-261.png"
+                alt="Ithra Dubai logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Ithra Dubai</h3>
+              <p>
+                Ithra seeks to ensure that Dubai stands out in the global arena in a similar way to Sheikh Mohammed bin
+                Rashid Al Maktoum, Vice-President and Prime Minister of the United Arab Emirates and Ruler of Dubai.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/jumeirah-golf-estates" data-l="J" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_6391_Jumeirah golf estates.png"
+                alt="Jumeirah Golf Estates logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Jumeirah Golf Estates</h3>
+              <p>
+                Jumeirah Golf Estates LLC is the master developer, and as part of the reorganisation of Dubai World,
+                Jumeirah Golf Estates is now 100 per cent owned by the Government of Dubai, especially the Investment
+                Corporation of Dubai (ICD).
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/kerzner-international" data-l="K" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_2486_kerzner.png"
+                alt="Kerzner International logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Kerzner International</h3>
+              <p>
+                As a leading developer and operator of global destination resorts, ultra-luxury hotels and residences,
+                as well as innovative gaming and entertainment experiences, Kerzner International is a global leader in
+                these areas.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/lamar-developments" data-l="L" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_9637_Lamar-Development.png"
+                alt="Lamar Developments logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Lamar Developments</h3>
+              <p>
+                Lamar Development employs a specialised operations team to develop, manage, and maintain high-quality
+                income-generating real estate assets to maximise rental yields and transaction values for investors
+                during the life of the assets.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/liv" data-l="L" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_9740_liv developers.png"
+                alt="Liv Developers logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Liv Developers</h3>
+              <p>
+                LIV Property have a super quality project in exceptional cities all around the world, the LIV brand is
+                defined by the reputation of better upscale locations combined with the improved interior finish and
+                remarkable details.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/mag-lifestyle-development" data-l="M" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_80_MAG-logo-345-261.png"
+                alt="Mag Ld logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Mag Ld</h3>
+              <p>
+                MAG Lifestyle Development is part of the Moafaq Ahmad Al Gaddah (MAG) Group – a multinational
+                conglomerate based in the UAE.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/majid-al-futtaim" data-l="M" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_4556_Majid-Al-Futtaim-logo_345_261.png"
+                alt="Majid Al Futtaim logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Majid Al Futtaim</h3>
+              <p>
+                Majid Al Futtaim is a privately-held property development company and one of the leading developers in
+                the United Arab Emirates.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/meydan" data-l="M" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_2980_Developer-logo.png"
+                alt="Meydan logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Meydan</h3>
+              <p>
+                Meydan is the visionary concept of His Highness Sheikh Mohammed Bin Rashid Al Maktoum, UAE Vice
+                President, Prime Minister and Ruler of Dubai.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/muraba-properties" data-l="M" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_5777_345-1.png"
+                alt="Muraba Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Muraba Properties</h3>
+              <p>
+                Muraba is a privately-held property development company based in Dubai, United Arab Emirates. The
+                company was founded in 2014 a slice of Dubai’s luxury real estate market with a property development on
+                the Palm Jumeirah.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/omniyat" data-l="O" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_71_OMNIYAT.png"
+                alt="Omniyat logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Omniyat</h3>
+              <p>
+                Omniyat is a leading real estate company in the UAE that provide extraordinary services in the Gulf
+                region since 2005.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/oriental-pearls" data-l="O" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_3310_orieantal_logo.png"
+                alt="Oriental Pearls logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Oriental Pearls</h3>
+              <p>Oriental Pearls is a privately settled Real Estate designer of upscale network homes.</p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/oro24-developments" data-l="O" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_2612_ORO-24.png"
+                alt="Oro24 Developments logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Oro24 Developments</h3>
+              <p>
+                The term ORO24 comes from the Italian word meaning GOLD. The number 24 indicates its purest form as an
+                indication of unadulterated excellence.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/palma-holding" data-l="P" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_2114_Palma-Development.png"
+                alt="Palma Holding logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Palma Holding</h3>
+              <p>
+                Palma was formed in 1998 by Kareem Derbas. With a reputation for quality projects in Dubai, the company
+                is a global leader in developers.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/porto-montenegro" data-l="P" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_1711_logo-345-261.png"
+                alt="Porto Montenegro logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Porto Montenegro</h3>
+              <p>
+                As the only UNESCO World Heritage site in the Bay of Kotor, Porto Montenegro offers a dynamic lifestyle
+                destination and world-class marina.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/reportage-properties" data-l="R" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_8784_Reportage.png"
+                alt="Reportage Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Reportage Properties</h3>
+              <p>
+                Reportage Group was founded in 2014 as a single business by shareholders with over 30 years of worldwide
+                property development and construction expertise.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/samana" data-l="S" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_3742_Samana-Developers.png"
+                alt="Samana Developers logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Samana Developers</h3>
+              <p>
+                Samana Developers has an established strategy of making real estate investments in different areas of
+                the world.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/scope-investment" data-l="S" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_497_Scope-Investment-logo.png"
+                alt="Scope Investment logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Scope Investment</h3>
+              <p>
+                SCOPE Investment is a privately held company that focuses on long-term investments in a diversified
+                portfolio of companies with premium brands, attractive growth, and strong cash flow.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/select-group" data-l="S" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_6689_select-group345-261.png"
+                alt="Select Group logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Select Group</h3>
+              <p>
+                Select Group is a multinational corporation specializing in real estate development and property
+                management. The firm’s portfolio has grown in recent years to include investments in travel,
+                hospitality, health, and technology.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/seven-tides" data-l="S" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_470_seven-tides365_261.png"
+                alt="Seven Tides logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Seven Tides</h3>
+              <p>
+                Seven Tides is a Dubai-based Privately owned property development and holding company established in
+                2004.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/shapoorji-pallonji" data-l="S" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_6340_Untitled-1-7.png"
+                alt="Shapoorji Pallonji logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Shapoorji Pallonji</h3>
+              <p>
+                Shapoorji Pallonji an illustrious name to be reckoned with in the real estate sector, Shapoorji Pallonji
+                is one of India’s oldest and most trusted business conglomerates.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/sunrise-transcon" data-l="S" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_4737_Sunrise-capital.png"
+                alt="Sunrise Transoon logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Sunrise Transoon</h3>
+              <p>
+                Sunrise Transcon is a peacemaker and Dubai-based Private Real Estate Development Company that creates
+                innovative destinations to enhance residents’ lives.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/titans" data-l="T" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_7658_2020-05-06-2.png"
+                alt="Titans logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Titans</h3>
+              <p>Titans Developers is an emerging real estate developer established in 2014.</p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/safe-developers" data-l="S" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_2773_safe-developers.png"
+                alt="Safe Developers logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Safe Developers</h3>
+              <p>
+                Safe Developers is a renowned property development company established by Silgo Group of Companies. They
+                are widely known for their excellence in the market.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/triplanet" data-l="T" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_2185_Triplanet-1.png"
+                alt="Triplanet logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Triplanet</h3>
+              <p>
+                The Triplanet Range Company has a worldwide reputation as a renowned real estate company in the UAE. A
+                wide variety of foreign and UAE investments are being made by Triplanet’s developers.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/union-properties" data-l="U" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_8969_Union-Properties.png"
+                alt="Union Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Union Properties</h3>
+              <p>
+                Union Properties was founded in 1987 by Darwish Abdulla Ahmed Al Ketbi with an ambitious vision of
+                becoming the sector’s leading company.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/vincitore-realty" data-l="V" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_1624_vincitore.png"
+                alt="Vincitore Realty logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Vincitore Realty</h3>
+              <p>Vincitore Real Estate Development LLC entered Dubai’s property market to have any kind of effect.</p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/wasl-group" data-l="W" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_2894_wasl-logo.png"
+                alt="Wasl Group logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Wasl Group</h3>
+              <p>
+                Wasl is a renowned real estate developer in Dubai, established in 2008 with a mission to support the
+                city’s long-term urban and economic vision.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/wow-real-estate" data-l="W" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_3915_wow_red_logo345_261.png"
+                alt="Wow Real Estate logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Wow Real Estate</h3>
+              <p>
+                WOW Real Estate Development is a privately-owned developer of integrated communities globally, a
+                relatively newer entry into the property development and real-estate world.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/zazen-properties" data-l="Z" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_5010_zazen-properties-345-261.png"
+                alt="Zazen Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Zazen Properties</h3>
+              <p>
+                ZAZEN Properties is part of a multibillion-dollar corporation with 111 years of expertise in industries
+                like medicines, energy, chemicals, and real estate.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/al-barari" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_2768_al-brari-345-261.png"
+                alt="Al Barari logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Al Barari</h3>
+              <p>The Al Barari Group, a family-owned developer based in Dubai, commenced operations in 2005.</p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/al-habtoor-group" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_7552_al-habtoor-group-logo-345-261.png"
+                alt="Al Habtoor Group logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Al Habtoor Group</h3>
+              <p>
+                The Al Habtoor Group is one of the most well-known and profitable businesses in the United Arab
+                Emirates.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/al-sharq-investment" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_867_al-sharq-345-261-3.png"
+                alt="Al Sharq Investment logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Al Sharq Investment</h3>
+              <p>
+                The Al Sharq Investment Company is one of the UAE’s biggest and most respected companies. It was founded
+                in 1994.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/aqua-properties" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_2384_aqua-properties-345-261.png"
+                alt="Aqua Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Aqua Properties</h3>
+              <p>
+                AQUA Properties, founded in 2005, immediately rose to prominence as a renowned, award-winning real
+                estate developer due to its innovative, creative, and forward-thinking strategy.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/arada" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_8652_arada345_261_black-1.png"
+                alt="Arada logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Arada</h3>
+              <p>
+                Arada is a privately held property development company based in Sharjah, United Arab Emirates. The
+                company was founded in 2016.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/ays-developers" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_563_AYS-Developers.png"
+                alt="Ays Developers logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Ays Developers</h3>
+              <p>
+                AYS Developments Limited is a leading property development company with proven expertise in real estate
+                and lifestyle properties.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/bloom-holding" data-l="B" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_7332_bloom-holding-345-261.png"
+                alt="Bloom Holding logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Bloom Holding</h3>
+              <p>
+                With a focus on developing real estate and enriching people’s lives through the management and operation
+                of their communities, schools, and hotels, Bloom Holding is one of the UAE’s top companies.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/dar-al-arkan" data-l="D" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_4072_DAR-AL-ARKAN.png"
+                alt="Dar Al Arkan logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Dar Al Arkan</h3>
+              <p>
+                Dar Al Arkan’s vision was to develop and deliver a contemporary style of living that matches the
+                aspirations and success of every future homeowner and investor.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/azizi-developments" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_6113_AZIZI.png"
+                alt="Azizi Developments logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Azizi Developments</h3>
+              <p>
+                Azizi Developments was established in 2007, the multi-billion dollar award-winning company has
+                experience in the international real estate market.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/devmark" data-l="D" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_7875_devemark-345-261-2.png"
+                alt="Devmark logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Devmark</h3>
+              <p>
+                As a developer-centric firm offering results-driven, intelligent real estate strategies and solutions,
+                The Devmark Group prides itself on three deliverables.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/deyaar" data-l="D" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_1278_deyaar-l.png"
+                alt="Deyaar logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Deyaar</h3>
+              <p>
+                Deyaar Development is a real estate service Company, unsightly it is one of the leading local and
+                regional real estate developers.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/dubai-holding" data-l="D" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_8774_Dubai_holding-1.png"
+                alt="Dubai Holding logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Dubai Holding</h3>
+              <p>
+                Dubai Holding is a leading global investment company and real estate developer that plays a key role in
+                shaping Dubai’s modern urban landscape.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/dubai-properties" data-l="D" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_862_Dubai_properties-1.png"
+                alt="Dubai Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Dubai Properties</h3>
+              <p>
+                Located in the United Arab Emirates, Dubai Properties is a leading developer of luxury real estate
+                properties.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/dubai-south" data-l="D" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_1223_dubai_south_345_261.png"
+                alt="Dubai South logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Dubai South</h3>
+              <p>The Dubai South Real Estate Developer is one of the most famous names in Dubai.</p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/eagle-hills" data-l="E" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_8704_Eagle-hills-345_261.png"
+                alt="Eagle Hills logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Eagle Hills</h3>
+              <p>
+                Eagle Hills is a Privately Held real estate investment well-established and highly renowned development
+                entity in the UAE.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/ellington-properties" data-l="E" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_3363_ellington-properties-logo-1.png"
+                alt="Ellington Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Ellington Properties</h3>
+              <p>
+                Since its establishment in 2014, Ellington Properties has built a reputation for building unique and
+                beautiful properties and communities in Dubai for people who demand quality.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/mira-developments" data-l="M" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_3720_mira-devlopments-logo.png"
+                alt="Mira Developments logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Mira Developments</h3>
+              <p>
+                Mira Developments is a renowned name in Middle East real estate development, driven by a powerful vision
+                and an unwavering commitment to shaping the future of communities.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/ohana-development" data-l="O" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_5176_ohana-development-logo.png"
+                alt="Ohana Development logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Ohana Development</h3>
+              <p>
+                Ohana Development stands as a premier force in Development &amp; Contracting, headquartered in the UAE
+                and extending its reach across the expansive MENA region.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/object-1-development" data-l="O" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_1150_object-1.png"
+                alt="Object One Development logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Object One Development</h3>
+              <p>
+                Object 1 is a part of TSZ Group, established in the real estate sector in 2010, operating within the
+                real estate markets of Spain and the UAE.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/amali-properties" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_1493_amali-properties-logo.png"
+                alt="Amali Properties logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Amali Properties</h3>
+              <p>Amali Properties is redefining luxury living by focusing on sophistication and refinement.</p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/h-h-development" data-l="H" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_6701_h&amp;h-development-logo.png"
+                alt="H&amp;H Development logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>H&amp;H Development</h3>
+              <p>
+                H&amp;H Development was founded in 2007 by Shahab Lutfi and Mohamed Al Hussaini, offering an extensive
+                array of real estate services across various divisions.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/arte-developments" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_4949_arte-developments-logo.png"
+                alt="Arte Developments logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Arte Developments</h3>
+              <p>
+                ARTE Developments is a leader in the real estate sector, renowned for its commitment to premium quality
+                and excellence in every project.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/kasco-development" data-l="K" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_4819_kasco-developments_B.png"
+                alt="KASCO Development logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>KASCO Development</h3>
+              <p>
+                KASCO Developments is the real estate arm of the KASCO Group, dedicated to creating communities that
+                blend thoughtful design, quality construction, and elevated lifestyles.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/centurion-developer" data-l="C" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_4904_centurion-developer-logo.png"
+                alt="Centurion Developer logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Centurion Developer</h3>
+              <p>
+                Centurion Group, established in 2013, is a Dubai-based developer known for delivering premium
+                residential and commercial projects that combine innovative design with high-quality, sustainable
+                construction.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          ><a class="dv" href="https://drehomes.com/developer/avenew-development" data-l="A" hidden=""
+            ><div class="dv-logo">
+              <img
+                src="https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_2475_Avenuew-Development.png"
+                alt="Avenew Development logo"
+                loading="lazy"
+              />
+            </div>
+            <div class="dv-b">
+              <h3>Avenew Development</h3>
+              <p>
+                Avenew Development is a forward-thinking developer that integrates cutting-edge technology at the core
+                of its vision.
+              </p>
+              <em>View developer →</em>
+            </div></a
+          >
+        </div>
+        <div class="op-empty glass" id="dvEmpty" hidden="">
+          <h3>No developer found.</h3>
+          <p>Try another name — or ask us, we work with many more.</p>
+          <div class="story-cta" style="justify-content: center">
+            <button class="btn btn-glass" id="dvClear">Show all</button
+            ><a class="btn btn-gold" href="#contact">Ask an advisor →</a>
+          </div>
+        </div>
+        <div style="text-align: center; margin-top: 34px">
+          <button class="btn btn-glass" id="dvMore">Show more developers</button>
+        </div>
+      </div>
+    </section>
+
+    <section style="padding-top: 20px">
+      <div class="wrap">
+        <div class="op-cta glass acc-edge reveal">
+          <div>
+            <span class="eyebrow">Are you a developer?</span>
+            <h2 class="serif">Partner with <em class="gold-text">DRE.</em></h2>
+            <p class="lead">
+              150 dedicated agents, two Dubai offices and 19 years of relationships with buyers and investors worldwide.
+              Let’s launch your next project together.
+            </p>
+          </div>
+          <div class="op-cta-b">
+            <a class="btn btn-gold" href="#contact">Start a conversation →</a>
+            <a class="btn btn-glass" href="offplan-properties.html">See off-plan launches</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" style="padding-top: 20px">
+      <div class="wrap">
+        <div class="cta glass acc-edge reveal">
+          <div>
+            <span class="eyebrow">Private Consultation</span>
+            <h2 class="serif">Your advisor is<br /><em class="gold-text">one call</em> away.</h2>
+            <p class="lead">Toll free 800 37373 · Hotline +971 52 754 3243</p>
+          </div>
+          <form class="form" id="ctaForm" novalidate="">
+            <input class="form-control" name="name" placeholder="Full name" autocomplete="name" required="" />
+            <input
+              class="form-control"
+              id="ctaPhone"
+              name="phone"
+              type="tel"
+              placeholder="Phone / WhatsApp"
+              autocomplete="tel"
+              required=""
+            />
+            <input type="hidden" name="phone_full" id="ctaPhoneFull" />
+            <div class="err" id="ctaPhoneErr" role="alert">Please enter a valid phone number.</div>
+            <input class="form-control" name="message" placeholder="What are you looking for?" />
+            <button class="btn btn-gold" style="justify-content: center; margin-top: 6px">Request a call back</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap">
+        <div class="f-box glass">
+          <div class="f-grid row">
+            <div class="col-12 col-md-6 f-col">
+              <a href="https://drehomes.com/" aria-label="DRE Homes — home"
+                ><img
+                  class="site-logo"
+                  src="https://drehomes.com/admin_nsrdwsc/assets/media/footer/footer_logo_4220_logo-w.png"
+                  alt="DRE logo"
+                  width="250"
+                  height="110"
+                  style="height: 72px; margin-left: -10px"
+              /></a>
+              <p style="margin-top: 16px; max-width: 300px">
+                HQ — Park Heights Square 2, Offices 401–406, Dubai Hills Estate.<br /><br />Town Square Branch — Street
+                Shop 2, Community Center, Town Square.
+              </p>
+              <div class="socials" aria-label="Follow DRE">
+                <a
+                  class="so"
+                  href="https://www.facebook.com/drehomesrealestateuae/"
+                  target="_blank"
+                  rel="noopener"
+                  aria-label="Facebook"
+                  title="Facebook"
+                  ><svg viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                      d="M14 8.5V6.8c0-.8.2-1.3 1.4-1.3H17V2.6c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.4-4 4.1v1.9H8v3.2h2.6V22H14v-10.3h2.7l.4-3.2z"
+                    ></path></svg></a
+                ><a
+                  class="so"
+                  href="https://www.instagram.com/drehomes_realestate/"
+                  target="_blank"
+                  rel="noopener"
+                  aria-label="Instagram"
+                  title="Instagram"
+                  ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="3" y="3" width="18" height="18" rx="5"></rect>
+                    <circle cx="12" cy="12" r="4"></circle>
+                    <circle cx="17.5" cy="6.5" r="1" fill="currentColor"></circle></svg></a
+                ><a
+                  class="so"
+                  href="https://www.linkedin.com/company/drehomes-real-estate-brokers/"
+                  target="_blank"
+                  rel="noopener"
+                  aria-label="LinkedIn"
+                  title="LinkedIn"
+                  ><svg viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                      d="M4.98 3.5a2.5 2.5 0 110 5 2.5 2.5 0 010-5zM3 9.5h4V21H3zM9.5 9.5h3.8v1.6h.1c.5-1 1.8-2 3.8-2 4 0 4.8 2.6 4.8 6V21h-4v-5.2c0-1.2 0-2.8-1.7-2.8s-2 1.3-2 2.7V21h-4z"
+                    ></path></svg></a
+                ><a
+                  class="so"
+                  href="https://www.youtube.com/@DrehomesRE"
+                  target="_blank"
+                  rel="noopener"
+                  aria-label="YouTube"
+                  title="YouTube"
+                  ><svg viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                      d="M23 7.2a3 3 0 00-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 001 7.2 31 31 0 00.5 12c0 1.6.2 3.2.5 4.8a3 3 0 002.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 002.1-2.1c.3-1.6.5-3.2.5-4.8s-.2-3.2-.5-4.8zM9.8 15.1V8.9l5.8 3.1z"
+                    ></path></svg></a
+                ><a
+                  class="so"
+                  href="https://www.tiktok.com/@drehomesrealestate"
+                  target="_blank"
+                  rel="noopener"
+                  aria-label="TikTok"
+                  title="TikTok"
+                  ><svg viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                      d="M16.6 2h-3.4v13.4a2.9 2.9 0 11-2.9-2.9c.3 0 .6 0 .9.1V9.2a6.3 6.3 0 105.4 6.2V8.7a8 8 0 004.4 1.3V6.6a4.5 4.5 0 01-4.4-4.6z"
+                    ></path></svg
+                ></a>
+              </div>
+              <div class="f-award">
+                <img
+                  src="https://drehomes.com/admin_nsrdwsc/assets/media/header/greate_place_logo_2803_Great-place-to-work-middle-east-website.png"
+                  alt="Great Place To Work — Best Workplaces in Real Estate, Middle East 2026"
+                  loading="lazy"
+                />
+                <div>
+                  <b>Best Workplaces<sup style="font-size: 0.55em">™</sup> in Real Estate</b
+                  ><small>Great Place To Work® · Middle East 2026</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-md-6 f-col">
+              <h5>Communities</h5>
+              <ul>
+                <li>Jumeirah Village Circle<em>56</em></li>
+                <li>Dubai Hills Estate<em>51</em></li>
+                <li>Business Bay<em>48</em></li>
+                <li>Dubai Creek Harbour<em>46</em></li>
+                <li>Town Square<em>43</em></li>
+              </ul>
+            </div>
+            <div class="col-12 col-md-6 f-col">
+              <h5>Developers</h5>
+              <ul>
+                <li>Emaar<em>259</em></li>
+                <li>Damac<em>102</em></li>
+                <li>Sobha<em>64</em></li>
+                <li>Aldar<em>48</em></li>
+                <li>Nshama<em>42</em></li>
+              </ul>
+            </div>
+            <div class="col-12 col-md-6 f-col">
+              <h5>Get in touch</h5>
+              <ul>
+                <li>Toll free · 800 37373</li>
+                <li>Hotline · +971 52 754 3243</li>
+                <li>sales@drehomes.com</li>
+                <li>
+                  <a href="https://www.instagram.com/drehomes_realestate/" target="_blank" rel="noopener"
+                    >Instagram · @drehomes_realestate</a
+                  >
+                </li>
+              </ul>
+              <div class="f-qr">
+                <a
+                  href="https://drehomes.com/images/dre-qr-code-26.jpeg"
+                  target="_blank"
+                  rel="noopener"
+                  title="Open permit QR code"
+                  ><img
+                    src="https://drehomes.com/images/dre-qr-code-26.jpeg"
+                    alt="DRE permit QR code — Permit No. 1007935000"
+                    loading="lazy"
+                /></a>
+                <div><b>Permit Number</b><span>1007935000</span><small>Scan to verify with DLD / RERA</small></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="f-bot">
+          <span>Registered in Dubai, UAE · License No. 599208 · RERA office 652 · Permit 1007935000</span
+          ><span
+            ><a href="privacy-policy.html">Privacy Policy</a> ·
+            <a href="terms-conditions.html">Terms &amp; Conditions</a></span
+          >
+        </div>
+      </div>
+    </footer>
+
+    <!-- SIDE DOCK -->
+    <div class="dock glass" role="toolbar" aria-label="Quick contact">
+      <span
+        class="dk-grip"
+        tabindex="0"
+        role="button"
+        aria-label="Move quick contact bar: drag, or use arrow keys. Double-click or Enter to reset."
+        title="Drag to move · double-click to reset"
+      ></span>
+      <button class="dk ai" id="aiBtn" aria-expanded="false" aria-controls="aiPanel" aria-label="AI Assistant">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9z"></path>
+          <path d="M19 14l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9z" opacity=".7"></path></svg
+        ><span class="tip">Ask DRE AI</span>
+      </button>
+      <button class="dk" id="popinBtn" aria-label="Live video agent">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+          <rect x="2.5" y="6" width="13" height="12" rx="3"></rect>
+          <path d="M15.5 10.5l6-3.5v10l-6-3.5z"></path></svg
+        ><span class="dot"></span><span class="tip">Live Agent · Video call</span>
+      </button>
+      <a
+        class="dk wa"
+        href="https://wa.me/971585837346?text=Just%20visited%20your%20website!%20Would%20like%20to%20know%20more."
+        target="_blank"
+        rel="noopener"
+        aria-label="WhatsApp"
+        ><svg viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1112 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 01-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 2s.8 2.3.9 2.5c.1.2 1.6 2.5 4 3.5 1.5.6 2.1.7 2.8.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.4-.2z"
+          ></path></svg
+        ><span class="tip">WhatsApp us</span></a
+      >
+      <button class="dk mode" id="modeBtn" aria-pressed="false" aria-label="Night mode">
+        <svg
+          class="i-moon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M20.5 14.2A8.5 8.5 0 019.8 3.5a8.5 8.5 0 1010.7 10.7z"></path></svg
+        ><svg
+          class="i-sun"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+        >
+          <circle cx="12" cy="12" r="4.2"></circle>
+          <path
+            d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"
+          ></path></svg
+        ><span class="tip">Night mode</span>
+      </button>
+    </div>
+
+    <div class="ai-panel glass" id="aiPanel" role="dialog" aria-label="DRE AI Assistant">
+      <div class="ai-h">
+        <span class="av"
+          ><svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9z"></path>
+            <path d="M19 14l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9z" opacity=".7"></path></svg
+        ></span>
+        <div><b>DRE AI Assistant</b><small>Online · replies instantly</small></div>
+        <button class="x" id="aiClose" aria-label="Close">×</button>
+      </div>
+      <div class="ai-body" id="aiBody"></div>
+      <div class="ai-chips" id="aiChips">
+        <button>Off-plan under AED 2M</button><button>Golden Visa</button><button>Book a viewing</button
+        ><button>Best areas to invest</button><button>Talk to a human</button>
+      </div>
+      <form class="ai-f" id="aiForm">
+        <input id="aiIn" placeholder="Ask about properties, areas, visas…" autocomplete="off" /><button
+          aria-label="Send"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 12h15M13 6l6 6-6 6"></path>
+          </svg>
+        </button>
+      </form>
+    </div>
+
+    <!-- COLOR SWITCHER -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/main.js"></script>
+    <script src="assets/js/site.js"></script>
+
+    <script src="assets/js/suggest.js"></script>
+  </body>
+</html>

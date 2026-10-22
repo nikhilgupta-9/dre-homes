@@ -22,7 +22,6 @@ $dre_menu = [
 		['Dashboard', 'bi-speedometer2', 'dashboard.php', ['dashboard.php']],
 		['Leads', 'bi-person-lines-fill', 'manage-leads.php', ['manage-leads.php', 'edit-leads.php'], 'only' => 1],
 		['AI Chats', 'bi-chat-dots', 'manage-ai-chats.php', ['manage-ai-chats.php'], 'only' => 1],
-		['Quiz Enquiries', 'bi-patch-question', 'manage-quiz.php', ['manage-quiz.php']],
 	],
 
 	'Properties' => [

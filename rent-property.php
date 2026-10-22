@@ -1,811 +1,381 @@
 <?php
-
+// 1. CONFIG
 include('db/config.php');
-$meta_tags = select_row("tbl_tags", "id=20 and is_active=1");
-include('common/header.php');
-$page = 1;
-if (!empty($_GET)) {
-    $conditions = [];
 
-    $conditions[] = "prj_type_id = 8";
+// 2. SEO: Admin > Manage Tags ("Rent Property", id=20, edit-tags.php?edit=MjA=)
+$meta_tags = get_seo_tags(20);
 
-    if (!empty($_GET["search_offplan"])) {
-        $searchRaw = urldecode($_GET["search_offplan"]);
-        $searchTerm = mysqli_real_escape_string($conn, $searchRaw);
-        $conditions[] = "proj_name LIKE '%$searchTerm%'";
-    }
+// 3. DATA: Admin > Manage Rent Projects (tbl_proj, type=8, active=1) & Rent Property Content (tbl_rentproperty_content)
+$rent_content = get_rent_content();          // Admin > Rent Property > Rent Property Content
+$projects = get_rent_projects();             // Admin > Manage Rent Projects: published rental properties as cards
+$filters = get_rent_filters($projects);      // types, communities, quick communities, prices for the filter bar
+$cards_per_page = 9;                        // the page's JS shows this many per page
 
-    if (!empty($_GET["dev_id"])) {
-        $devId = (int) $_GET["dev_id"];
-        $conditions[] = "prj_dev_id = $devId";
-    }
+// Filter exclusive/featured properties for the #exTrack carousel
+$exclusive_projects = array_values(array_filter($projects, function ($p) {
+  return !empty($p['is_featured']);
+}));
 
-    if (!empty($_GET["proj_bedroom"])) {
-        $bedroomsArr = [];
-
-        if (is_array($_GET["proj_bedroom"])) {
-            $bedroomsArr = $_GET["proj_bedroom"];
-        } else {
-            $bedroomsRaw = urldecode($_GET["proj_bedroom"]);
-            $bedroomsArr = explode(",", $bedroomsRaw);
-        }
-
-        $bedroomsClean = array_map(function ($b) use ($conn) {
-            return mysqli_real_escape_string($conn, trim($b));
-        }, $bedroomsArr);
-
-        $bedroomConditions = [];
-        foreach ($bedroomsClean as $bed) {
-            $bedroomConditions[] = "proj_bedroom LIKE '%$bed%'";
-        }
-
-        if (!empty($bedroomConditions)) {
-            $conditions[] = "(" . implode(" OR ", $bedroomConditions) . ")";
-        }
-    }
-    if (!empty($_GET["property_type"])) {
-
-        $propertyType = mysqli_real_escape_string(
-            $conn,
-            $_GET["property_type"]
-        );
-
-        $conditions[] = "proj_inventory_type = '$propertyType'";
-    }
-
-    if (!empty($_GET["location"])) {
-
-        $location = $_GET["location"];
-
-        $conditions[] = "proj_location LIKE '%$location%'";
-    }
-    // --- Price Filter ---
-    if (!empty($_GET["price_min"]) && is_numeric($_GET["price_min"])) {
-        $priceMin = (int) $_GET["price_min"];
-        $conditions[] = "proj_price >= $priceMin";
-    }
-
-    if (
-        !empty($_GET["price_max"]) &&
-        is_numeric($_GET["price_max"]) &&
-        $_GET["price_max"] !== "show_all"
-    ) {
-        $priceMax = (int) $_GET["price_max"];
-        $conditions[] = "proj_price <= $priceMax";
-    }
-
-    // --- Amenities Filter ---
-    if (!empty($_GET["amenities"]) && is_array($_GET["amenities"])) {
-        $amenityConditions = [];
-        $selectedAmenityIds = array_map("intval", $_GET["amenities"]);
-        foreach ($selectedAmenityIds as $aid) {
-            $amenityConditions[] = "FIND_IN_SET($aid, proj_fea_fac_opt)";
-        }
-
-        if (!empty($amenityConditions)) {
-            $conditions[] = "(" . implode(" AND ", $amenityConditions) . ")";
-        }
-    }
-
-    $whereClause = implode(" AND ", $conditions);
-    $whereClause .= " AND is_active = 1";
-
-    $sql = select_query("tbl_proj", $whereClause);
-} else {
-    $sql = select_query("tbl_proj", "prj_type_id = 8 AND is_active = 1");
+// Hero Background Image: Prioritize SEO sharing picture from Admin > Manage Tags (edit-tags.php?edit=MjA=), fallback to Rent Property Content
+$hero_bg_img = '';
+if (!empty($meta_tags['meta_og_img']) && is_file(__DIR__ . '/admin_nsrdwsc/assets/media/meta/' . $meta_tags['meta_og_img'])) {
+  $hero_bg_img = BASE_URL_IMG . 'meta/' . rawurlencode($meta_tags['meta_og_img']);
+} elseif (!empty($rent_content['rentproperty_cont_img']) && is_file(__DIR__ . '/admin_nsrdwsc/assets/media/project/' . $rent_content['rentproperty_cont_img'])) {
+  $hero_bg_img = BASE_URL_IMG . 'project/' . rawurlencode($rent_content['rentproperty_cont_img']);
 }
 
-$count = mysqli_num_rows($sql);
-$per_page = 10;
-$no_of_page = ceil($count / $per_page);
-$start = ($page - 1) * $per_page;
-$rentprop_content = select_row("tbl_rentproperty_content", "is_active=1");
+// Hero Subtitle: from Admin > Manage Tags meta_description (edit-tags.php?edit=MjA=)
+$hero_subtitle = (!empty($meta_tags['meta_description']) && $meta_tags['meta_description'] !== 'Rent Property')
+  ? $meta_tags['meta_description']
+  : 'Apartments, villas and townhouses for rent across Dubai — verified listings and viewings arranged by DRE.';
+
+$page = [
+  'active' => 'properties',
+  'css' => ['assets/css/pages/rent-property.css'],
+];
+
+include('common/header.php');
 ?>
-
-
-
-<!--warpper-->
-<div class="wrapper">
-    <!--content-->
-    <div class="content search-pgs">
-        <!--section-->
-        <div class="section hero-section hero-section_sin">
-            <div class="hero-section-wrap">
-                <div class="hero-section-wrap-item">
-                    <div class="container">
-                        <div class="hero-section-container">
-                            <div class="hero-section-title">
-                                <h1><?= $rentprop_content[
-                                    "rentproperty_cont_heading"
-                                ] ?></h1>
-
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-wrap bg-hero bg-parallax-wrap-gradien fs-wrapper" data-scrollax-parent="true">
-                        <div class="bg" data-bg="<?= BASE_URL_IMG ?>project/<?= $rentprop_content[
-                              "rentproperty_cont_img"
-                          ] ?>" data-scrollax="properties: { translateY: '30%' }">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!--section-end-->
-
-        <!--container-->
-        <div class="container">
-            <!--breadcrumbs-list-->
-            <div class="breadcrumbs-list bl_flat">
-                <a href="<?= BASE_URL ?>">Home</a><a href="javascript:void(0)">Properties</a><span>Rent Property</span>
-                <div class="breadcrumbs-list_dec"><i class="fa-thin fa-arrow-up"></i></div>
-            </div>
-            <?php
-            $prop_query = select_query("tbl_proj", "prj_type_id=8 and proj_markfeat=1 and is_active=1 order by prj_id desc");
-            $proj_count = mysqli_num_rows($prop_query);
-
-            if ($proj_count > 0 && empty($_GET)): ?>
-                <!-- exclusive listing carousel starts -->
-                <div class="testimonilas-carousel-wrap">
-                    <div class="testimonilas-carousel exc-listing-carousel equal-elc">
-                        <div class="exc-carousel">
-                            <h4>Exclusive Listing</h4>
-                        </div>
-
-                        <div class="swiper-container">
-                            <div class="swiper-wrapper">
-                                <?php while ($row = mysqli_fetch_array($prop_query)):
-                                    $proj_dev = null;
-
-                                    if (!empty($row["prj_dev_id"]) && is_numeric($row["prj_dev_id"])) {
-                                        $proj_dev = select_row("tbl_developer", "dev_id=" . (int) $row["prj_dev_id"]);
-                                    }
-                                    $prj_thumb_arr = explode(",", $row["prj_thumb_img"]);
-                                    $prj_thumb_img = count($prj_thumb_arr) > 1 ? $prj_thumb_arr[0] : $row["prj_thumb_img"];
-                                    ?>
-                                    <div class="swiper-slide">
-                                        <div class="testi-item">
-                                            <div class="listing-item">
-                                                <div class="geodir-category-listing">
-                                                    <div class="geodir-category-img">
-                                                        <a href="<?= BASE_URL ?>rent-property/<?= $row["proj_slug"] ?>"
-                                                            class="geodir-category-img_item">
-                                                            <div class="sm-prop-thumb">
-                                                                <img src="<?= BASE_URL_IMG ?>project/thumb/<?= $prj_thumb_img ?>"
-                                                                    alt="">
-                                                            </div>
-                                                            <div class="overlay"></div>
-                                                        </a>
-                                                        <div class="geodir-category-location">
-                                                            <a href="javascript:void(0)" class="map-item">
-                                                                <i class="fas fa-map-marker-alt"></i>
-                                                                <?= $row['proj_location'] ?>
-                                                            </a>
-                                                        </div>
-
-                                                    </div>
-
-                                                    <div class="geodir-category-content prop-gcc eq-ns">
-                                                        <h3><a
-                                                                href="<?= BASE_URL ?>rent-property/<?= $row["proj_slug"] ?>"><?= $row['proj_name'] ?></a>
-                                                        </h3>
-                                                        <div class="pshp_item_2">
-
-                                                            <?php if (is_numeric($row["proj_price"]) && $row["proj_price"] != 0): ?>
-                                                                <div class="price-row"
-                                                                    style="display: flex; align-items: center; gap: 10px;">
-                                                                    <!-- Price Output -->
-                                                                    <div class="geodir-category-content_price  currency-price"
-                                                                        data-price="<?= $row["proj_price"] ?>"
-                                                                        data-original-currency="AED"
-                                                                        data-original-price="<?= $row["proj_price"] ?>"
-                                                                        style="width: 100%;">
-                                                                        <img src="<?= BASE_URL ?>images/symbol/currency-symbol.png"
-                                                                            alt="Currency"
-                                                                            style="height: 14px; vertical-align: middle;">
-                                                                        AED <?= number_format($row["proj_price"]) ?>
-                                                                    </div>
-                                                                </div>
-                                                            <?php else: ?>
-                                                                <div class="geodir-category-content_price ">
-                                                                    Call Us
-                                                                </div>
-                                                            <?php endif; ?>
-
-                                                            <?php if (!empty($row["proj_price_type"])): ?>
-                                                                <span class="price-type">
-                                                                    / <?= htmlspecialchars(ucfirst($row["proj_price_type"])) ?>
-                                                                </span>
-                                                            <?php endif; ?>
-                                                        </div>
-
-                                                        <div class="geodir-category-content-details">
-                                                            <ul>
-                                                                <?php if (!empty($row["proj_bedroom"])): ?>
-                                                                    <li><i
-                                                                            class="fa-light fa-bed"></i><span><?= htmlspecialchars(str_replace(',', ', ', $row["proj_bedroom"])) ?></span>
-                                                                    </li>
-                                                                <?php endif; ?>
-                                                                <?php if (!empty($row["proj_shower"])): ?>
-                                                                    <li><i
-                                                                            class="fa-light fa-bath"></i><span><?= htmlspecialchars($row["proj_shower"]) ?></span>
-                                                                    </li>
-                                                                <?php endif; ?>
-                                                                <?php if (!empty($row["proj_area"])): ?>
-                                                                    <li><i class="fa-light fa-chart-area"></i><span><?= htmlspecialchars($row["proj_area"]) ?>
-                                                                            sq ft</span> </li>
-                                                                <?php endif; ?>
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="geodir-category-footer list-footer eq-ns-f">
-                                                        <a href="<?= BASE_URL ?>rent-property/<?= $row["proj_slug"] ?>"
-                                                            class="gcf-company post-card_link-2">View<i
-                                                                class="fa-solid fa-caret-right"></i></a>
-                                                        <div class="clearfix"></div>
-                                                        <div class="list-contact-icon">
-                                                            <a href="tel:<?= $header_details['header_contact_number'] ?>"
-                                                                target="_blank" class="pcl_btn">
-                                                                <img src="images/c-icon/call-icon.png" alt="Call Icon"
-                                                                    width="100%" title="Call">
-                                                            </a>
-                                                            <a href="https://wa.me/<?= $header_details['header_contact_number'] ?>"
-                                                                target="_blank" class="pcl_btn">
-                                                                <img src="images/c-icon/whatsapp-icon.png" alt="Whatsapp Icon"
-                                                                    width="100%" title="Whatsapp">
-                                                            </a>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                <?php endwhile; ?>
-                            </div>
-                        </div>
-
-                        <div class="tc-button tc-button-next"><i class="fas fa-caret-right"></i></div>
-                        <div class="tc-button tc-button-prev"><i class="fas fa-caret-left"></i></div>
-                    </div>
-                </div>
-                <!-- exclusive listing carousel ends -->
-            <?php endif; ?>
-
-
-            <div class="boxed-container space-r">
-                <div class="show-mob-filter"><i class="far fa-sliders-h"></i> Search Filters</div>
-                <!-- list-searh-input-wrap-->
-                <form action="" method="get">
-                    <div class="list-searh-input-wrap box_list-searh-input-wrap lws_mobile lsw_mb-btn">
-                        <div class="close_mob-filter cmf"><i class="fa-regular fa-xmark"></i></div>
-                        <div class="list-searh-input-wrap-title_wrap">
-                            <div class="list-searh-input-wrap-title"><i class="far fa-sliders-h"></i><span>Search
-                                    Filters</span></div>
-
-                        </div>
-                        <div class="custom-form">
-                            <div class="row">
-                                <!-- listsearch-input-item -->
-                                <div class="col-lg-4">
-                                    <div class="cs-intputwrap">
-                                        <label for="" class="sr-only">Your Query</label>
-                                        <i class="fa-light fa-search"></i>
-                                        <div class="autocomplete-container">
-                                            <div class="search-wrapper">
-                                                <input type="text" name="search_offplan" class="search-input"
-                                                    placeholder="Search Property..." autocomplete="off" <?php if (isset($_GET['search_offplan'])): ?>
-                                                        value="<?= htmlspecialchars($_GET['search_offplan']) ?>" <?php endif; ?>>
-
-                                                <span class="clear-btn">&times;</span>
-                                            </div>
-                                            <?php
-                                            $prop_query = select_query("tbl_proj", "prj_type_id=8 and is_active=1 order by proj_name");
-                                            $proj_count = mysqli_num_rows($prop_query);
-                                            if ($proj_count > 0): ?>
-                                                <ul class="suggestions">
-                                                    <?php while ($row = mysqli_fetch_array($prop_query)): ?>
-                                                        <li><?= htmlspecialchars($row["proj_name"]) ?></li>
-                                                    <?php endwhile; ?>
-                                                </ul>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- listsearch-input-item -->
-
-                                <!-- listsearch-input-item -->
-                                <div class="col-lg-4">
-                                    <div class="cs-intputwrap">
-                                        <label for="" class="sr-only">Developer</label>
-                                        <i class="fa-light fa-home"></i>
-                                        <div class="autocomplete-container">
-                                            <div class="search-wrapper">
-                                                <input type="text" name="dev_name" class="search-input"
-                                                    placeholder="Developer" autocomplete="off" <?php if (isset($_GET['dev_name'])): ?>
-                                                        value="<?= htmlspecialchars($_GET['dev_name']) ?>" <?php endif; ?>>
-                                                <input type="hidden" name="dev_id" id="dev_id"
-                                                    value="<?= isset($_GET['dev_id']) ? (int) $_GET['dev_id'] : 0 ?>">
-                                                <span class="clear-btn">&times;</span>
-                                            </div>
-                                            <?php
-                                            $dev_query = select_query("tbl_developer", "is_active=1 ORDER BY dev_heading");
-                                            if (mysqli_num_rows($dev_query) > 0): ?>
-                                                <ul class="suggestions">
-                                                    <?php while ($row = mysqli_fetch_array($dev_query)): ?>
-                                                        <li data-dev-id="<?= (int) $row["dev_id"] ?>">
-                                                            <?= htmlspecialchars($row["dev_heading"]) ?>
-                                                        </li>
-                                                    <?php endwhile; ?>
-                                                </ul>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- listsearch-input-item -->
-
-
-                                <?php
-                                // Bedrooms logic unchanged, assuming $conn is your mysqli connection
-                                $sql = "SELECT DISTINCT proj_bedroom FROM tbl_proj WHERE proj_bedroom IS NOT NULL AND proj_bedroom != ''";
-                                $result = mysqli_query($conn, $sql);
-
-                                $bedroom_options = [];
-
-                                while ($row = mysqli_fetch_assoc($result)) {
-                                    $values = explode(",", $row["proj_bedroom"]);
-                                    foreach ($values as $val) {
-                                        $val = trim($val);
-                                        // Keep only integers
-                                        if ($val !== "" && ctype_digit($val) && !in_array($val, $bedroom_options, true)) {
-                                            $bedroom_options[] = $val;
-                                        }
-                                    }
-                                }
-
-                                // Sort numerically
-                                sort($bedroom_options, SORT_NUMERIC);
-
-                                $selected_bedrooms_string = "";
-                                if (isset($_GET["proj_bedroom"])) {
-                                    if (is_array($_GET["proj_bedroom"])) {
-                                        $selected_bedrooms_string = implode(",", $_GET["proj_bedroom"]);
-                                    } else {
-                                        $selected_bedrooms_string = $_GET["proj_bedroom"];
-                                    }
-                                }
-                                $selected_bedrooms = array_filter(array_map("trim", explode(",", $selected_bedrooms_string)));
-                                ?>
-
-                                <div class="col-lg-4">
-                                    <div class="cs-intputwrap">
-                                        <label for="proj_bedroom" class="sr-only">Choose Bedroom</label>
-                                        <i class="fa-light fa-bed"></i>
-                                        <select name="proj_bedroom[]" data-placeholder="Project Bedroom"
-                                            class="chosen-select on-radius no-search-select" multiple>
-                                            <?php foreach ($bedroom_options as $option): ?>
-                                                <?php $isSelected = in_array($option, $selected_bedrooms, true) ? "selected" : ""; ?>
-                                                <option value="<?= htmlspecialchars($option) ?>" <?= $isSelected ?>>
-                                                    <?= htmlspecialchars($option) ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </div>
-                                </div>
-
-
-                                <?php
-                                // Prices array and formatting function unchanged
-                                
-                                $prices = [
-                                    500000,
-                                    750000,
-                                    1000000,
-                                    2000000,
-                                    3000000,
-                                    4000000,
-                                    5000000,
-                                    6000000,
-                                    7000000,
-                                    8000000,
-                                    9000000,
-                                    10000000,
-                                    15000000,
-                                    25000000,
-                                    35000000,
-                                    45000000,
-                                ];
-
-                                function formatPrice($price)
-                                {
-                                    return "AED " . number_format($price);
-                                }
-
-                                // Check if GET values exist and sanitize
-                                $selectedMin = isset($_GET["price_min"]) ? $_GET["price_min"] : "";
-                                $selectedMax = isset($_GET["price_max"]) ? $_GET["price_max"] : "";
-                                ?>
-
-                                <!-- Min Price -->
-                                <div class="col-lg-3">
-                                    <div class="cs-intputwrap">
-                                        <label for="price_min" class="sr-only">Set Min Price</label>
-                                        <i class="fa-light fa-tag"></i>
-                                        <select name="price_min" data-placeholder="Price Min"
-                                            class="chosen-select on-radius no-search-select" id="price_min">
-                                            <option value="show_all" <?= $selectedMin === "show_all" ? "selected" : "" ?>>
-                                                Min</option>
-                                            <?php foreach ($prices as $price): ?>
-                                                <option value="<?= htmlspecialchars($price) ?>" <?= ($selectedMin !== "" && $selectedMin == $price) ? "selected" : "" ?>>
-                                                    <?= formatPrice($price) ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <!-- Max Price -->
-                                <div class="col-lg-3">
-                                    <div class="cs-intputwrap">
-                                        <label for="price_max" class="sr-only">Set Max Price</label>
-                                        <i class="fa-light fa-tag"></i>
-                                        <select name="price_max" data-placeholder="Price Max"
-                                            class="chosen-select on-radius no-search-select" id="price_max">
-                                            <option value="show_all" <?= $selectedMax === "show_all" ? "selected" : "" ?>>
-                                                Max</option>
-                                            <?php foreach ($prices as $price): ?>
-                                                <option value="<?= htmlspecialchars($price) ?>" <?= ($selectedMax !== "" && $selectedMax == $price) ? "selected" : "" ?>>
-                                                    <?= formatPrice($price) ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </div>
-                                </div>
-
-
-
-                                <!-- Amenities -->
-                                <div class="col-lg-3">
-                                    <div class="hidden-listing_search_wrap">
-                                        <div class="more_search-btn">More Options <i class="fa-regular fa-plus"></i>
-                                        </div>
-                                        <div class="hidden-listing-filter">
-                                            <?php
-                                            $amenities_query = mysqli_query($conn, "SELECT featfac_id, featfac_name FROM tbl_proj_featfac WHERE is_active = 1 ORDER BY featfac_name");
-                                            $selected_amenities = isset($_GET["amenities"]) ? (array) $_GET["amenities"] : [];
-                                            ?>
-                                            <div class="hidden-listing-item">
-                                                <div class="filter-tags-title">Amenities</div>
-                                                <div class="filter-tags">
-                                                    <ul class="no-list-style">
-                                                        <?php while ($amenity = mysqli_fetch_assoc($amenities_query)):
-                                                            $id = (int) $amenity["featfac_id"];
-                                                            $name = htmlspecialchars($amenity["featfac_name"]);
-                                                            $isChecked = in_array($id, $selected_amenities) ? "checked" : "";
-                                                            ?>
-                                                            <li>
-                                                                <input class="amenity-checkbox" id="amenity-<?= $id ?>"
-                                                                    type="checkbox" name="amenities[]" value="<?= $id ?>"
-                                                                    <?= $isChecked ?>>
-                                                                <label for="amenity-<?= $id ?>"><?= $name ?></label>
-                                                            </li>
-                                                        <?php endwhile; ?>
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-
-
-                                <!-- Search Button -->
-                                <div class="col-lg-3">
-                                    <button type="submit" name="submit"
-                                        class="commentssubmit commentssubmit_fw">Search</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </form>
-
-            </div>
-
-
-
-
-
-
-
-            <!--<div class="small-head">-->
-            <!--    <p>Properties for rent in Dubai (378)</p>-->
-            <!--</div>-->
-
-
-            <!--breadcrumbs-list end-->
-            <!--main-content-->
-            <div class="main-content">
-                <!--boxed-container-->
-                <div class="boxed-container">
-                    <!---add-filter----->
-                    <div class="row">
-                        <div class="col-lg-12 br-space rent_prop_pos">
-                            <!-- list-main-wrap-header-->
-                            <div class="list-main-wrap-header box-list-header" style="margin-top: 0">
-                                <!-- list-main-wrap-title-->
-                                <div class="list-main-wrap-title">
-                                    <h2>Results : <span><?= $searchRaw ?></span><strong><?= $count ?></strong></h2>
-                                </div>
-                                <!-- list-main-wrap-title end-->
-
-                            </div>
-                            <!-- list-main-wrap-header end-->
-                            <!--listing-item-container-->
-                            <div class="listing-item-container fw-listing-item buy-listing  rent_prop_data">
-                                <!-- 1st listing-item -->
-                                <?php
-                                if (!isset($whereClause)) {
-                                    $conditions = [];
-                                    $conditions[] = "prj_type_id = 8";
-                                    $conditions[] = "is_active = 1";
-
-                                    if (!empty($_GET["search_offplan"])) {
-                                        $searchRaw = urldecode($_GET["search_offplan"]);
-                                        $searchTerm = mysqli_real_escape_string($conn, $searchRaw);
-                                        $conditions[] = "proj_name LIKE '%$searchTerm%'";
-                                    }
-
-                                    if (!empty($_GET["dev_id"])) {
-                                        $devId = (int) $_GET["dev_id"];
-                                        $conditions[] = "prj_dev_id = $devId";
-                                    }
-
-                                    if (!empty($_GET["proj_bedroom"])) {
-                                        $bedroomsArr = [];
-
-                                        if (is_array($_GET["proj_bedroom"])) {
-                                            $bedroomsArr = $_GET["proj_bedroom"];
-                                        } else {
-                                            $bedroomsRaw = urldecode($_GET["proj_bedroom"]);
-                                            $bedroomsArr = explode(",", $bedroomsRaw);
-                                        }
-
-                                        $bedroomsClean = array_map(function ($b) use ($conn) {
-                                            return mysqli_real_escape_string($conn, trim($b));
-                                        }, $bedroomsArr);
-
-                                        $bedroomConditions = [];
-                                        foreach ($bedroomsClean as $bed) {
-                                            $bedroomConditions[] = "proj_bedroom LIKE '%$bed%'";
-                                        }
-
-                                        if (!empty($bedroomConditions)) {
-                                            $conditions[] = "(" . implode(" OR ", $bedroomConditions) . ")";
-                                        }
-                                    }
-
-                                    if (!empty($_GET["price_min"]) && is_numeric($_GET["price_min"])) {
-                                        $conditions[] = "proj_price >= " . (int) $_GET["price_min"];
-                                    }
-
-                                    if (!empty($_GET["price_max"]) && is_numeric($_GET["price_max"]) && $_GET["price_max"] !== "show_all") {
-                                        $conditions[] = "proj_price <= " . (int) $_GET["price_max"];
-                                    }
-
-                                    if (!empty($_GET["amenities"]) && is_array($_GET["amenities"])) {
-                                        $amenityConditions = [];
-                                        $selectedAmenityIds = array_map("intval", $_GET["amenities"]);
-                                        foreach ($selectedAmenityIds as $aid) {
-                                            $amenityConditions[] = "FIND_IN_SET($aid, proj_fea_fac_opt)";
-                                        }
-
-                                        if (!empty($amenityConditions)) {
-                                            $conditions[] = "(" . implode(" AND ", $amenityConditions) . ")";
-                                        }
-                                    }
-
-                                    $whereClause = implode(" AND ", $conditions);
-                                }
-
-                                // Now use it in the dynamic listing query
-                                $finalQuery = $whereClause . " ORDER BY prj_id desc LIMIT $start, $per_page";
-                                $dynamic_listings = select_query("tbl_proj", $finalQuery);
-
-
-                                if (mysqli_num_rows($dynamic_listings) > 0):
-                                    while ($row = mysqli_fetch_array($dynamic_listings)):
-
-                                        $proj_dev = null;
-
-                                        if (!empty($row["prj_dev_id"])) {
-                                            $proj_dev = select_row("tbl_developer", "dev_id=" . (int) $row["prj_dev_id"]);
-                                        }
-                                        $prj_thumb_arr = explode(",", $row["prj_thumb_img"]);
-
-                                        // Clean and filter empty values
-                                        $prj_thumb_arr = array_filter($prj_thumb_arr, function ($val) {
-                                            return !empty(trim($val));
-                                        });
-
-                                        // Re-index the array
-                                        $prj_thumb_arr = array_values($prj_thumb_arr);
-
-                                        // Set fallback images
-                                        $main_thumb = isset($prj_thumb_arr[0]) ? $prj_thumb_arr[0] : 'default.jpg';
-                                        $thumb1 = isset($prj_thumb_arr[1]) ? $prj_thumb_arr[1] : $main_thumb;
-                                        $thumb2 = isset($prj_thumb_arr[2]) ? $prj_thumb_arr[2] : $main_thumb;
-                                        ?>
-                                        <div class="listing-item br-list">
-                                            <div class="geodir-category-listing">
-                                                <div class="geodir-category-img">
-                                                    <div class="boxed-content">
-                                                        <div class="boxed-content-item pd-rem">
-                                                            <div class="row gallery-layout">
-                                                                <!-- RIGHT SIDE -->
-                                                                <div class="col-lg-8 px-1 right-col">
-                                                                    <div class="right-gallery">
-                                                                        <a data-fancybox="dre-gallery-<?= $row['prj_id'] ?>"
-                                                                            href="<?= BASE_URL_IMG ?>project/thumb/<?= $main_thumb ?>"
-                                                                            class="dre-gallery-item">
-                                                                            <img src="<?= BASE_URL_IMG ?>project/thumb/<?= $main_thumb ?>"
-                                                                                class="dre-gallery-img" />
-                                                                        </a>
-                                                                    </div>
-                                                                </div>
-
-                                                                <!-- LEFT SIDE -->
-                                                                <div class="col-lg-4 px-1 left-col">
-                                                                    <div class="left-gallery">
-
-                                                                        <div class="gallery-img">
-                                                                            <a data-fancybox="dre-gallery-<?= $row['prj_id'] ?>"
-                                                                                href="<?= BASE_URL_IMG ?>project/thumb/<?= $thumb1 ?>"
-                                                                                class="dre-gallery-item">
-                                                                                <img src="<?= BASE_URL_IMG ?>project/thumb/<?= $thumb1 ?>"
-                                                                                    class="dre-gallery-img" />
-                                                                            </a>
-                                                                        </div>
-
-                                                                        <div class="gallery-img">
-                                                                            <a data-fancybox="dre-gallery-<?= $row['prj_id'] ?>"
-                                                                                href="<?= BASE_URL_IMG ?>project/thumb/<?= $thumb2 ?>"
-                                                                                class="dre-gallery-item">
-                                                                                <img src="<?= BASE_URL_IMG ?>project/thumb/<?= $thumb2 ?>"
-                                                                                    class="dre-gallery-img" />
-                                                                            </a>
-
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div class="geodir-category-content">
-                                                    <h3><a
-                                                            href="<?= BASE_URL ?>rent-property/<?= $row["proj_slug"] ?>"><?= $row['proj_name'] ?></a>
-                                                    </h3>
-
-                                                    <div class="geodir-category-location mb-2" style="text-align: left">
-                                                        <a href="javascript:void(0)" class="map-item color-b">
-                                                            <i class="fas fa-map-marker-alt"></i> <?= $row['proj_location'] ?>
-                                                        </a>
-                                                    </div>
-
-                                                    <div class="pshp_item_2">
-
-                                                        <?php if (is_numeric($row["proj_price"]) && $row["proj_price"] != 0): ?>
-                                                            <div class="price-row"
-                                                                style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
-                                                                <!-- Price Output -->
-                                                                <div class="geodir-category-content_price currency-price"
-                                                                    data-price="<?= $row["proj_price"] ?>"
-                                                                    data-original-currency="AED"
-                                                                    data-original-price="<?= $row["proj_price"] ?>"
-                                                                    style="width: 100%;">
-                                                                    <img src="<?= BASE_URL ?>images/symbol/currency-symbol.png"
-                                                                        alt="Currency"
-                                                                        style="height: 14px; vertical-align: middle;">
-                                                                    AED <?= number_format($row["proj_price"]) ?>
-                                                                </div>
-                                                            </div>
-                                                        <?php else: ?>
-                                                            <div class="geodir-category-content_price ">
-                                                                Call Us
-                                                            </div>
-                                                        <?php endif; ?>
-                                                        <?php if (!empty($row["proj_price_type"])): ?>
-                                                            <span class="price-type">
-                                                                / <?= htmlspecialchars(ucfirst($row["proj_price_type"])) ?>
-                                                            </span>
-                                                        <?php endif; ?>
-                                                    </div>
-
-
-
-
-                                                    <div class="geodir-category-content-details">
-                                                        <ul>
-                                                            <?php if (!empty($row["proj_bedroom"])): ?>
-                                                                <li>
-                                                                    <i class="fa-light fa-bed"></i>
-                                                                    <span><?= htmlspecialchars(str_replace(',', ', ', $row["proj_bedroom"])) ?></span>
-                                                                </li>
-                                                            <?php endif; ?>
-
-                                                            <?php if (!empty($row["proj_shower"])): ?>
-                                                                <li>
-                                                                    <i class="fa-light fa-bath"></i>
-                                                                    <span><?= htmlspecialchars($row["proj_shower"]) ?></span>
-                                                                </li>
-                                                            <?php endif; ?>
-
-                                                            <?php if (!empty($row["proj_area"])): ?>
-                                                                <li>
-                                                                    <i class="fa-light fa-chart-area"></i>
-                                                                    <span><?= htmlspecialchars($row["proj_area"]) ?> sq ft</span>
-                                                                </li>
-                                                            <?php endif; ?>
-                                                        </ul>
-                                                    </div>
-                                                </div>
-
-                                                <div class="geodir-category-footer p-list-footer">
-                                                    <a href="<?= BASE_URL ?>rent-property/<?= $row["proj_slug"] ?>"
-                                                        class="gcf-company post-card_link-2">View<i
-                                                            class="fa-solid fa-caret-right"></i></a>
-                                                    <div class="clearfix"></div>
-                                                    <div class="list-contact-icon">
-                                                        <a href="tel:<?= $header_details['header_contact_number'] ?>"
-                                                            target="_blank" class="pcl_btn">
-                                                            <img src="images/c-icon/call-icon.png" alt="Call Icon" width="100%"
-                                                                title="Call">
-                                                        </a>
-                                                        <a href="https://wa.me/<?= $header_details['header_contact_number'] ?>"
-                                                            target="_blank" class="pcl_btn">
-                                                            <img src="images/c-icon/whatsapp-icon.png" alt="Whatsapp Icon"
-                                                                width="100%" title="Whatsapp">
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <?php
-                                    endwhile;
-                                endif;
-                                ?>
-
-
-
-                            </div>
-                            <!--listing-item-container end-->
-                            <!-- pagination-->
-                            <div class="pagination-wrap">
-                                <div class="pagination">
-                                    <?php include "pagination/paging_rent_property.php"; ?>
-                                </div>
-                            </div>
-                            <!-- pagination end-->
-                        </div>
-                    </div>
-                    <div class="limit-box"></div>
-                </div>
-                <!--boxed-container end-->
-            </div>
-            <!--main-content end-->
-            <div class="to_top-btn-wrap">
-                <div class="to-top to-top_btn"><span>Back to top</span> <i class="fa-solid fa-arrow-up"></i></div>
-                <div class="svg-corner svg-corner_white" style="top:0;left:  -40px; transform: rotate(-90deg)">
-                </div>
-                <div class="svg-corner svg-corner_white" style="top:0;right: -40px; transform: rotate(-180deg)">
-                </div>
-            </div>
-        </div>
-        <!-- container end-->
+<!-- ===== RENT: HERO ===== -->
+<header class="ph-hero op-hero">
+  <div class="ph-bg" <?= $hero_bg_img !== '' ? 'style="background-image: url(' . e($hero_bg_img) . '); background-position: center 60%;"' : '' ?>></div>
+  <div class="wrap">
+    <div class="crumbs" role="navigation" aria-label="Breadcrumb">
+      <a href="<?= BASE_URL ?>">Home</a><span>/</span><a href="#listing">Properties</a><span>/</span><span
+        aria-current="page">Rent Property</span>
     </div>
-    <!--content  end-->
+    <span class="eyebrow">Rent Property · Homes for rent</span>
+    <h1 class="serif">Your next home, <em class="gold-text">ready to rent.</em></h1>
+    <p class="sub">
+      <?= e($hero_subtitle) ?>
+    </p>
+    <form class="op-search glass" id="opSearch" role="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <circle cx="11" cy="11" r="7"></circle>
+        <path d="M20 20l-3.5-3.5"></path>
+      </svg>
+      <input id="qIn" type="search" placeholder="Search a community or building — e.g. Town Square, JVC…"
+        aria-label="Search rental homes" />
+      <button class="btn btn-gold" type="submit">Search</button>
+    </form>
+    <div class="quick" id="quickC">
+      <?php foreach ($filters['quick_communities'] as $qc) { ?>
+        <button type="button" data-c="<?= e($qc['name']) ?>">
+          <?= e($qc['name']) ?> <span style="opacity: 0.6"><?= (int) $qc['count'] ?></span>
+        </button>
+      <?php } ?>
+    </div>
+  </div>
+</header>
 
-    <?php include 'common/footer.php'; ?>
+<?php if (!empty($exclusive_projects)) { ?>
+  <!-- ===== EXCLUSIVE ===== -->
+  <section id="exclusive" style="padding: 60px 0 10px">
+    <div class="wrap">
+      <div class="head-row" style="margin-bottom: 26px">
+        <div>
+          <span class="eyebrow">Exclusive Listings</span>
+          <h2 class="serif">Only with <em class="gold-text">DRE.</em></h2>
+        </div>
+        <div class="car-nav">
+          <button id="exPrev" aria-label="Previous">←</button><button id="exNext" aria-label="Next">→</button>
+        </div>
+      </div>
+      <div class="ex-track" id="exTrack">
+        <?php foreach ($exclusive_projects as $p) { ?>
+          <article class="oc" data-i="0" data-ty="<?= e($p['type']) ?>" data-c="<?= e($p['community']) ?>"
+            data-p="<?= $p['price'] ?>" data-bn="<?= $p['beds_num'] ?>" data-bt="<?= $p['baths_num'] ?>"
+            data-a="<?= $p['area'] ?>" data-ppf="<?= $p['ppf'] ?>" data-u="<?= e($p['slug']) ?>"
+            data-l="<?= e($p['location']) ?>" data-x="1">
+            <div class="oc-img" data-href="<?= e($p['url']) ?>">
+              <div class="oc-slides">
+                <?php foreach ($p['images'] as $img_idx => $img_url) { ?>
+                  <img src="<?= e($img_url) ?>"
+                    alt="<?= e($p['name']) . ($p['location'] !== '' ? ', ' . e($p['location']) : '') . ' photo ' . ($img_idx + 1) ?>"
+                    loading="lazy"
+                    onerror="this.onerror=null; this.src='<?= BASE_URL ?>admin_nsrdwsc/assets/media/logos/logo-light.png'; this.style.objectFit='contain'; this.style.padding='20px';" />
+                <?php } ?>
+              </div>
+              <span class="badge exc">Exclusive</span>
+              <?php if ($p['community'] !== '') { ?>
+                <span class="oc-loc"><svg viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                      d="M12 2a7 7 0 00-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 00-7-7zm0 9.5A2.5 2.5 0 1112 6.5a2.5 2.5 0 010 5z">
+                    </path>
+                  </svg><?= e($p['community']) ?></span>
+              <?php } ?>
+              <button class="oc-nav p" aria-label="Previous photo">‹</button><button class="oc-nav n"
+                aria-label="Next photo">›</button><span class="oc-dots">
+                <?php foreach ($p['images'] as $img_idx => $img_url) { ?>
+                  <i<?= $img_idx === 0 ? ' class="on"' : '' ?>></i>
+                <?php } ?>
+              </span>
+            </div>
+            <button class="oc-fav" data-u="<?= e($p['slug']) ?>" aria-pressed="false"
+              aria-label="Save <?= e($p['name']) ?>">
+              ♡
+            </button>
+            <div class="oc-b">
+              <span class="tp"><?= e($p['type']) ?></span>
+              <h3>
+                <a href="<?= e($p['url']) ?>"><?= e($p['name']) ?></a>
+              </h3>
+              <div class="specs">
+                <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <path d="M3 18V8M21 18v-5a3 3 0 00-3-3H10v8M3 14h18M6.5 11.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"></path>
+                  </svg><?= e($p['beds_label']) ?></span><?php if ($p['baths_num'] > 0) { ?><span><svg viewBox="0 0 24 24"
+                      fill="none" stroke="currentColor" stroke-width="1.6">
+                      <path d="M4 12h16v3a4 4 0 01-4 4H8a4 4 0 01-4-4zM6 12V6a2 2 0 014 0M7 19l-1 2M17 19l1 2"></path>
+                    </svg><?= e($p['baths_label']) ?></span><?php } ?><?php if ($p['area'] > 0) { ?><span><svg
+                      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                      <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"></path>
+                    </svg><?= e($p['area_label']) ?></span><?php } ?>
+              </div>
+              <div class="oc-meta">
+                <div class="pr">
+                  <small>Annual rent</small><b><?= $p['price'] > 0 ? e($p['price_label']) : 'Price on request' ?></b>
+                  <?php if ($p['ppf'] > 0) { ?>
+                    <div class="ppf"><?= e($p['ppf_label']) ?></div>
+                  <?php } ?>
+                </div>
+              </div>
+              <div class="oc-act">
+                <a class="btn btn-glass" href="<?= e($p['url']) ?>">View details →</a><a class="oc-wa"
+                  href="<?= e($p['whatsapp']) ?>" target="_blank" rel="noopener"
+                  aria-label="Enquire about <?= e($p['name']) ?> on WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                      d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm4.5 12.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 01-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 2s.8 2.3.9 2.5c.1.2 1.6 2.5 4 3.5 1.5.6 2.1.7 2.8.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.4-.2z">
+                    </path>
+                  </svg></a>
+              </div>
+            </div>
+          </article>
+        <?php } ?>
+      </div>
+    </div>
+  </section>
+<?php } ?>
+
+<!-- ===== LISTING ===== -->
+<section id="listing" class="op-list">
+  <div class="wrap">
+    <div class="fbar glass" id="fbar">
+      <div class="fb-row">
+        <div class="seg" id="tySeg" role="tablist" aria-label="Property type">
+          <button role="tab" data-t="" class="on">All types</button><button role="tab"
+            data-t="Apartment">Apartments</button><button role="tab" data-t="Villa">Villas</button><button role="tab"
+            data-t="Townhouse">Townhouses</button>
+        </div>
+        <label class="fsel"><span>Community</span><select id="locSel">
+            <option value="">All communities</option>
+            <?php foreach ($filters['communities'] as $c) { ?>
+              <option><?= e($c) ?></option>
+            <?php } ?>
+          </select></label>
+        <label class="fsel"><span>Min price</span><select id="pMin">
+            <option value="">Any</option>
+            <?php foreach ($filters['prices'] as $price_step) { ?>
+              <option value="<?= $price_step ?>">AED <?= number_format($price_step) ?> / yr</option>
+            <?php } ?>
+          </select></label>
+        <label class="fsel"><span>Max price</span><select id="pMax">
+            <option value="">Any</option>
+            <?php foreach ($filters['prices'] as $price_step) { ?>
+              <option value="<?= $price_step ?>">AED <?= number_format($price_step) ?> / yr</option>
+            <?php } ?>
+          </select></label>
+        <button class="fmore" id="moreBtn" aria-expanded="false" aria-controls="moreF">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M4 6h16M7 12h10M10 18h4"></path>
+          </svg>Beds &amp; baths<b id="bedCount"></b>
+        </button>
+      </div>
+      <div class="more" id="moreF" hidden="">
+        <div class="more-row">
+          <small>Bedrooms</small>
+          <div class="beds" id="bedChips">
+            <button type="button" data-b="STD">Studio</button><button type="button" data-b="1">1</button><button
+              type="button" data-b="2">2</button><button type="button" data-b="3">3</button><button type="button"
+              data-b="4">4</button><button type="button" data-b="5">5+</button>
+          </div>
+        </div>
+        <div class="more-row">
+          <small>Bathrooms</small>
+          <div class="beds" id="bathChips">
+            <button type="button" data-b="1">1+</button><button type="button" data-b="2">2+</button><button
+              type="button" data-b="3">3+</button><button type="button" data-b="4">4+</button><button type="button"
+              data-b="5">5+</button>
+          </div>
+        </div>
+        <div class="more-row">
+          <small>Min size</small>
+          <div class="beds" id="sizeChips">
+            <button type="button" data-s="500">500+ sq ft</button><button type="button" data-s="1000">1,000+ sq
+              ft</button><button type="button" data-s="1500">1,500+ sq ft</button><button type="button"
+              data-s="2500">2,500+ sq ft</button><button type="button" data-s="4000">4,000+ sq ft</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rbar">
+      <p id="rCount" data-noun="homes for rent"></p>
+      <div class="rbar-r">
+        <button class="clear" id="clearAll" hidden="">Clear filters ×</button>
+        <label class="fsel sort"><span>Sort</span><select id="sortSel">
+            <option value="feat">Featured</option>
+            <option value="pa">Rent: low to high</option>
+            <option value="pd">Rent: high to low</option>
+            <option value="sz">Size: largest first</option>
+            <option value="ppf">Best value (rent / sq ft)</option>
+          </select></label>
+        <button class="favbtn" id="favOnly" aria-pressed="false" title="Show saved only">
+          ♡ <b id="favCount">0</b>
+        </button>
+        <div class="vt" role="group" aria-label="View">
+          <button data-v="grid" class="on" aria-label="Grid view">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <rect x="3" y="3" width="8" height="8" rx="2"></rect>
+              <rect x="13" y="3" width="8" height="8" rx="2"></rect>
+              <rect x="3" y="13" width="8" height="8" rx="2"></rect>
+              <rect x="13" y="13" width="8" height="8" rx="2"></rect>
+            </svg></button><button data-v="list" aria-label="List view">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <rect x="3" y="4" width="18" height="4" rx="1.5"></rect>
+              <rect x="3" y="10" width="18" height="4" rx="1.5"></rect>
+              <rect x="3" y="16" width="18" height="4" rx="1.5"></rect>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="opg" id="opGrid" aria-live="polite" data-fav-key="dre-favs-rent">
+      <?php foreach ($projects as $i => $p) { ?>
+        <article class="oc" data-i="0" data-ty="<?= e($p['type']) ?>" data-c="<?= e($p['community']) ?>"
+          data-p="<?= $p['price'] ?>" data-bn="<?= $p['beds_num'] ?>" data-bt="<?= $p['baths_num'] ?>"
+          data-a="<?= $p['area'] ?>" data-ppf="<?= $p['ppf'] ?>" data-u="<?= e($p['slug']) ?>"
+          data-l="<?= e($p['location']) ?>" <?= !empty($p['is_featured']) ? 'data-x="1"' : '' ?>   <?= $i >= $cards_per_page ? 'hidden=""' : '' ?>>
+          <div class="oc-img" data-href="<?= e($p['url']) ?>">
+            <div class="oc-slides">
+              <?php foreach ($p['images'] as $img_idx => $img_url) { ?>
+                <img src="<?= e($img_url) ?>"
+                  alt="<?= e($p['name']) . ($p['location'] !== '' ? ', ' . e($p['location']) : '') . ' photo ' . ($img_idx + 1) ?>"
+                  loading="lazy"
+                  onerror="this.onerror=null; this.src='<?= BASE_URL ?>admin_nsrdwsc/assets/media/logos/logo-light.png'; this.style.objectFit='contain'; this.style.padding='20px';" />
+              <?php } ?>
+            </div>
+            <span
+              class="badge<?= !empty($p['is_featured']) ? ' exc' : '' ?>"><?= !empty($p['is_featured']) ? 'Exclusive' : 'For rent' ?></span>
+            <?php if ($p['community'] !== '') { ?>
+              <span class="oc-loc"><svg viewBox="0 0 24 24" fill="currentColor">
+                  <path
+                    d="M12 2a7 7 0 00-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 00-7-7zm0 9.5A2.5 2.5 0 1112 6.5a2.5 2.5 0 010 5z">
+                  </path>
+                </svg><?= e($p['community']) ?></span>
+            <?php } ?>
+            <button class="oc-nav p" aria-label="Previous photo">‹</button><button class="oc-nav n"
+              aria-label="Next photo">›</button><span class="oc-dots">
+              <?php foreach ($p['images'] as $img_idx => $img_url) { ?>
+                <i<?= $img_idx === 0 ? ' class="on"' : '' ?>></i>
+              <?php } ?>
+            </span>
+          </div>
+          <button class="oc-fav" data-u="<?= e($p['slug']) ?>" aria-pressed="false"
+            aria-label="Save <?= e($p['name']) ?>">
+            ♡
+          </button>
+          <div class="oc-b">
+            <span class="tp"><?= e($p['type']) ?></span>
+            <h3>
+              <a href="<?= e($p['url']) ?>"><?= e($p['name']) ?></a>
+            </h3>
+            <div class="specs">
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M3 18V8M21 18v-5a3 3 0 00-3-3H10v8M3 14h18M6.5 11.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"></path>
+                </svg><?= e($p['beds_label']) ?></span><?php if ($p['baths_num'] > 0) { ?><span><svg viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="1.6">
+                    <path d="M4 12h16v3a4 4 0 01-4 4H8a4 4 0 01-4-4zM6 12V6a2 2 0 014 0M7 19l-1 2M17 19l1 2"></path>
+                  </svg><?= e($p['baths_label']) ?></span><?php } ?><?php if ($p['area'] > 0) { ?><span><svg
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"></path>
+                  </svg><?= e($p['area_label']) ?></span><?php } ?>
+            </div>
+            <div class="oc-meta">
+              <div class="pr">
+                <small>Annual rent</small><b><?= $p['price'] > 0 ? e($p['price_label']) : 'Price on request' ?></b>
+                <?php if ($p['ppf'] > 0) { ?>
+                  <div class="ppf"><?= e($p['ppf_label']) ?></div>
+                <?php } ?>
+              </div>
+            </div>
+            <div class="oc-act">
+              <a class="btn btn-glass" href="<?= e($p['url']) ?>">View details →</a><a class="oc-wa"
+                href="<?= e($p['whatsapp']) ?>" target="_blank" rel="noopener"
+                aria-label="Enquire about <?= e($p['name']) ?> on WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor">
+                  <path
+                    d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm4.5 12.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 01-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 2s.8 2.3.9 2.5c.1.2 1.6 2.5 4 3.5 1.5.6 2.1.7 2.8.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.4-.2z">
+                  </path>
+                </svg></a>
+            </div>
+          </div>
+        </article>
+      <?php } ?>
+    </div>
+    <div class="op-empty glass" id="opEmpty" hidden="">
+      <h3>No rental homes match these filters.</h3>
+      <p>Try widening your budget — or tell us what you need and we’ll source it.</p>
+      <div class="story-cta" style="justify-content: center">
+        <button class="btn btn-glass" id="emptyClear">Clear filters</button><a class="btn btn-gold" href="#contact">Ask
+          an advisor →</a>
+      </div>
+    </div>
+    <div class="pager" id="pager" role="navigation" aria-label="Pagination"></div>
+  </div>
+</section>
+
+<!-- ===== LANDLORD / MANAGEMENT CTA ===== -->
+<section style="padding-top: 20px">
+  <div class="wrap">
+    <div class="op-cta glass acc-edge reveal">
+      <div>
+        <span class="eyebrow">Own a property?</span>
+        <h2 class="serif">Let it with DRE — <em class="gold-text">stress-free.</em></h2>
+        <p class="lead">
+          From finding the right tenant to rent collection and maintenance — our property management team takes care
+          of it.
+        </p>
+      </div>
+      <div class="op-cta-b">
+        <a class="btn btn-gold" href="<?= BASE_URL ?>property-management">Property management →</a>
+        <a class="btn btn-glass" href="<?= BASE_URL ?>landlord-guide">Landlord guide</a>
+        <a class="btn btn-glass" href="<?= BASE_URL ?>tenant-guide">Tenant guide</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="contact" style="padding-top: 20px">
+  <div class="wrap">
+    <div class="cta glass acc-edge reveal">
+      <div>
+        <span class="eyebrow">Private Consultation</span>
+        <h2 class="serif">Your advisor is<br /><em class="gold-text">one call</em> away.</h2>
+        <p class="lead">Toll free <?= e($footer_info['footer_contact_number'] ?? '800 37373') ?> · Hotline
+          <?= e($footer_info['footer_contact_number2'] ?? '+971 52 754 3243') ?></p>
+      </div>
+      <form class="form" id="ctaForm" novalidate="">
+        <input class="form-control" name="name" placeholder="Full name" autocomplete="name" required="" />
+        <input class="form-control" id="ctaPhone" name="phone" type="tel" placeholder="Phone / WhatsApp"
+          autocomplete="tel" required="" />
+        <input type="hidden" name="phone_full" id="ctaPhoneFull" />
+        <div class="err" id="ctaPhoneErr" role="alert">Please enter a valid phone number.</div>
+        <input class="form-control" name="message" placeholder="What are you looking to rent?" />
+        <button class="btn btn-gold" style="justify-content: center; margin-top: 6px">Request a call back</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<?php include('common/footer.php'); ?>
+

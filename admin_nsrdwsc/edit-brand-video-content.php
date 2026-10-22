@@ -96,7 +96,7 @@ $entity = [
   'table' => 'tbl_brand_video_content',
   'id' => 'brand_video_cont_id',
   'heading' => '',
-  'public_path' => 'dre-brand-video',
+  'public_path' => 'brand-video',
   'public_slug' => '',
   'page_label' => 'Brand video page of DRE Homes, a Dubai real estate brokerage',
   'active_label' => 'Use this content on the website',
@@ -109,7 +109,9 @@ $entity = [
   'missing' => [],
   'in_use_sql' => "", 'in_use_note' => '',
   'content_file' => '',
-  'links' => [],
+  'links' => [
+    ['Manage SEO tags', 'edit-tags.php?edit=' . base64_encode('35'), 'bi-search'],
+  ],
   'sections' => [['Top of the page', 'bi-window', ''], ['The words', 'bi-text-paragraph', ''], ['YouTube video', 'bi-youtube', 'The picture is shown first; a click plays the YouTube video.'], ['Uploaded video', 'bi-film', 'A second video that plays from this website. Leave empty to show none.']],
   'fields' => [
   ['name' => 'banner', 'col' => 'brand_video_cont_img', 'label' => 'Banner image', 'type' => 'image', 'folder' => 'assets/media/brand-video/', 'help' => 'A wide picture works best (about 1920 × 600).'],

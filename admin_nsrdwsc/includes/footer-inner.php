@@ -97,7 +97,7 @@
 <script src="<?=BASE_URL?>assets/js/additional-methods.min.js"></script>
 <script src=<?=BASE_URL?>assets/js/pages/features/miscellaneous/sweetalert2.js></script>
 <script src="<?=BASE_URL?>assets/js/pages/crud/forms/widgets/bootstrap-datepicker.js"></script>
-<script type="text/javascript" src="<?=BASE_URL?>assets/js/custom.js?121212"></script>
+<script type="text/javascript" src="<?=BASE_URL?>assets/js/custom.js?v=20261017d"></script>
 
 <!--end::Page Scripts-->
 <script type='text/javascript'> 

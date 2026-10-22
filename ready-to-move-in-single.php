@@ -1,669 +1,349 @@
 <?php
+// 1. CONFIG
 include('db/config.php');
 
-$type=2;
-$slug = str_replace('/', '', $_GET['detail']);
-$proj_detail = select_project_detail($slug, $type);
-
-if (empty($proj_detail)) {
-    header('Location:' . BASE_URL . 'ready-to-move-in');
-    exit;  // Stop further execution immediately after redirect
+// 2. DATA: Ready to move in project detail (/ready-to-move-in/<slug>, see .htaccess) — design: ready-paradise-view-2-majan.html
+// Admin > Manage Projects (tbl_proj, type 2): project, developer, community, gallery, amenities, downloads
+$slug = trim(str_replace('/', '', (string) ($_GET['detail'] ?? '')));
+if ($slug === '') {
+    $slug = 'paradise-view-2-majan';
 }
 
-$meta_tags = $proj_detail;
-$dev_detail = select_row('tbl_developer', 'dev_id=' . $proj_detail['prj_dev_id']);
+$property = get_ready_project($slug);
+if (!$property) {
+    // Cross-link fallback: check if it belongs to another category before redirecting
+    if ($slug !== '' && get_offplan_project($slug)) {
+        header('Location: ' . BASE_URL . 'property/' . rawurlencode($slug), true, 301);
+        exit;
+    }
+    if ($slug !== '' && get_buy_project($slug)) {
+        header('Location: ' . BASE_URL . 'buy-property/' . rawurlencode($slug), true, 301);
+        exit;
+    }
+    if ($slug !== '' && get_rent_project($slug)) {
+        header('Location: ' . BASE_URL . 'rent-property/' . rawurlencode($slug), true, 301);
+        exit;
+    }
+    if ($slug !== '' && get_international_project($slug)) {
+        header('Location: ' . BASE_URL . 'international-properties/' . rawurlencode($slug), true, 301);
+        exit;
+    }
+    // Unknown or unpublished project: back to ready to move in listing
+    header('Location: ' . BASE_URL . 'ready-to-move-in', true, 302);
+    exit;
+}
+
+// 3. SEO: the project's own meta fields (Admin > Manage Projects > SEO); header falls back to photos[0] as og:image
+$meta_tags = $property['meta'];
+$page = [
+    'active' => 'properties',
+    'title' => $property['name'] . ' | DRE Homes',
+    'description' => $property['meta']['meta_description'],
+    'css' => ['assets/css/pages/ready-to-move-in-single.css'],
+];
 
 include('common/header.php');
 ?>
-
-<!--warpper-->
-<div class="box-head-bg"></div>
-<div class="wrapper">
-    <div class="content">
-        <div class="container">
-            <div class="breadcrumbs-list bl_flat">
-                <a href="<?= BASE_URL ?>">Home</a><a href="<?= BASE_URL ?>ready-to-move-in">Ready To Move In</a><span><?= $proj_detail['proj_name'] ?></span>
-                <div class="breadcrumbs-list_dec"><i class="fa-thin fa-arrow-up"></i></div>
-            </div>
+    <!-- ===== PROPERTY DETAIL ===== -->
+    <header class="pd-hero">
+      <div class="wrap">
+        <div class="crumbs" role="navigation" aria-label="Breadcrumb">
+          <a href="<?= BASE_URL ?>">Home</a><span>/</span><a href="<?= BASE_URL ?>ready-to-move-in">Ready To Move In</a><span>/</span
+          ><span aria-current="page"><?= e($property['name']) ?></span>
         </div>
-        <!--single-carousle-container-->
-        <div class="fw-carousel-container">
-            <div class="fw-carousel-wrap ">
-                <!-- fw-carousel  -->
-                <div class="fw-carousel lightgallery">
-                    <div class="swiper-container">
-                        <div class="swiper-wrapper">
-                            <?php
-                            $query = select_query('tbl_proj_gallery', 'proj_id = "' . $proj_detail['prj_id'] . '" AND is_active = 1');
-                            while ($row = mysqli_fetch_array($query)) {
-                                ?>
-                                <div class="swiper-slide hov_zoom">
-                                    <a href="<?= BASE_URL_IMG ?>project/gallery/<?= $row['gallery_img'] ?>" class="popup-image">
-                                    <img src="<?= BASE_URL_IMG ?>project/gallery/<?= $row['gallery_img'] ?>"
-                                    alt="<?= $row['gallery_img_alt'] ?>">
-                                    </a>
-                                    
-                                </div>
-                            <?php } ?>
-                        </div>
-                    </div>
-                </div>
-                <!-- fw-carousel end -->
-            </div>
-            <!-- fw-carousel-wrap end -->
-            <div class="fw-carousel-button-prev slider-button"><i class="fa-solid fa-caret-left"></i></div>
-            <div class="fw-carousel-button-next slider-button"><i class="fa-solid fa-caret-right"></i></div>
-            <div class="fwc-controls_wrap">
-                <div class="solid-pagination_btns fwc-pagination"></div>
-            </div>
-        </div>
-        <!--single-carousle-container-->
-        <div class="container">
-            <div class="main-content">
-                <div class="boxed-container">
-                    <div class="row">
-                        <div class="col-lg-8">
-                            <!--boxed-container-->
-                            <div class="scroll-content-wrap">
-                                <div class="list-single-opt_header hsc_flat_bci">
-                                    <div class="hero-section_categories">
-                                        <a href="javascript:void(0)"><?= $proj_detail['proj_inventory_type'] ?></a>
-
-                                    </div>
-
-                                </div>
-                                <!--boxed-content-->
-                                <div class="boxed-content">
-                                    <!--boxed-content-item-->
-                                    <div class="boxed-content-item pd-title">
-                                        <div class="hero-section-title_container hsc_flat">
-                                            <div class="hero-section-title proj-head">
-                                                <h1><?= $proj_detail['proj_name'] ?></h1>
-                                               <h4><strong>Starting From:</strong>
-        <span class="pshp_item">
-               <?php if (is_numeric($proj_detail["proj_price"]) && $proj_detail["proj_price"] != 0): ?>
-    <div class="price-row" style="display: flex; align-items: center; gap: 10px; ">
-        <!-- Price Output -->
-        <div class="geodir-category-content_price  currency-price"
-             data-price="<?= $proj_detail["proj_price"] ?>"
-             data-original-currency="AED"
-             data-original-price="<?= $proj_detail["proj_price"] ?>">
-            <img src="<?= BASE_URL ?>images/symbol/currency-symbol.png" alt="Currency"
-                 style="height: 14px; vertical-align: middle;">
-            AED <?= number_format($proj_detail["proj_price"]) ?>
-        </div>
-    </div>
-<?php else: ?>
-    <div class="geodir-category-content_price ">
-        Call Us
-    </div>
-<?php endif; ?>
-
-    </h4>
-
-
-                                                <div
-                                                    class="property-single-header-price property-dev-box d-flex justify-content-between align-items-center">
-                                                    <div>
-                                                        <span>Developer:</span> <a
-                                                            href="<?= BASE_URL ?>developer/<?= $dev_detail['dev_slug'] ?>"><?= $dev_detail['dev_heading'] ?></a>
-                                                    </div>
-                                                    <div><a href="<?= BASE_URL ?>developer/<?= $dev_detail['dev_slug'] ?>"
-                                                            class="post-card_link ms-auto">View Details <i
-                                                                class="fa-solid fa-caret-right"></i></a></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <!--boxed-content-item end-->
-                                </div>
-                                <!--boxed-content end-->
-                                <!--ps-facts-wrapper-->
-                                <div class="ps-facts-wrapper">
-                                    <!-- Location -->
-                                    <?php if (!empty($proj_detail['proj_location'])): ?>
-                                        <div class="ps-facts-item">
-                                            <h4>Location</h4>
-                                            <h5><?= htmlspecialchars($proj_detail['proj_location']) ?></h5>
-                                            <i class="fa-light fa-location-dot"></i>
-                                        </div>
-                                    <?php endif; ?>
-
-                                    <!-- Bedroom -->
-<?php if (!empty($proj_detail['proj_bedroom'])): ?>
-    <div class="ps-facts-item">
-        <h4>Bedroom</h4>
-        <h5>
-            <?php
-                $items = array_filter(array_map('trim', explode(',', $proj_detail['proj_bedroom'])), 'strlen');
-
-                $text = [];
-                $numbers = [];
-
-                foreach ($items as $item) {
-                    if (is_numeric($item)) {
-                        $numbers[] = $item;
-                    } else {
-                        $text[] = $item;
-                    }
-                }
-
-                // Optional: sort numbers ascending
-                sort($numbers, SORT_NUMERIC);
-
-                echo htmlspecialchars(implode(', ', array_merge($text, $numbers)));
-            ?>
-        </h5>
-        <i class="fa-light fa-bed"></i>
-    </div>
-<?php endif; ?>
-
-                            
-                            
-                                    <!-- Payment plan -->
-                                    <?php if (!empty($proj_detail['proj_pplan_cont'])): ?>
-                                        <div class="ps-facts-item">
-                                            <h4>Payment Plan</h4>
-                                            <h5><?= htmlspecialchars($proj_detail['proj_pplan_cont']) ?></h5>
-                                            <i class="fa-solid fa-credit-card"></i>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                                <!--ps-facts-wrapper end-->
-                                <!--boxed-content-->
-                                <div class="boxed-content">
-                                    <!--boxed-content-title-->
-                                    <div class="boxed-content-title">
-                                        <h3>About this Property</h3>
-                                    </div>
-                                    <!--boxed-content-title end-->
-
-                                    <!--boxed-content-item-->
-                                    <div class="boxed-content-item editor-cont">
-                                        <?= $proj_detail['proj_overview'] ?>
-                                        <div class="pp-single-opt-wrap">
-                                            <div class="pp-single-opt-links">
-                                               <?php if (!empty($proj_detail['proj_brochure']) || !empty($proj_detail['proj_payplan']) || !empty($proj_detail['proj_floorplan'])): ?>
-    <ul>
-        <?php if (!empty($proj_detail['proj_brochure'])): ?>
-            <li class="modal-open">
-                <a data-url="<?= $proj_detail['proj_brochure'] ?>">
-                    <i class="fa-light fa-file-pdf"></i> Brochure
-                </a>
-            </li>
-        <?php endif; ?>
-
-        <?php if (!empty($proj_detail['proj_payplan'])): ?>
-            <li class="modal-open">
-                <a data-url="<?= $proj_detail['proj_payplan'] ?>">
-                    <i class="fa-light fa-file-pdf"></i> Payment Plan
-                </a>
-            </li>
-        <?php endif; ?>
-
-        <?php if (!empty($proj_detail['proj_floorplan'])): ?>
-            <li class="modal-open">
-                <a data-url="<?= $proj_detail['proj_floorplan'] ?>">
-                    <i class="fa-light fa-file-pdf"></i> Floor Plan
-                </a>
-            </li>
-        <?php endif; ?>
-    </ul>
-<?php endif; ?>
-
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <!--boxed-content-item end-->
-                                </div>
-
-                                <?php
-                                $payplan_query = select_query('tbl_proj_payplan', 'proj_id=' . $proj_detail['prj_id'] . ' and is_active=1');
-                                $payplan_tot = mysqli_num_rows($payplan_query);
-                                if ($payplan_tot > 0) {
-
-                                    ?>
-
-
-                                    <div class="boxed-content">
-                                        <!--boxed-content-title-->
-                                        <div class="boxed-content-title">
-                                            <h3> Payment Plan</h3>
-                                        </div>
-                                        <!--boxed-content-title end-->
-                                        <!--boxed-content-item-->
-                                        <div class="boxed-content-item property-pp">
-                                            <div class="process-wrap">
-                                                <ul>
-
-                                                    <?php
-                                                    while ($row = mysqli_fetch_array($payplan_query)) {
-                                                        ?>
-
-                                                        <li>
-                                                            <div class="process-item ">
-                                                                <h4 class="process-title text-left"><?= $row['payplan_heading'] ?>
-                                                                </h4>
-                                                                <span
-                                                                    class="process-count"><?= $row['payplan_percentage'] ?></span>
-                                                            </div>
-
-                                                            <span class="pr-dec"></span>
-                                                        </li>
-
-                                                    <?php } ?>
-
-                                                </ul>
-                                            </div>
-
-                                        </div>
-                                        <!--boxed-content-item end-->
-                                    </div>
-
-                                <?php } ?>
-
-
-                                <div class="boxed-content">
-                                    <!--boxed-content-title-->
-                                    <div class="boxed-content-title">
-                                        <h3> Property Amenities</h3>
-                                    </div>
-                                    <!--boxed-content-title end-->
-                                    <!--boxed-content-item-->
-                                    <div class="boxed-content-item">
-                                        <div class="pp-single-opt">
-                                            <div class="pp-single-features ">
-                                          <ul>
-    <?php
-    $feat_fac_query = select_query('tbl_proj_featfac', 'is_active=1');
-    $feat_fac_arr = explode(',', $proj_detail['proj_fea_fac_opt']);
-    while ($row = mysqli_fetch_array($feat_fac_query)) {
-        if (in_array($row['featfac_id'], $feat_fac_arr)) {
-            ?>
-            <li>
-                <a href="#">
-                    <i class="fa <?= htmlspecialchars($row['featfac_faicon']) ?> me-2"></i>
-                    <?= htmlspecialchars($row['featfac_name']) ?>
-                </a>
-            </li>
-        <?php }
-    } ?>
-</ul>
-
-
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <!--boxed-content-item end-->
-                                </div>
-
-                                <!--boxed-content-->
-                                <div class="boxed-content">
-                                    <!--boxed-content-title-->
-                                    <div class="boxed-content-title">
-                                        <h3>Property Location </h3>
-                                    </div>
-                                    <!--boxed-content-title end-->
-                                    <!--boxed-content-item-->
-                                    <div class="boxed-content-item">
-                                        <div class="row">
-                                            <div class="col-lg-12">
-                                                <?php if (!empty($proj_detail['proj_map'])) { ?>
-
-                                                    <iframe src="<?= $proj_detail['proj_map'] ?>" width="100%" height="450"
-                                                        style="border:0;" allowfullscreen="" loading="lazy"
-                                                        referrerpolicy="no-referrer-when-downgrade"></iframe> <?php } ?>
-
-
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <!--boxed-content-item end-->
-                                </div>
-                                <!--boxed-content end-->
-                                <!--boxed-content-->
-                                <?php if ($proj_detail['proj_masterplan'] != '') { ?>
-
-                                    <div class="boxed-content">
-                                        <!--boxed-content-title-->
-                                        <div class="boxed-content-title">
-                                            <h3>Property Masterplan</h3>
-                                        </div>
-                                        <!--boxed-content-title end-->
-
-                                        <!--boxed-content-item-->
-                                        <div class="boxed-content-item">
-
-                                            <div class="">
-                                                <?= $proj_detail['proj_masterplan'] ?>
-                                            </div>
-                                        </div>
-                                        <!--boxed-content-item end-->
-                                    </div>
-
-                                <?php } ?>
-
-
-
-                            </div>
-                        </div>
-                        <div class="col-lg-4">
-                            <!--boxed-container-->
-                            <div class="sb-container">
-                                <!--boxed-content-->
-                                <div class="fixed-form-wrap">
-                                    <div class="fixed-form">
-                                        <div class="boxed-content">
-
-                                            <!--boxed-content-item-->
-                                            <div class="boxed-content-item p-4">
-                                                <p class="form-heading">Fill the form. And book a viewing</p>
-                                                <div class="custom-form" id="single_cf">
-                                                    <?php include_once "common/sidebare-form.php";?>
-                                                    <!--<div class="log-separator py-3"><span>or</span></div>-->
-
-                                                </div>
-                                                <!-- <div class="property-contacts-wrap buy-p-wrap">
-                                                    <div class="property-contacts-item sh-links">
-                                                        <div
-                                                            class="property-contacts_profile d-flex align-items-center">
-                                                            <div class=" py-1">
-                                                                <a href="javascript:void(0)"
-                                                                    class="property-contacts_profile_link">
-                                                                    <img src="images/avatar/2.jpg" alt="">
-                                                                </a>
-                                                            </div>
-                                                            <div class="text-left ps-2 buy-p-wrap-h py-1">
-                                                                <h3>Dummy Name</h3>
-                                                                <h6>Sales Consultant</h6>
-                                                            </div>
-                                                            <div class="list-contact-icon ms-auto py-1">
-                                                                <a href="tel:+18475555555" target="_blank" class=""
-                                                                    data-microtip-position="right"><img
-                                                                        src="images/c-icon/call-icon.png"
-                                                                        alt="Call Icon" width="100%" title="Call">
-                                                                </a>
-                                                                <a href="https://wa.me/971527543243" target="_blank"
-                                                                    class="" data-microtip-position="right"><img
-                                                                        src="images/c-icon/whatsapp-icon.png"
-                                                                        alt="Whatsapp Icon" width="100%"
-                                                                        title="Whatsapp">
-                                                                </a>
-                                                            </div>
-                                                        </div>
-
-                                                    </div>
-
-                                                </div> -->
-                                            </div>
-                                            <!--boxed-content-item end-->
-                                        </div>
-                                    </div>
-                                </div>
-                                <!--boxed-content end-->
-                            </div>
-                        </div>
-                    </div>
-                    <div class="limit-box"></div>
-                </div>
-                <?php
-                // Similar properties worked out by ai/cron/build_similar.php, with the old list as fallback.
-                require_once __DIR__ . '/ai/SimilarProjects.php';
-                $prj_query = SimilarProjects::forPage($proj_detail['prj_id'], 2);
-                if (!$prj_query) {
-                    $prj_query = db_query("SELECT * FROM tbl_proj WHERE prj_dev_id = ? AND proj_slug != ? AND is_active = 1 ORDER BY proj_posted_on DESC", [(int) $proj_detail['prj_dev_id'], (string) $proj_detail['proj_slug']]);
-                }
-                if(mysqli_num_rows($prj_query) > 0){
-                ?>
-                <div class="boxed-container proj-sim-box">
-                    <div class="boxed-content-title bcst_ca">
-                        <h3>More Like This</h3>
-                    </div>
-                    <div class="single-carousel-wrap">
-                        <div class="single-carousel equal-elc">
-                            <div class="swiper-container">
-                                <div class="swiper-wrapper">
-
-                                    <?php
-                                    $key = 0;
-                                    while ($row = mysqli_fetch_array($prj_query)) {
-                                        $proj_dev = select_row(
-                                            "tbl_developer",
-                                            "dev_id=" . $row["prj_dev_id"] . ""
-                                        );
-                                        $prj_thumb_arr = explode(',', $row['prj_thumb_img']);
-
-                                        if (count($prj_thumb_arr) > 1) {
-                                            $prj_thumb_img = $prj_thumb_arr[0];
-                                        } else {
-                                            $prj_thumb_img = $row['prj_thumb_img'];
-                                        }
-                                        ?>
-
-                                        <div class="swiper-slide">
-                                            <!-- listing-item -->
-                                            <div class="listing-item">
-                                                <div class="geodir-category-listing">
-                                                    <div class="geodir-category-img">
-                                                        <a href="<?= BASE_URL ?>property/<?= $row['proj_slug'] ?>"
-                                                            class="geodir-category-img_item">
-                                                            <div class="off-plan-thumb">
-                                                                <img src="<?= BASE_URL_IMG ?>project/thumb/<?= $prj_thumb_img ?>"
-                                                                    alt="">
-                                                            </div>
-                                                            <div class="overlay"></div>
-                                                        </a>
-                                                        <div class="geodir-category-location">
-                                                            <a href="<?= BASE_URL ?>property/<?= $row['proj_slug'] ?>"
-                                                                class="map-item"><i class="fas fa-map-marker-alt"></i>
-                                                                <?= $row['proj_location'] ?></a>
-                                                        </div>
-                                                        <?php
-                                                        if($row['proj_pplan_cont']){
-                                                        ?>
-                                                        <ul class="list-single-opt_header_cat">
-                                                                <li><a href="javascript:void(0)" class="cat-opt">
-                                                                        <?= $row['proj_pplan_cont'] ?></a>
-                                                                </li>
-                                                        </ul>
-                                                        <?php } ?>
-                                                    </div>
-                                                    <div class="geodir-category-content prop-gcc">
-                                                        <h3><a
-                                                                href="<?= BASE_URL ?>property/<?= $row['proj_slug'] ?>"><?= $row['proj_name'] ?></a>
-                                                        </h3>
-                                                    <?php if (is_numeric($row["proj_price"]) && $row["proj_price"] != 0): ?>
-                                                        <div class="price-row" style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
-                                                            <!-- Price Output -->
-                                                            <div class="geodir-category-content_price text-muted currency-price"
-                                                                data-price="<?= $row["proj_price"] ?>"
-                                                                data-original-currency="AED"
-                                                                data-original-price="<?= $row["proj_price"] ?>">
-                                                                <img src="<?= BASE_URL ?>images/symbol/currency-symbol.png" alt="Currency"
-                                                                    style="height: 14px; vertical-align: middle;">
-                                                                AED <?= number_format($row["proj_price"]) ?>
-                                                            </div>
-                                                        </div>
-                                                    <?php else: ?>
-                                                        <div class="geodir-category-content_price text-muted">
-                                                            Call Us
-                                                        </div>
-                                                    <?php endif; ?>
-
-                                                    </div>
-                                                    <div class="geodir-category-footer list-footer">
-                                                        <!--<a href="<?= BASE_URL ?>property/<?= $row['proj_slug'] ?>"-->
-                                                        <!--    class="gcf-company">-->
-                                                        <!--    <img src="<?= BASE_URL_IMG ?>project/dev/<?= $row['proj_dev_img'] ?>"-->
-                                                        <!--        alt=""></a>-->
-                                                        <a href="<?= BASE_URL ?>property/<?= $row['proj_slug'] ?>" class="gcf-company post-card_link-2">View<i class="fa-solid fa-caret-right"></i></a>
-                                                        <div class="clearfix"></div>
-                                                        <div class="list-contact-icon">
-                                                            <a href="tel:<?= $row['proj_mobileno'] ?>" target="_blank"
-                                                                class=" pcl_btn" data-microtip-position="right"><img
-                                                                    src="<?= BASE_URL ?>images/c-icon/call-icon.png"
-                                                                    alt="Call Icon" width="100%" title="Call"></a>
-                                                            <a href="https://wa.me/<?= $row['proj_whatsaapno'] ?>"
-                                                                target="_blank" class=" pcl_btn"
-                                                                data-microtip-position="right"><img
-                                                                    src="<?= BASE_URL ?>images/c-icon/whatsapp-icon.png"
-                                                                    alt="Whatsapp Icon" width="100%" title="Whatsapp"></a>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div> <!-- listing-item end-->
-                                        </div>
-
-                                        <?php $key++;
-                                    } ?>
-                                </div>
-                            </div>
-                            <div class="ss-carousel-button ss-carousel-button-prev"><i
-                                        class="fas fa-caret-left"></i>
-                            </div>
-                            <div class="ss-carousel-button ss-carousel-button-next"><i
-                                        class="fas fa-caret-right"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-                <?php } ?>
-            </div>
-
-        </div>
-        <!-- container end-->
-    </div>
-    <!--content  end-->
-    
-    <!--register form -->
-<div class="main-register-container">
-    <div class="main-register_box">
-        <div class="main-register-holder">
-            <div class="main-register-wrap ">
-                <div class="main-register_bg">
-                    <div class="mr_title">
-                        <h4>Welcome to Drehomes</h4>
-                        <h5>Premium Real Estate Agency</h5>
-                    </div>
-                    <div class="main-register_contacts-wrap">
-                        <h4>Have a questions?</h4>
-                        <a href="<?= BASE_URL ?>contact-us.php"> Get in Touch</a>
-                        <div class="svg-corner svg-corner_white" style="bottom:0;left:  -39px;"></div>
-                        <div class="svg-corner svg-corner_white"
-                            style="bottom:0;right:  -39px;transform: rotate(90deg)"></div>
-                    </div>
-                    <div class="main-register_bg-dec"></div>
-                </div>
-                <div class="main-register tabs-act fl-wrap">
-                  <ul class="tabs-menu">
-    <?php if (!empty($proj_detail['proj_brochure'])): ?>
-        <li class="current">
-            <a href="#tab-1"><i class="fa-light fa-download"></i>Brochure</a>
-        </li>
-    <?php endif; ?>
-
-    <?php if (!empty($proj_detail['proj_payplan'])): ?>
-        <li>
-            <a href="#tab-2"><i class="fa-light fa-download"></i>Payment Plan</a>
-        </li>
-    <?php endif; ?>
-
-    <?php if (!empty($proj_detail['proj_floorplan'])): ?>
-        <li>
-            <a href="#tab-3"><i class="fa-light fa-download"></i>Floor Plan</a>
-        </li>
-    <?php endif; ?>
-</ul>
-
-                    
-                    <!--tabs -->
-<div id="tabs-container">
-    <div class="tab">
-        <!-- Tab 1: Brochure -->
-        <div id="tab-1" class="tab-content first-tab">
-            <div class="custom-form">
-                <form method="post" name="brochureform" id="brochure-frm">
-                    <div class="cs-intputwrap">
-                        <i class="fa-light fa-user"></i>
-                        <input type="text" placeholder="Name" name="brochure_name" required>
-                    </div>
-                    <div class="cs-intputwrap">
-                        <i class="fa-light fa-envelope"></i>
-                        <input type="email" placeholder="Email Address" name="brochure_email" required>
-                    </div>
-                    <div class="cs-intputwrap">
-                        <input type="text" placeholder="Phone Number" id="brochure_phone" name="brochure_phone" required>
-                    </div>
-                    <input type="hidden" name="download_type" value="Brochure">
-                    <input type="hidden" name="page_url" value="<?= current_url() ?>">
-                    <input type="hidden" name="brochure_number_hidden" value="">
-                    <input type="hidden" name="brochure_url" value="<?= $proj_detail['proj_brochure'] ?>">
-                    <button type="submit" class="commentssubmit" data-url="<?= $proj_detail['proj_brochure'] ?>" name="brochure_submit">Download Brochure</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Tab 2: Payment Plan -->
-        <div id="tab-2" class="tab-content">
-            <div class="custom-form">
-                <form method="post" name="payplanform" id="payplan-frm">
-                    <div class="cs-intputwrap">
-                        <i class="fa-light fa-user"></i>
-                        <input type="text" placeholder="Name" name="payplan_name" >
-                    </div>
-                    <div class="cs-intputwrap">
-                        <i class="fa-light fa-envelope"></i>
-                        <input type="email" placeholder="Email Address" name="payplan_email" >
-                    </div>
-                    <div class="cs-intputwrap">
-                        <input type="text" placeholder="Phone Number" id="payplan_phone" name="payplan_phone" >
-                    </div>
-                    <input type="hidden" name="download_type" value="Pay Plan">
-                    <input type="hidden" name="page_url" value="<?= current_url() ?>">
-                    <input type="hidden" name="payplan_number_hidden" value="">
-                    <input type="hidden" name="payplan_url" value="<?= $proj_detail['proj_payplan'] ?>">
-                    <button type="submit" class="commentssubmit" data-url="<?= $proj_detail['proj_payplan'] ?>" name="payplan_submit">Download Payplan</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Tab 3: Floor Plan -->
-<!-- Tab 3: Floor Plan -->
-<div id="tab-3" class="tab-content">
-    <div class="custom-form">
-        <form method="post" name="floorplanform" id="floorplan-frm">
-            <div class="cs-intputwrap">
-                <i class="fa-light fa-user"></i>
-                <input type="text" placeholder="Name" name="floorplan_name">
-            </div>
-            <div class="cs-intputwrap">
-                <i class="fa-light fa-envelope"></i>
-                <input type="email" placeholder="Email Address" name="floorplan_email">
-            </div>
-            <div class="cs-intputwrap">
-                <input type="text" placeholder="Phone Number" id="floorplan_phone" name="floorplan_phone">
-            </div>
-            <input type="hidden" name="download_type" value="Floor Plan">
-            <input type="hidden" name="page_url" value="<?= current_url() ?>">
-            <input type="hidden" name="floorplan_number_hidden" value="">
-            <input type="hidden" name="floorplan_url" value="<?= $proj_detail['proj_floorplan'] ?>">
-            <button type="submit" class="commentssubmit" data-url="<?= $proj_detail['proj_floorplan'] ?>" name="floorplan_submit">
-                <span>Download Floor Plan</span>
+        <div class="pd-gal">
+<?php if (!empty($property['photos'])) { ?>
+          <button class="pg-main" data-g="0" aria-label="Open gallery">
+            <img src="<?= e($property['photos'][0]['src']) ?>" alt="<?= e($property['photos'][0]['title']) ?>" />
+          </button>
+<?php } ?>
+<?php if (!empty($property['side_photos'])) { ?>
+          <div class="pg-side">
+            <button data-g="1" aria-label="Open photo 2">
+              <img src="<?= e($property['side_photos'][0]['src']) ?>" alt="<?= e($property['side_photos'][0]['title']) ?>" />
             </button>
-        </form>
-    </div>
-</div>
-
-        <button type="button" class="commentssubmit close-modal close-reg-form">Close</button>
-    </div>
-</div>
-                </div>
+<?php if (isset($property['side_photos'][1])) { ?>
+            <button data-g="2" aria-label="Open photo 3">
+              <img src="<?= e($property['side_photos'][1]['src']) ?>" alt="<?= e($property['side_photos'][1]['title']) ?>" />
+              <span class="pg-more glass on-img">⤢ View all <?= count($property['photos']) ?> photos</span>
+            </button>
+<?php } ?>
+          </div>
+<?php } ?>
+          <div class="pd-title glass on-img">
+            <div class="pt-tags">
+              <span>Ready to move in</span>
+              <span><?= e($property['beds']) ?></span>
+<?php if ($property['type'] !== '') { ?>
+              <span><?= e($property['type']) ?></span>
+<?php } ?>
             </div>
+            <h1 class="serif"><?= $property['title_html'] ?></h1>
+            <p>
+              <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                <path d="M12 2a7 7 0 00-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 00-7-7zm0 9.5A2.5 2.5 0 1112 6.5a2.5 2.5 0 010 5z"></path>
+              </svg>
+              <?= e($property['location']) ?><?php if ($property['developer'] !== '') { ?> · by <?= e($property['developer']) ?><?php } ?>
+            </p>
+          </div>
+<?php if (!empty($property['photos'])) { ?>
+          <ul class="pd-photos" id="pdPhotos" hidden="">
+<?php foreach ($property['photos'] as $photo) { ?>
+            <li data-src="<?= e($photo['src']) ?>" data-title="<?= e($photo['title']) ?>"></li>
+<?php } ?>
+          </ul>
+<?php } ?>
         </div>
-    </div>
-    <div class="body-overlay fs-wrapper reg-overlay close-reg-form"></div>
-</div>
-<!--register form end -->
+      </div>
+    </header>
 
-    <?php include 'common/footer.php'; ?>
+    <section class="pd-body">
+      <div class="wrap pd-grid">
+        <div class="pd-main">
+          <div class="pd-tabs glass" id="pdTabs">
+            <a href="#overview" class="on">Overview</a><a href="#amenities">Amenities</a><a href="#location">Location</a
+            ><a href="#downloads">Downloads</a><a href="#enquire">Enquire</a>
+          </div>
+
+          <div class="facts reveal">
+            <div class="glass"><small>Starting from</small><b><?= e($property['price_label']) ?></b></div>
+            <div class="glass"><small>Handover</small><b>Ready</b></div>
+            <div class="glass"><small>Type</small><b><?= e($property['type']) ?></b></div>
+<?php if ($property['developer'] !== '') { ?>
+            <div class="glass"><small>Developer</small><b><?= e($property['developer']) ?></b></div>
+<?php } ?>
+          </div>
+
+<?php if (!empty($property['overview'])) { ?>
+          <article id="overview" class="pd-sec reveal">
+            <span class="eyebrow">About this property</span>
+            <p class="lead"><?= e($property['overview'][0]) ?></p>
+<?php if (count($property['overview']) > 1) { ?>
+            <div class="more-txt" id="ovMore">
+<?php foreach (array_slice($property['overview'], 1) as $p) { ?>
+              <p class="lead"><?= e($p) ?></p>
+<?php } ?>
+            </div>
+            <button class="rm" data-t="ovMore">Read more ↓</button>
+<?php } ?>
+          </article>
+<?php } ?>
+
+<?php if (!empty($property['amenities'])) { ?>
+          <article id="amenities" class="pd-sec reveal">
+            <span class="eyebrow">Property Amenities</span>
+            <h2 class="serif">Quality living, <em class="gold-text">ready today.</em></h2>
+            <div class="am-grid">
+<?php foreach ($property['amenities'] as $a) { ?>
+              <div class="am glass">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><?= $a['icon'] ?></svg>
+                <span><?= e($a['name']) ?></span>
+              </div>
+<?php } ?>
+            </div>
+          </article>
+<?php } ?>
+
+          <article id="location" class="pd-sec reveal">
+            <span class="eyebrow">Property Location</span>
+            <h2 class="serif">Location: <em class="gold-text"><?= e($property['location']) ?>.</em></h2>
+            <div class="loc-grid">
+<?php if ($property['map_url'] !== '') { ?>
+              <div class="map-wrap glass" id="mapWrap">
+                <button
+                  class="map-load"
+                  id="mapLoad"
+                  data-map="<?= e($property['map_url']) ?>"
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
+                    <path d="M12 2a7 7 0 00-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 00-7-7zm0 9.5A2.5 2.5 0 1112 6.5a2.5 2.5 0 010 5z"></path>
+                  </svg>
+                  ><b>Load interactive map</b><small>Google Maps</small>
+                </button>
+              </div>
+<?php } ?>
+              <ol class="drive glass">
+                <li><b>10<small>min</small></b><span>Global Village &amp; IMG Worlds</span></li>
+                <li><b>15<small>min</small></b><span>Dubai Hills Mall</span></li>
+                <li><b>20<small>min</small></b><span>Downtown Dubai &amp; Burj Khalifa</span></li>
+                <li><b>25<small>min</small></b><span>Dubai International Airport (DXB)</span></li>
+              </ol>
+            </div>
+          </article>
+
+          <article id="downloads" class="pd-sec reveal">
+            <span class="eyebrow">Downloads</span>
+            <h2 class="serif">Get the <em class="gold-text">full details.</em></h2>
+            <div class="dl-cards">
+              <button class="dl-card glass" data-dl="Brochure">
+                <span class="dl-ic"
+                  ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <path d="M6 3h9l4 4v14H6z"></path>
+                    <path d="M14 3v5h5M9 13h7M9 17h5"></path></svg></span
+                ><b>Brochure</b><small>Project overview, amenities &amp; visuals</small><em>Download ↓</em>
+              </button>
+              <button class="dl-card glass" data-dl="Payment Plan">
+                <span class="dl-ic"
+                  ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                    <path d="M3 10h18M7 15h4"></path></svg></span
+                ><b>Payment Plan</b><small>Payment terms &amp; mortgage options</small><em>Download ↓</em>
+              </button>
+              <button class="dl-card glass" data-dl="Floor Plan">
+                <span class="dl-ic"
+                  ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <path d="M3 3h18v18H3zM3 12h8M11 3v13M15 12h6M15 12v9"></path></svg></span
+                ><b>Floor Plans</b><small>Unit layouts &amp; dimensions</small><em>Download ↓</em>
+              </button>
+            </div>
+          </article>
+
+          <span id="contact" aria-hidden="true"></span>
+          <article id="enquire" class="pd-sec reveal">
+            <div class="enq glass acc-edge">
+              <div>
+                <span class="eyebrow">Ready to view?</span>
+                <h2 class="serif">Schedule a <em class="gold-text">private viewing.</em></h2>
+                <p class="lead">Available units, keys and title deed paperwork — handled seamlessly by a DRE advisor.</p>
+              </div>
+              <form class="form" id="ctaForm" novalidate="">
+                <input name="name" placeholder="Your name" autocomplete="name" required="" />
+                <input id="ctaPhone" name="phone" type="tel" placeholder="Your phone" autocomplete="tel" required="" />
+                <input type="hidden" name="phone_full" id="ctaPhoneFull" />
+                <div class="err" id="ctaPhoneErr" role="alert">Please enter a valid phone number.</div>
+                <input name="email" type="email" placeholder="Your email" autocomplete="email" />
+                <input
+                  name="message"
+                  placeholder="Your message"
+                  value="I'm interested in viewing <?= e($property['name']) ?>."
+                />
+                <input
+                  type="hidden"
+                  name="page_url"
+                  value="<?= e($property['url']) ?>"
+                />
+                <button class="btn btn-gold" style="justify-content: center">Request viewing</button>
+              </form>
+            </div>
+          </article>
+        </div>
+
+        <aside class="pd-side">
+          <div class="side-card glass acc-edge">
+            <small>Starting from</small>
+            <div class="sc-price gold-text"><?= e($property['price_label']) ?></div>
+            <ul class="sc-facts">
+<?php if ($property['developer'] !== '') { ?>
+              <li><span>Developer</span><b><?= e($property['developer']) ?></b></li>
+<?php } ?>
+              <li><span>Location</span><b><?= e($property['location']) ?></b></li>
+              <li><span>Type</span><b><?= e($property['type']) ?></b></li>
+              <li><span>Bedrooms</span><b><?= e($property['beds']) ?></b></li>
+              <li><span>Handover</span><b>Ready to move in</b></li>
+            </ul>
+            <div class="sc-dl">
+              <button class="btn btn-gold" data-dl="Brochure">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <path d="M12 3v12M7 10l5 5 5-5M4 21h16"></path></svg
+                >Brochure
+              </button>
+              <button class="btn btn-glass" data-dl="Payment Plan">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <path d="M12 3v12M7 10l5 5 5-5M4 21h16"></path></svg
+                >Payment plan
+              </button>
+            </div>
+            <div class="sc-ct">
+              <a
+                class="btn btn-glass sc-wa"
+                href="<?= e($property['whatsapp']) ?>"
+                target="_blank"
+                rel="noopener"
+                ><svg viewBox="0 0 24 24" fill="currentColor">
+                  <path
+                    d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm4.5 12.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 01-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 2s.8 2.3.9 2.5c.1.2 1.6 2.5 4 3.5 1.5.6 2.1.7 2.8.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.4-.2z"
+                  ></path></svg
+                >WhatsApp</a
+              >
+              <button class="btn btn-glass" id="popinBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16">
+                  <rect x="2.5" y="6" width="13" height="12" rx="3"></rect>
+                  <path d="M15.5 10.5l6-3.5v10l-6-3.5z"></path></svg
+                >Video call
+              </button>
+            </div>
+            <a class="sc-call" href="tel:<?= e($toll_free) ?>">Or call <b><?= e($toll_free) ?></b></a>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+<?php if (!empty($property['similar'])) { ?>
+    <section id="similar" style="padding-top: 40px">
+      <div class="wrap">
+        <div class="head-row reveal">
+          <div>
+            <span class="eyebrow">More ready homes</span>
+            <h2 class="serif">Similar <em class="gold-text">ready</em> properties</h2>
+          </div>
+          <div class="car-nav">
+            <button id="simPrev" aria-label="Previous">←</button><button id="simNext" aria-label="Next">→</button>
+          </div>
+        </div>
+        <div class="sim-track" id="simTrack">
+<?php foreach ($property['similar'] as $sim) { ?>
+          <article class="oc sim">
+            <a class="oc-img" href="<?= e($sim['url']) ?>"
+              ><img
+                src="<?= e($sim['image']) ?>"
+                alt="<?= e($sim['name']) ?>"
+                loading="lazy"
+              /><span class="badge">Ready</span><span class="oc-loc"><?= e($sim['location']) ?></span></a
+            >
+            <div class="oc-b">
+              <h3><a href="<?= e($sim['url']) ?>"><?= e($sim['name']) ?></a></h3>
+              <div class="oc-meta">
+                <div><small>Bedrooms</small><b><?= e($sim['beds']) ?></b></div>
+                <div class="pr" style="text-align: right">
+                  <small>Starting price</small><?= $sim['price_html'] ?>
+                </div>
+              </div>
+            </div>
+          </article>
+<?php } ?>
+        </div>
+      </div>
+    </section>
+<?php } ?>
+
+    <dialog class="lb" id="lb" aria-label="Photo gallery">
+      <button class="lb-x" id="lbX" aria-label="Close">×</button
+      ><button class="lb-n lb-p" id="lbP" aria-label="Previous">←</button><img id="lbImg" alt="" /><button
+        class="lb-n lb-nx"
+        id="lbN"
+        aria-label="Next"
+      >
+        →
+      </button>
+      <p id="lbC"></p>
+    </dialog>
+
+    <dialog class="dl glass" id="dl" aria-label="Download">
+      <form id="dlForm" data-done="A DRE advisor will send it to you shortly.">
+        <button type="button" class="sv-x" id="dlX" aria-label="Close">×</button>
+        <span class="eyebrow" id="dlEy">Download</span>
+        <h2 class="serif">Get the <em class="gold-text" id="dlT">brochure</em></h2>
+        <p class="lead"><?= e($property['name']) ?><?php if ($property['developer'] !== '') { ?> · <?= e($property['developer']) ?><?php } ?></p>
+        <input name="name" placeholder="Your name" required="" />
+        <input id="dlPhone" name="phone" type="tel" placeholder="Your phone" required="" />
+        <input type="hidden" name="phone_full" id="dlPhoneFull" />
+        <div class="err" id="dlPhoneErr" role="alert">Please enter a valid phone number.</div>
+        <input name="email" type="email" placeholder="Your email (we will send the file here)" required="" />
+        <input type="hidden" name="item" id="dlItem" value="Brochure" />
+        <input type="hidden" name="project" value="<?= e($property['name']) ?>" />
+        <input type="hidden" name="page_url" value="<?= e($property['url']) ?>" />
+        <button class="btn btn-gold" style="justify-content: center; margin-top: 6px">Send me the file</button>
+      </form>
+    </dialog>
+
+<?php include('common/footer.php'); ?>

@@ -1,92 +1,100 @@
 <?php
-include('db/config.php');
-$meta_tags=select_row('tbl_tags','id=29 and is_active=1');
+require_once('db/config.php');
+
+$data = get_legal_page_data('privacy');
+$meta_tags = $data['meta_tags'];
+
+$page = [
+  'active' => '',
+  'css' => ['assets/css/pages/privacy-policy.css'],
+];
+
 include('common/header.php');
-$row=select_row('tbl_privacy_policy','is_active=1 ') ?: [];
-$privacy_heading = trim((string) ($row['privacy_policy_heading'] ?? '')) ?: 'Privacy Policy';
-$privacy_content_heading = trim((string) ($row['privacy_policy_content_heading'] ?? '')) ?: 'PRIVACY POLICY & TERM OF USES';
-$privacy_descp = (string) ($row['privacy_policy_descp'] ?? '');
 ?>
-    <!--warpper-->
-    <div class="wrapper">
-        <!--content-->
-        <div class="content">
-            <!--section-->
-            <div class="section hero-section hero-section_sin">
-                <div class="hero-section-wrap">
-                    <div class="hero-section-wrap-item">
-                        <div class="container">
-                            <div class="hero-section-container">
-                                <div class="hero-section-title">
-                                    <h1><?=htmlspecialchars($privacy_heading, ENT_QUOTES, 'UTF-8')?></h1>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="bg-wrap bg-hero bg-parallax-wrap-gradien fs-wrapper" data-scrollax-parent="true">
-                            <div class="bg" data-bg="<?=BASE_URL_IMG?>privacy-policy/<?=$row['privacy_policy_img']?>"
-                                data-scrollax="properties: { translateY: '30%' }">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!--section-end-->
-            <!--container-->
-            <div class="container">
-                <!--breadcrumbs-list-->
-                <div class="breadcrumbs-list bl_flat">
-                    <a href="<?=BASE_URL?>">Home</a><span>Privacy Policy</span>
-                    <div class="breadcrumbs-list_dec"><i class="fa-thin fa-arrow-up"></i></div>
-                </div>
-                <!--breadcrumbs-list end-->
-                <!--main-content-->
-                <div class="main-content">
-                    <!--boxed-container-->
-                    <div class="boxed-container">
-                        <div class="scroll-content-wrap">
-                            
-                            <div class="row">
-                                <div class="col-lg-12">
-                                    <div class="post-container">
-                                        <div class="boxed-content">
-                                            <div class="boxed-content-title">
-                                                        <h3><?=htmlspecialchars($privacy_content_heading, ENT_QUOTES, 'UTF-8')?></h3>
-                                            </div>
-                                            <div class="boxed-content-item">
 
-                                                <div class="text-block post-single_tb">
-
-                                                    <div class="text-block-container">
-
-                                                        <div class="privacy-box mt-3 editor-cont">
-                                                            
-                                                        <?=$privacy_descp?>
-
-                                                        </div>
-
-                                                        <div class="clearfix"></div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="limit-box"></div>
-                    </div>
-                    <!--boxed-container end-->
-                </div>
-                <!--main-content end-->
-                <div class="to_top-btn-wrap">
-                    <div class="to-top to-top_btn"><span>Back to top</span> <i class="fa-solid fa-arrow-up"></i></div>
-                    <div class="svg-corner svg-corner_white" style="top:0;left:  -40px; transform: rotate(-90deg)">
-                    </div>
-                    <div class="svg-corner svg-corner_white" style="top:0;right: -40px; transform: rotate(-180deg)">
-                    </div>
-                </div>
-            </div>
-            <!-- container end-->
+    <!-- ===== LEGAL: HERO ===== -->
+    <header class="ph-hero lg-hero">
+      <div
+        class="ph-bg"
+        style="
+          background-image: url('<?= htmlspecialchars($data['banner_img']) ?>');
+        "
+      ></div>
+      <div class="wrap">
+        <div class="crumbs" role="navigation" aria-label="Breadcrumb">
+          <a href="<?= page_link('index') ?>">Home</a><span>/</span><span>Legal</span><span>/</span><span aria-current="page">Privacy Policy</span>
         </div>
-        <!--content  end-->
-        <?php include 'common/footer.php'; ?>
+        <span class="eyebrow">Legal</span>
+        <h1 class="serif"><?= $data['heading_html'] ?></h1>
+        <div class="lg-meta">
+          <span><?= (int) $data['section_count'] ?> sections</span><span><?= (int) $data['reading_time'] ?> min read</span><span>DRE Homes Real Estate Broker LLC</span>
+        </div>
+        <nav class="lg-tabs glass" aria-label="Legal documents">
+          <a class="lg-tab on" href="<?= page_link('privacy-policy') ?>" aria-current="page">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"></path>
+              <path d="M9 12l2 2 4-4"></path>
+            </svg>Privacy Policy
+          </a>
+          <a class="lg-tab" href="<?= page_link('terms-conditions') ?>">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M14 3H6v18h12V7z"></path>
+              <path d="M14 3v4h4M9 13h6M9 17h6"></path>
+            </svg>Terms &amp; Conditions
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- ===== DOCUMENT ===== -->
+    <section style="padding-top: 44px">
+      <div class="wrap lg-grid">
+        <aside class="lg-side">
+          <nav class="lg-toc glass" aria-label="On this page">
+            <span class="eyebrow">On this page</span>
+            <div class="lg-prog"><i></i></div>
+            <ol>
+              <?php foreach ($data['toc'] as $item): ?>
+              <li>
+                <a href="#<?= htmlspecialchars($item['slug']) ?>"><span><?= htmlspecialchars($item['num_str']) ?></span><?= htmlspecialchars($item['title']) ?></a>
+              </li>
+              <?php endforeach; ?>
+            </ol>
+          </nav>
+          <div class="lg-act">
+            <button type="button" id="lgPrint">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                <path d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="7" rx="1"></rect>
+              </svg>Print / PDF
+            </button>
+            <a href="<?= page_link('terms-conditions') ?>">Terms &amp; Conditions →</a>
+          </div>
+        </aside>
+        <article class="lg-doc glass reveal">
+          <?= $data['content_html'] ?>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===== HELP ===== -->
+    <section style="padding-top: 30px">
+      <div class="wrap">
+        <div class="lg-help glass acc-edge reveal">
+          <span class="mx-ic"
+            ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+              <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+              <path d="M3 7l9 6 9-6"></path></svg
+          ></span>
+          <div>
+            <span class="eyebrow">Questions about this policy?</span>
+            <h3 class="serif">We’re happy to <em class="gold-text">help.</em></h3>
+            <p>For any queries or concerns, email us at <?= htmlspecialchars($header_info['header_email'] ?? 'sales@drehomes.com') ?>.</p>
+          </div>
+          <a class="btn btn-gold" href="mailto:<?= htmlspecialchars($header_info['header_email'] ?? 'sales@drehomes.com') ?>">Email us →</a>
+        </div>
+      </div>
+    </section>
+
+<?php include('common/footer.php'); ?>
+

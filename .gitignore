@@ -48,6 +48,7 @@ zoho_tokens.json
 
 # --- Old copies and archives ---
 /Archive/
+/updated/
 *.zip
 *.php--
 *.php----

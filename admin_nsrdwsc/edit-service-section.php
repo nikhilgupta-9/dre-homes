@@ -3,6 +3,7 @@ include('db/config.php');
 include('includes/header.php');
 include('lock2.php');
 include('includes/Logger.php');
+include('includes/seo-check.php');
 
 // Nothing below runs unless someone is signed in.
 if (empty($_SESSION['email_id'])) {
@@ -331,6 +332,14 @@ if ($can_show_form && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_P
     $data[$field['col']] = $value;
   }
 
+  if (isset($_POST['seo_focus']) && is_string($_POST['seo_focus']) && trim($_POST['seo_focus']) !== '') {
+    $typed_focus = trim($_POST['seo_focus']);
+    if (empty($data['meta_keyword'])) {
+      $data['meta_keyword'] = mb_substr($typed_focus, 0, 255);
+      $old['meta_keyword'] = $data['meta_keyword'];
+    }
+  }
+
   $to_move = [];      // [temporary file, final path]
   $replaced = [];     // saved files that a new upload replaces
   foreach ($fields as $name => $field) {
@@ -528,6 +537,7 @@ $uses_ai = (bool) array_filter(array_column($fields, 'ai'));
               <link href="<?= BASE_URL ?>assets/css/dre-settings.css?v=1" rel="stylesheet" type="text/css" />
               <link href="<?= BASE_URL ?>assets/css/dre-careers.css?v=1" rel="stylesheet" type="text/css" />
               <link href="<?= BASE_URL ?>assets/css/dre-ai-assist.css?v=1" rel="stylesheet" type="text/css" />
+              <link href="<?= BASE_URL ?>assets/css/dre-seo-check.css?v=2" rel="stylesheet" type="text/css" />
 
               <div class="dre-dash dre-form-page dre-settings-form">
 
@@ -668,6 +678,21 @@ $uses_ai = (bool) array_filter(array_column($fields, 'ai'));
                           </div>
                         <?php endif; ?>
                       <?php endforeach; ?>
+                      <?php if ($section[0] === 'Search engines and sharing'): ?>
+                        <?php
+                        $saved_focus = '';
+                        if (!empty($details['meta_keyword'])) {
+                          $kw_parts = explode(',', (string) $details['meta_keyword']);
+                          $saved_focus = trim($kw_parts[0]);
+                        }
+                        seo_check_panel($conn, [
+                          'prj_id' => 0,
+                          'focus' => isset($_POST['seo_focus']) && is_string($_POST['seo_focus']) && trim($_POST['seo_focus']) !== '' ? trim($_POST['seo_focus']) : $saved_focus,
+                          'url' => rtrim(BASE_URL_HOME, '/') . '/',
+                          'site' => 'DRE Homes'
+                        ]);
+                        ?>
+                      <?php endif; ?>
                     </section>
                   <?php endforeach; ?>
 
@@ -682,6 +707,10 @@ $uses_ai = (bool) array_filter(array_column($fields, 'ai'));
 
                   <div class="dre-form-bar">
                     <div class="dre-form-progress"><div id="entState"><?= $editing ? 'No unsaved changes' : 'Not saved yet' ?></div></div>
+                    <div class="dre-seo-lights" title="SEO check: click to see what can be better">
+                      <a href="#dreSeo" data-seo-light="seo"><i></i> SEO <em>Not checked</em></a>
+                      <a href="#dreSeo" data-seo-light="readability"><i></i> Readability <em>Not checked</em></a>
+                    </div>
                     <div class="dre-form-bar-buttons">
                       <button type="submit" class="dre-btn dre-btn-main"><i class="bi bi-check2"></i> <?= $editing ? 'Save changes' : 'Save ' . set_e($entity['one']) ?></button>
                     </div>
@@ -701,6 +730,8 @@ $uses_ai = (bool) array_filter(array_column($fields, 'ai'));
         <?php
         include('includes/footer-inner.php');
         ?>
+
+        <script src="<?= BASE_URL ?>assets/js/dre-seo-check.js?v=2"></script>
 
         <?php if ($uses_ai && $can_show_form): ?>
           <script>

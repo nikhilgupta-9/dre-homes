@@ -33,7 +33,9 @@ include "../db/config.php";
 // Get and sanitize form inputs
 $name = mysqli_real_escape_string($conn, $_POST['name'] ?? '');
 $email = mysqli_real_escape_string($conn, $_POST['email'] ?? '');
-$phone = $_POST['sideform_country_code'] . ' ' . $_POST['phone'];
+$raw_phone = trim($_POST['phone'] ?? $_POST['phone_full'] ?? '');
+$country_code = trim($_POST['sideform_country_code'] ?? '');
+$phone = mysqli_real_escape_string($conn, $country_code ? ($country_code . ' ' . $raw_phone) : $raw_phone);
 $message = mysqli_real_escape_string($conn, $_POST['message'] ?? '');
 $page_url = mysqli_real_escape_string($conn, $_POST['page_url'] ?? '');
 $download_type = mysqli_real_escape_string($conn, $_POST['download_type'] ?? '');
@@ -42,17 +44,17 @@ $prop_name = mysqli_real_escape_string($conn, $_POST['prop_name'] ?? '');
 $prop_location = mysqli_real_escape_string($conn, $_POST['prop_location'] ?? '');
 $prop_bedroom = mysqli_real_escape_string($conn, $_POST['prop_bedroom'] ?? '');
 $developer = mysqli_real_escape_string($conn, $_POST['developer'] ?? '');
-$channel = mysqli_real_escape_string($conn, $_POST['channel'] ?? '');
-$leads_nature = mysqli_real_escape_string($conn, $_POST['leads_nature'] ?? '');
+$channel = mysqli_real_escape_string($conn, $_POST['channel'] ?? 'Website');
+$leads_nature = mysqli_real_escape_string($conn, $_POST['leads_nature'] ?? 'Fresh Lead');
 
 // Validate required fields
-if (empty($name) || empty($email) || empty($phone)) {
+if (empty($name) || empty($phone)) {
     echo json_encode(['status' => 'error', 'msg' => 'Please fill all required fields']);
     exit;
 }
 
-// Validate email format
-if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+// Validate email format if provided
+if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
     echo json_encode(['status' => 'error', 'msg' => 'Invalid email address']);
     exit;
 }

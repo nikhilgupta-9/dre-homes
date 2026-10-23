@@ -4468,16 +4468,15 @@ function get_single_community_data($slug) {
 	$loc_img = trim((string) $comm['comm_loc_main_img']);
 	$loc_img_url = $loc_img !== '' ? BASE_URL_IMG . 'community/location/' . rawurlencode($loc_img) : $hero_bg;
 
-	// Google Maps URL
+	// Google Maps URL — Admin > Communities > Edit Community > Map Iframe; empty hides the Location section
 	$map_raw = trim((string) $comm['comm_map_iframe']);
+	$map_url = '';
 	if ($map_raw !== '') {
 		if (preg_match('/src=["\']([^"\']+)["\']/', $map_raw, $m)) {
 			$map_url = $m[1];
 		} else {
 			$map_url = $map_raw;
 		}
-	} else {
-		$map_url = 'https://maps.google.com/maps?q=' . urlencode($comm['comm_heading'] . ', ' . ($comm['comm_location'] ?: 'Dubai')) . '&t=&z=13&ie=UTF8&iwloc=&output=embed';
 	}
 
 	// Subtitle / lead paragraph

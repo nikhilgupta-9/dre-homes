@@ -134,6 +134,7 @@ include __DIR__ . '/common/header.php';
     <?php endif; ?>
 
     <!-- ===== LOCATION ===== -->
+    <?php if ($map_url): ?>
     <section id="location" style="padding-top: 20px">
       <div class="wrap">
         <div class="head-row reveal">
@@ -144,22 +145,18 @@ include __DIR__ . '/common/header.php';
         </div>
         <div class="cl-grid reveal"<?= empty($nearby) ? ' style="grid-template-columns: 1fr;"' : '' ?>>
           <div class="map-wrap glass" id="mapWrap">
-            <button
-              class="map-load"
-              id="mapLoad"
-              data-map="<?= htmlspecialchars($map_url) ?>"
-            >
-              <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
-                <path
-                  d="M12 2a7 7 0 00-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 00-7-7zm0 9.5A2.5 2.5 0 1112 6.5a2.5 2.5 0 010 5z"
-                ></path>
-              </svg>
-              <b>Load interactive map</b><small>Google Maps</small>
-            </button>
+            <iframe
+              src="<?= htmlspecialchars($map_url) ?>"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              allowfullscreen
+              title="Map"
+              style="width: 100%; height: 100%; border: 0"
+            ></iframe>
           </div>
           <?php if (!empty($nearby)): ?>
           <ol class="drive glass">
-            <?php foreach ($nearby as $nb): 
+            <?php foreach ($nearby as $nb):
               $dt = parse_community_drive_time($nb['comm_map_distance']);
               $place = preg_replace('/^\d+\s*(mins?|minutes?)\s*(from\s*)?/i', '', $nb['comm_map_heading']);
             ?>
@@ -173,6 +170,7 @@ include __DIR__ . '/common/header.php';
         </div>
       </div>
     </section>
+    <?php endif; ?>
 
     <!-- ===== HOMES ===== -->
     <section id="homes" style="padding-top: 20px">

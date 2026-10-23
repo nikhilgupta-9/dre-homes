@@ -494,6 +494,8 @@
 
   /* =====================================================================
      Google map loads only when clicked (map link = data-map on the #mapLoad button)
+     Used by the property detail pages (single-property, buy/rent/ready/international
+     -*-single.php); community-single.php embeds its map directly instead.
      ===================================================================== */
   (function () {
     const b = $("mapLoad"),

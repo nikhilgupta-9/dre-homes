@@ -1,0 +1,614 @@
+/* Website Pages section: the hero and Instagram card pages, and two field kinds of the generated forms. */
+
+/* ---- Cards ---- */
+.dre-webpages .dre-wp-grid {
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+}
+.dre-webpages .dre-media-frame {
+    aspect-ratio: 16 / 10;
+}
+.dre-webpages .dre-media-frame video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #1d1a17;
+}
+.dre-webpages .dre-media-card.is-hidden .dre-media-frame video {
+    opacity: 0.5;
+}
+.dre-webpages .dre-media-card.is-editing {
+    outline: 2px solid var(--dd-accent);
+    outline-offset: 3px;
+    border-radius: 14px;
+}
+.dre-wp-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    margin: 10px 0 8px;
+    color: var(--dd-ink);
+    font-size: 0.86rem;
+}
+.dre-wp-info small {
+    color: var(--dd-muted);
+    font-size: 0.76rem;
+}
+.dre-wp-link {
+    color: var(--dd-accent);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.dre-wp-warn,
+.dre-wp-info small.dre-wp-warn {
+    color: #b4541a;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+.dre-webpages .dre-media-actions {
+    justify-content: flex-end;
+}
+
+/* ---- The add / change form under the cards ---- */
+.dre-wp-form {
+    padding: 20px 22px;
+    scroll-margin-top: 90px;
+}
+.dre-wp-form .dre-h {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.dre-wp-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px 18px;
+    align-items: start;
+}
+.dre-wp-fields > label {
+    display: block;
+    margin: 0;
+}
+.dre-wp-fields > label > span:first-child {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--dd-muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+.dre-wp-fields .dre-wp-file {
+    grid-column: 1 / -1;
+}
+.dre-wp-fields input[type="text"],
+.dre-wp-fields input[type="url"],
+.dre-wp-fields input[type="number"],
+.dre-wp-fields input[type="file"],
+.dre-wp-fields select,
+.dre-wp-fields textarea {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1px solid rgba(95, 87, 76, 0.2);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--dd-ink);
+    font-size: 0.88rem;
+}
+.dre-wp-fields input:focus,
+.dre-wp-fields select:focus,
+.dre-wp-fields textarea:focus {
+    outline: 2px solid var(--dd-accent);
+    outline-offset: 1px;
+}
+.dre-wp-fields small {
+    display: block;
+    margin-top: 5px;
+    color: var(--dd-muted);
+    font-size: 0.76rem;
+    line-height: 1.45;
+}
+.dre-wp-fields .dre-wp-live {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.dre-wp-preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+}
+.dre-wp-preview[hidden] {
+    display: none;
+}
+.dre-wp-preview img,
+.dre-wp-preview video {
+    width: 220px;
+    max-width: 50%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    border-radius: 10px;
+    background: #1d1a17;
+}
+.dre-wp-preview em {
+    color: var(--dd-muted);
+    font-size: 0.8rem;
+    font-style: normal;
+}
+.dre-wp-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+/* ---- Generated forms: a switch among the fields, and the saved video ---- */
+.dre-form-section .dre-field-toggle {
+    margin: 4px 0 16px;
+}
+.dre-current.dre-current-video video {
+    width: 260px;
+    max-width: 100%;
+    border-radius: 10px;
+    background: #1d1a17;
+}
+
+/* ---- Two-column form with a summary card (team member) ---- */
+.dre-profile-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 18px;
+    align-items: start;
+}
+.dre-profile-main {
+    min-width: 0;
+}
+.dre-profile-side {
+    position: sticky;
+    top: 92px;
+    display: grid;
+    gap: 14px;
+}
+.dre-profile-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 22px 18px 16px;
+    text-align: center;
+}
+.dre-profile-photo {
+    width: 124px;
+    height: 124px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: rgba(95, 87, 76, 0.12);
+    border: 3px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 10px 26px rgba(60, 50, 40, 0.18);
+    color: var(--dd-muted);
+    font-size: 3rem;
+}
+.dre-profile-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+}
+.dre-profile-card > strong {
+    margin-top: 8px;
+    color: var(--dd-ink);
+    font-size: 1.05rem;
+}
+.dre-profile-card > span:not(.dre-pill) {
+    color: var(--dd-muted);
+    font-size: 0.84rem;
+    min-height: 1.2em;
+}
+.dre-profile-meter {
+    width: 100%;
+    height: 7px;
+    margin-top: 12px;
+    border-radius: 99px;
+    background: rgba(95, 87, 76, 0.14);
+    overflow: hidden;
+}
+.dre-profile-meter > div {
+    height: 100%;
+    width: 0;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #a08a72, #5f574c);
+    transition: width 0.3s ease;
+}
+.dre-profile-card > p {
+    margin: 4px 0 0;
+    color: var(--dd-muted);
+    font-size: 0.76rem;
+}
+.dre-profile-checks {
+    width: 100%;
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+    text-align: left;
+    display: grid;
+    gap: 2px;
+}
+.dre-profile-checks li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px;
+    border-radius: 8px;
+    color: #b4541a;
+    font-size: 0.82rem;
+}
+.dre-profile-checks li a {
+    color: var(--dd-ink);
+    font-weight: 600;
+}
+.dre-profile-checks li.is-done {
+    color: #3f7d57;
+}
+.dre-profile-checks li.is-done a {
+    color: var(--dd-muted);
+    font-weight: 500;
+}
+.dre-profile-checks li:hover {
+    background: rgba(95, 87, 76, 0.08);
+}
+.dre-profile-nav {
+    display: grid;
+    gap: 2px;
+    padding: 10px;
+}
+.dre-profile-nav a {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 10px;
+    border-radius: 9px;
+    color: var(--dd-ink);
+    font-size: 0.84rem;
+    font-weight: 600;
+}
+.dre-profile-nav a:hover {
+    background: rgba(95, 87, 76, 0.1);
+    text-decoration: none;
+}
+.dre-profile-main .dre-form-section {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 18px;
+    scroll-margin-top: 90px;
+}
+.dre-profile-main .dre-form-section > h2,
+.dre-profile-main .dre-form-section > .dre-form-note,
+.dre-profile-main .dre-form-section > .dre-toggle,
+.dre-profile-main .dre-f-rich,
+.dre-profile-main .dre-f-textarea,
+.dre-profile-main .dre-f-image,
+.dre-profile-main .dre-f-slug,
+.dre-profile-main .dre-f[data-f="inner_heading"] {
+    grid-column: 1 / -1;
+}
+.dre-profile-main .dre-f {
+    min-width: 0;
+}
+.dre-profile-main .dre-f-toggle {
+    align-self: center;
+}
+@media (max-width: 1199px) {
+    .dre-profile-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .dre-profile-side {
+        position: static;
+        order: -1;
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .dre-profile-nav {
+        display: none;
+    }
+}
+@media (max-width: 700px) {
+    .dre-profile-main .dre-form-section {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* ---- Arrange the team ---- */
+.dre-arrange-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px 20px;
+    padding: 14px 18px;
+    position: sticky;
+    top: 70px;
+    z-index: 5;
+}
+.dre-arrange-tools .dre-leads-search {
+    flex: 1 1 240px;
+    max-width: 340px;
+    margin: 0;
+    position: relative;
+}
+.dre-arrange-tools .dre-leads-search i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--dd-muted);
+}
+.dre-arrange-tools input[type="search"] {
+    width: 100%;
+    padding: 9px 12px 9px 34px;
+    border: 1px solid rgba(95, 87, 76, 0.2);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--dd-ink);
+    font-size: 0.88rem;
+}
+.dre-arrange-tools .dre-proj-check {
+    margin: 0;
+}
+.dre-arrange-hint {
+    margin-left: auto;
+    color: var(--dd-muted);
+    font-size: 0.8rem;
+}
+.dre-arrange-bad {
+    color: #a13c2a;
+}
+.dre-arrange-group {
+    padding: 16px 18px 18px;
+}
+.dre-arrange-group .dre-h {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.dre-arrange-group.is-off h3 {
+    color: var(--dd-muted);
+}
+.dre-arrange-group-buttons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.dre-arrange-empty {
+    margin: 0;
+    color: var(--dd-muted);
+    font-size: 0.86rem;
+}
+.dre-arrange-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+    gap: 12px;
+}
+.dre-arrange-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 10px 8px;
+    border: 1px solid rgba(95, 87, 76, 0.14);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.72);
+    text-align: center;
+    cursor: grab;
+    transition: box-shadow 0.15s ease, transform 0.15s ease, background 0.3s ease;
+}
+.dre-arrange-card:hover {
+    box-shadow: 0 8px 22px rgba(60, 50, 40, 0.14);
+}
+.dre-arrange-card.is-dragging {
+    opacity: 0.35;
+    outline: 2px dashed var(--dd-accent);
+}
+.dre-arrange-card.is-moved {
+    background: rgba(214, 190, 150, 0.45);
+}
+.dre-arrange-card.is-hidden img,
+.dre-arrange-card.is-hidden .dre-arrange-text strong {
+    opacity: 0.5;
+}
+.dre-arrange.hide-hidden .dre-arrange-card.is-hidden {
+    display: none;
+}
+.dre-arrange.is-searching .dre-arrange-card:not(.is-found) {
+    opacity: 0.3;
+}
+.dre-arrange-card.is-found {
+    outline: 2px solid var(--dd-accent);
+    outline-offset: 2px;
+}
+.dre-arrange-no {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 42px;
+    padding: 3px 2px;
+    border: 1px solid rgba(95, 87, 76, 0.2);
+    border-radius: 8px;
+    background: #5f574c;
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-align: center;
+    -moz-appearance: textfield;
+}
+.dre-arrange-no::-webkit-outer-spin-button,
+.dre-arrange-no::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.dre-arrange-card > img,
+.dre-arrange-nophoto {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: top;
+    background: rgba(95, 87, 76, 0.12);
+}
+.dre-arrange-nophoto {
+    display: grid;
+    place-items: center;
+    color: var(--dd-muted);
+    font-size: 1.8rem;
+}
+.dre-arrange-text {
+    min-height: 3.2em;
+    line-height: 1.25;
+}
+.dre-arrange-text strong {
+    display: block;
+    color: var(--dd-ink);
+    font-size: 0.84rem;
+}
+.dre-arrange-text span {
+    display: block;
+    color: var(--dd-muted);
+    font-size: 0.72rem;
+}
+.dre-arrange-text em {
+    color: #a13c2a;
+    font-size: 0.7rem;
+    font-style: normal;
+    font-weight: 700;
+}
+.dre-arrange-buttons {
+    display: flex;
+    gap: 2px;
+}
+.dre-arrange-buttons button,
+.dre-arrange-buttons a {
+    width: 30px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--dd-muted);
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+.dre-arrange-buttons button:hover,
+.dre-arrange-buttons a:hover {
+    background: rgba(95, 87, 76, 0.12);
+    color: var(--dd-ink);
+}
+.dre-arrange.is-compact .dre-arrange-cards {
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 8px;
+}
+.dre-arrange.is-compact .dre-arrange-card {
+    flex-direction: row;
+    padding: 6px 8px 6px 56px;
+    text-align: left;
+}
+.dre-arrange.is-compact .dre-arrange-no {
+    top: 50%;
+    transform: translateY(-50%);
+}
+.dre-arrange.is-compact .dre-arrange-card > img,
+.dre-arrange.is-compact .dre-arrange-nophoto {
+    width: 34px;
+    height: 34px;
+    font-size: 1rem;
+    flex: none;
+}
+.dre-arrange.is-compact .dre-arrange-text {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+}
+.dre-arrange.is-compact .dre-arrange-text span,
+.dre-arrange.is-compact .dre-arrange-buttons [data-move="first"],
+.dre-arrange.is-compact .dre-arrange-buttons a {
+    display: none;
+}
+.dre-arrange.is-compact .dre-arrange-text strong {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.dre-arrange-orphans {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.dre-arrange-orphans a {
+    padding: 5px 10px;
+    border-radius: 99px;
+    background: rgba(95, 87, 76, 0.1);
+    color: var(--dd-ink);
+    font-size: 0.82rem;
+}
+.dre-arrange-bar {
+    position: sticky;
+    bottom: 14px;
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-top: 16px;
+    padding: 12px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 12px 34px rgba(60, 50, 40, 0.18);
+}
+.dre-arrange-bar > span {
+    color: var(--dd-muted);
+    font-size: 0.86rem;
+    font-weight: 600;
+}
+.dre-arrange-bar > span.is-dirty {
+    color: #b4541a;
+}
+.dre-arrange-bar > div {
+    display: flex;
+    gap: 8px;
+}
+.dre-arrange-bar .dre-btn[hidden] {
+    display: none;
+}
+
+/* ---- Summary card with the page banner as its cover (leadership messages) ---- */
+.dre-profile-main .dre-f-wide {
+    grid-column: 1 / -1;
+}
+.dre-profile-card.has-cover {
+    padding-top: 0;
+    overflow: hidden;
+}
+.dre-profile-cover {
+    align-self: stretch;
+    height: 96px;
+    margin: 0 -18px;
+    background: linear-gradient(135deg, #8d7b68, #5f574c) center / cover no-repeat;
+    position: relative;
+}
+.dre-profile-cover::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(40, 33, 27, 0) 30%, rgba(40, 33, 27, 0.45));
+}
+.dre-profile-card.has-cover .dre-profile-photo {
+    margin-top: -62px;
+    position: relative;
+    z-index: 1;
+}

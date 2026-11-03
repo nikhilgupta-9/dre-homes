@@ -1,0 +1,232 @@
+<?php include('common/header.php'); ?>
+
+    <!-- ===== FOUNDERS NOTE: HERO ===== -->
+    <header class="ph-hero fn-hero">
+      <div
+        class="ph-bg"
+        style="
+          background-image: url(https://drehomes.com/admin_nsrdwsc/assets/media/message/foundr_bg_img_7003_msg-bg-1.jpg);
+        "
+      ></div>
+      <div class="wrap">
+        <div class="crumbs" role="navigation" aria-label="Breadcrumb">
+          <a href="index.php">Home</a><span>/</span><a href="about-us.php">About</a><span>/</span
+          ><span aria-current="page">Founders’ Note</span>
+        </div>
+        <span class="eyebrow">Founders’ note</span>
+        <h1 class="serif">A message from our <em class="gold-text">Chief Leadership Officer.</em></h1>
+        <nav class="fn-tabs glass" aria-label="Founders’ notes">
+          <a class="fn-tab on" href="message-from-co-founder-and-clo.php" aria-current="page"
+            ><img
+              src="https://drehomes.com/admin_nsrdwsc/assets/media/message/foundr_img_393_foundr_img_9583_Qurat-Ul-Ain-DRE.jpg"
+              alt=""
+            /><span><b>Qurat Ul Ain</b><small>Co-Founder &amp; CLO</small></span></a
+          ><a class="fn-tab" href="message-from-co-founder-and-ceo.php"
+            ><img
+              src="https://drehomes.com/admin_nsrdwsc/assets/media/message/ceo_img_2848_Mudasir-Wani-%28DRE%29.jpg"
+              alt=""
+            /><span><b>Mudasir Wani</b><small>Co-Founder &amp; CEO</small></span></a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <!-- ===== LETTER ===== -->
+    <section style="padding-top: 50px">
+      <div class="wrap fn-grid">
+        <aside class="fn-side">
+          <div class="fn-ph glass">
+            <img
+              src="https://drehomes.com/admin_nsrdwsc/assets/media/message/foundr_img_393_foundr_img_9583_Qurat-Ul-Ain-DRE.jpg"
+              alt="Qurat Ul Ain"
+            /><span class="fn-phc glass on-img"
+              ><b class="serif">Qurat Ul Ain</b><small>Co-Founder &amp; CLO</small></span
+            >
+          </div>
+          <dl class="fn-facts glass">
+            <div>
+              <dt>Founded</dt>
+              <dd>2007</dd>
+            </div>
+            <div>
+              <dt>Head office</dt>
+              <dd>Dubai Hills Estate</dd>
+            </div>
+            <div>
+              <dt>Team</dt>
+              <dd>161 people</dd>
+            </div>
+            <div>
+              <dt>Awards</dt>
+              <dd>83</dd>
+            </div>
+          </dl>
+          <a class="btn btn-glass fn-pl" href="agent-single.php?u=qurat-ul-ain">View Qurat’s profile →</a>
+        </aside>
+        <article class="fn-letter glass reveal">
+          <div class="fn-lh">
+            <span class="fn-mark"
+              ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path d="M3 17c3-4 5-9 7-9s-1 8 2 8 3-5 5-5 1 4 4 4"></path>
+                <path d="M3 21h18"></path></svg></span
+            ><span><small>A letter from</small><b>Qurat Ul Ain</b></span
+            >
+          </div>
+
+          <p class="fn-lead">
+            DRE Homes Real Estate was established in 2007 as a boutique brokerage firm to address the service gap that
+            existed in Dubai’s rapidly growing property market. At a time when many brokerages were offering standard,
+            “plain vanilla” buying and selling services, DRE set out to be different by raising the benchmark for client
+            service and expertise. As the Dubai real estate market moved through its natural cycles, the importance of
+            having experienced professionals to guide investors toward long-term strategies became increasingly evident.
+          </p>
+          <blockquote class="fn-pq">
+            <span
+              ><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path
+                  d="M9.5 6C6 7.3 4 10 4 13.6V18h6v-6H7.3c.2-2 1.3-3.4 3.2-4.3zM19.5 6C16 7.3 14 10 14 13.6V18h6v-6h-2.7c.2-2 1.3-3.4 3.2-4.3z"
+                ></path></svg
+            ></span>
+            <p>DRE set out to be different by raising the benchmark for client service and expertise.</p>
+          </blockquote>
+          <p>
+            DRE distinguished itself by consistently advising clients on investment and acquisition strategies, asset
+            management, and effective exit planning. The firm takes pride in the trust and loyalty of its clients, many
+            of whom continue to work with them, serving as a strong testament to their capabilities.
+          </p>
+          <p>
+            DRE Real Estate looks forward to building new relationships and welcomes the opportunity to assist future
+            clients.
+          </p>
+          <p>Co-Founder &amp; CLO</p>
+
+          <div class="fn-sign">
+            <b class="serif">Qurat Ul Ain</b
+            ><small>Co-Founder &amp; Chief Leadership Officer, DRE Homes Real Estate</small>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===== OTHER NOTE ===== -->
+    <section style="padding-top: 40px">
+      <div class="wrap">
+        <a class="fn-next glass acc-edge reveal" href="message-from-co-founder-and-ceo.php"
+          ><img
+            src="https://drehomes.com/admin_nsrdwsc/assets/media/message/ceo_img_2848_Mudasir-Wani-%28DRE%29.jpg"
+            alt="Mudasir Wani"
+            loading="lazy"
+          /><span
+            ><span class="eyebrow">Also read</span><b class="serif">A message from our Chief Executive Officer</b
+            ><small>Mudasir Wani · Co-Founder &amp; CEO</small></span
+          ><i aria-hidden="true">→</i></a
+        >
+      </div>
+    </section>
+
+    <!-- ===== IN THE NEWS ===== -->
+    <section style="padding-top: 40px">
+      <div class="wrap">
+        <div class="head-row reveal">
+          <div>
+            <span class="eyebrow">In the news</span>
+            <h2 class="serif">Recognition <em class="gold-text">&amp; press.</em></h2>
+          </div>
+          <a class="btn btn-glass" href="company-news.php">All company news →</a>
+        </div>
+        <ol class="mb-news reveal">
+          <li>
+            <a
+              class="pf-ev glass"
+              href="https://drehomes.com/company-news/qurat-ul-ain-recognized-among-the-uae-top-100-real-estate-professionals-by-entrepreneur-middle-east"
+              ><span class="pf-evi"
+                ><img
+                  src="https://drehomes.com/admin_nsrdwsc/assets/media/company-news/thumb/news_thumb_img_4559_qurat-ul-ain-drehomes.jpg.jpeg"
+                  alt=""
+                  loading="lazy" /></span
+              ><span class="pf-evb"
+                ><small>Aug 07, 2026</small
+                ><b
+                  >Qurat Ul Ain Recognized Among the UAE's Top 100 Real Estate Professionals by Entrepreneur Middle
+                  East</b
+                ></span
+              ><i aria-hidden="true">→</i></a
+            >
+          </li>
+          <li>
+            <a
+              class="pf-ev glass"
+              href="https://drehomes.com/company-news/qurat-ul-ain-featured-by-ahlan-dubai-among-real-estate-most-influential-leaders"
+              ><span class="pf-evi"
+                ><img
+                  src="https://drehomes.com/admin_nsrdwsc/assets/media/company-news/thumb/news_thumb_img_7633_Alhan-Qurat-Ul-AIn.jpg.jpeg"
+                  alt=""
+                  loading="lazy" /></span
+              ><span class="pf-evb"
+                ><small>Jul 17, 2026</small
+                ><b>Qurat Ul Ain Featured by Ahlan Dubai Among Real Estate's Most Influential Leaders</b></span
+              ><i aria-hidden="true">→</i></a
+            >
+          </li>
+          <li>
+            <a
+              class="pf-ev glass"
+              href="https://drehomes.com/company-news/qurat-ul-ain-industry-pioneer-female-award-by-danube-properties"
+              ><span class="pf-evi"
+                ><img
+                  src="https://drehomes.com/admin_nsrdwsc/assets/media/company-news/thumb/news_thumb_img_7279_danube-award.jpeg"
+                  alt=""
+                  loading="lazy" /></span
+              ><span class="pf-evb"
+                ><small>Jul 16, 2026</small
+                ><b>Qurat Ul Ain Honoured as Dubai's Female Industry Pioneer Award by Danube Properties</b></span
+              ><i aria-hidden="true">→</i></a
+            >
+          </li>
+          <li>
+            <a
+              class="pf-ev glass"
+              href="https://drehomes.com/company-news/qurat-ul-ain-inspiring-journey-to-success-featured-in-uae-stories"
+              ><span class="pf-evi"
+                ><img
+                  src="https://drehomes.com/admin_nsrdwsc/assets/media/company-news/thumb/news_thumb_img_7060_uae-stories-business-insight.jpg"
+                  alt=""
+                  loading="lazy" /></span
+              ><span class="pf-evb"
+                ><small>Apr 17, 2026</small
+                ><b>Qurat Ul Ain’s Inspiring Journey to Success — Featured in UAE Stories</b></span
+              ><i aria-hidden="true">→</i></a
+            >
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section id="contact" style="padding-top: 20px">
+      <div class="wrap">
+        <div class="cta glass acc-edge reveal">
+          <div>
+            <span class="eyebrow">Private Consultation</span>
+            <h2 class="serif">We look forward to<br /><em class="gold-text">hearing from you.</em></h2>
+            <p class="lead">Toll free 800 37373 · Hotline +971 52 754 3243</p>
+          </div>
+          <form class="form" id="ctaForm" novalidate="">
+            <input name="name" placeholder="Full name" autocomplete="name" required="" />
+            <input
+              id="ctaPhone"
+              name="phone"
+              type="tel"
+              placeholder="Phone / WhatsApp"
+              autocomplete="tel"
+              required=""
+            />
+            <input type="hidden" name="phone_full" id="ctaPhoneFull" />
+            <div class="err" id="ctaPhoneErr" role="alert">Please enter a valid phone number.</div>
+            <input name="message" placeholder="What are you looking for?" />
+            <button class="btn btn-gold" style="justify-content: center; margin-top: 6px">Request a call back</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <?php include('common/footer.php'); ?>

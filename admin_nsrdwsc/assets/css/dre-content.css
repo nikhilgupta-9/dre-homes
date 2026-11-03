@@ -1,0 +1,217 @@
+/* Page-content editors: the form on the left, a glass preview on the right. Builds on dre-form.css. */
+.dre-content-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
+    gap: 22px;
+    align-items: start;
+}
+.dre-content-side {
+    position: sticky;
+    top: 86px;
+    display: grid;
+    gap: 18px;
+}
+.dre-content-page .dre-preview-card {
+    height: auto;
+    padding: 16px;
+}
+.dre-preview-label {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--dd-muted);
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.dre-preview-label i {
+    margin-right: 4px;
+    color: var(--dd-accent);
+}
+.dre-preview-card small {
+    display: block;
+    margin-top: 8px;
+    color: var(--dd-muted);
+    font-size: 0.8rem;
+}
+
+/* The banner, with its title on frosted glass. */
+.dre-preview-banner {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    min-height: 170px;
+    padding: 14px;
+    border-radius: 16px;
+    background-color: #8c7a6a;
+    background-image: linear-gradient(135deg, #5f574c, #ab9889);
+    background-position: center;
+    background-size: cover;
+    overflow: hidden;
+}
+.dre-preview-banner::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(47, 42, 37, 0) 30%, rgba(47, 42, 37, 0.45) 100%);
+}
+.dre-preview-glass {
+    position: relative;
+    max-width: 100%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow: 0 8px 24px rgba(47, 42, 37, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    backdrop-filter: blur(14px) saturate(150%);
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(47, 42, 37, 0.55);
+}
+.dre-preview-glass strong {
+    display: block;
+    font-size: 1.15rem;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+.dre-preview-glass span {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.78rem;
+    opacity: 0.92;
+}
+
+/* The homepage block */
+.dre-preview-home {
+    padding: 16px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(171, 152, 137, 0.22), rgba(255, 255, 255, 0.5));
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    text-align: center;
+}
+.dre-preview-home strong {
+    display: block;
+    color: var(--dd-ink);
+    font-size: 1.05rem;
+    overflow-wrap: anywhere;
+}
+.dre-preview-home p {
+    margin: 6px 0 12px;
+    color: var(--dd-muted);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+.dre-preview-logos {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+.dre-preview-logos i {
+    width: 44px;
+    height: 30px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(95, 87, 76, 0.12);
+}
+
+@media (max-width: 1199px) {
+    .dre-content-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .dre-content-side {
+        position: static;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (max-width: 767px) {
+    .dre-content-side {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+@media (prefers-reduced-transparency: reduce) {
+    .dre-preview-glass {
+        background: rgba(47, 42, 37, 0.72);
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+}
+
+/* A light glass panel, for text over a pale background picture. */
+.dre-preview-home-bg {
+    align-items: center;
+    background-image: linear-gradient(135deg, #e9e2da, #f7f3ee);
+}
+.dre-preview-home-bg::before {
+    background: none;
+}
+.dre-preview-glass-light {
+    background: rgba(255, 255, 255, 0.55);
+    border-color: rgba(255, 255, 255, 0.8);
+    color: var(--dd-main);
+    text-shadow: none;
+}
+.dre-preview-glass-light span {
+    opacity: 1;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+@media (prefers-reduced-transparency: reduce) {
+    .dre-preview-glass-light {
+        background: rgba(255, 255, 255, 0.94);
+    }
+}
+
+/* Tabs that switch between pages of the same kind, and the small facts card. */
+.dre-content-tabs {
+    margin-bottom: 18px;
+}
+.dre-preview-text {
+    margin: 10px 0 0;
+    color: var(--dd-muted);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+.dre-preview-facts strong {
+    display: block;
+    color: var(--dd-ink);
+    font-size: 1.6rem;
+    line-height: 1.1;
+}
+.dre-preview-facts > span:not(.dre-preview-label) {
+    display: block;
+    color: var(--dd-ink);
+    font-size: 0.9rem;
+}
+
+/* Careers page content: the video preview and the links to the other parts of the page */
+.dre-career-video {
+    display: block;
+    width: 100%;
+    border-radius: 14px;
+    background: #2f2a25;
+}
+.dre-career-video[hidden] {
+    display: none;
+}
+.dre-career-parts {
+    display: grid;
+    gap: 6px;
+}
+.dre-content-page .dre-career-parts a {
+    display: block;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.55);
+    color: var(--dd-ink);
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+.dre-content-page .dre-career-parts a:hover {
+    background: #fff;
+}
+.dre-career-parts i {
+    width: 20px;
+    color: var(--dd-accent);
+}

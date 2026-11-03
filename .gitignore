@@ -1,0 +1,16 @@
+# Secrets — real DB credentials / API keys. Never commit these.
+/config/secrets.php
+
+# Uploaded media and user-generated content — not source code, far too large for git.
+/admin_nsrdwsc/assets/media/
+/video/
+
+# AI runtime/cache data (vector store, embeddings cache) — regenerated, not source.
+/ai/storage/
+
+# PHP dependencies — regenerate with `composer install` (composer.json/composer.lock are committed).
+/vendor/
+
+# OS / zip-extraction junk
+.DS_Store
+__MACOSX/

@@ -1,0 +1,853 @@
+<?php
+include('db/config.php');
+include('includes/header.php');
+include('lock2.php');
+include('includes/Logger.php');
+include('includes/seo-check.php');
+
+// Nothing below runs unless someone is signed in.
+if (empty($_SESSION['email_id'])) {
+  exit;
+}
+
+$logger = new Logger($conn);
+
+if (empty($_SESSION['admin_csrf'])) {
+  $_SESSION['admin_csrf'] = bin2hex(random_bytes(16));
+}
+
+function set_e($text)
+{
+  return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
+}
+
+// Runs a prepared query and returns its rows (or true for a write).
+function set_query($conn, $sql, array $params = [])
+{
+  try {
+    $stmt = mysqli_prepare($conn, $sql);
+    if (!$stmt) {
+      error_log('Settings query failed: ' . mysqli_error($conn));
+      return false;
+    }
+    if ($params) {
+      $types = '';
+      foreach ($params as $param) {
+        $types .= is_int($param) ? 'i' : 's';
+      }
+      mysqli_stmt_bind_param($stmt, $types, ...$params);
+    }
+    if (!mysqli_stmt_execute($stmt)) {
+      error_log('Settings query failed: ' . mysqli_stmt_error($stmt));
+      mysqli_stmt_close($stmt);
+      return false;
+    }
+    $result = mysqli_stmt_get_result($stmt);
+    mysqli_stmt_close($stmt);
+  } catch (mysqli_sql_exception $error) {
+    // This server reports database errors as exceptions.
+    error_log('Settings query failed: ' . $error->getMessage());
+    return false;
+  }
+  if ($result === false) {
+    return true;
+  }
+  $rows = [];
+  while ($row = mysqli_fetch_assoc($result)) {
+    $rows[] = $row;
+  }
+  return $rows;
+}
+
+// Picture types by what the file really contains: real type => extension it is stored with.
+const SET_IMAGE_TYPES = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
+const SET_ICON_TYPES = ['image/vnd.microsoft.icon' => 'ico', 'image/x-icon' => 'ico'];
+const SET_IMAGE_MAX = 5 * 1024 * 1024;
+
+// Checks one uploaded picture by extension and by its real content.
+// Returns [extension to store it with, error]; the extension is '' when no file was chosen.
+function set_check_upload($file, $label, $allow_icon = false)
+{
+  if (!is_array($file) || is_array($file['name']) || $file['error'] === UPLOAD_ERR_NO_FILE || (string) $file['name'] === '') {
+    return ['', ''];
+  }
+  if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE || $file['size'] > SET_IMAGE_MAX) {
+    return ['', "$label is too large (maximum 5 MB)."];
+  }
+  if ($file['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
+    return ['', "$label could not be uploaded. Please try again."];
+  }
+  $types = SET_IMAGE_TYPES + ($allow_icon ? SET_ICON_TYPES : []);
+  $extension = strtolower(pathinfo((string) $file['name'], PATHINFO_EXTENSION));
+  $finfo = new finfo(FILEINFO_MIME_TYPE);
+  $real = $finfo->file($file['tmp_name']);
+  if (!in_array($extension === 'jpeg' ? 'jpg' : $extension, $types, true) || !isset($types[$real])) {
+    return ['', "$label must be one of: " . strtoupper(implode(', ', array_unique(array_values($types)))) . '.'];
+  }
+  return [$types[$real], ''];
+}
+
+// What this page works on: its table, its columns and where it shows on the website.
+$entity = [
+  'one' => 'service',
+  'many' => 'services',
+  'title' => 'Services',
+  'blurb' => 'The service pages of the website, such as Mortgage Advisory and Relocation Service.',
+  'icon' => 'bi-briefcase',
+  'table' => 'tbl_service_section',
+  'id' => 'serv_sec_id',
+  'heading' => 'serv_sec_name',
+  'public_path' => 'services/',
+  'public_slug' => 'serv_sec_slug',
+  'page_label' => 'Service page of a real estate brokerage website',
+  'active_label' => 'Live on the website',
+  'active_off' => 'Off = the page is hidden and its link stops working.',
+  'site_note' => '',
+  'list_file' => 'manage-service-section.php', 'add_file' => 'add-service-section.php', 'edit_file' => 'edit-service-section.php',
+  'head_label' => 'Service', 'summary' => 'serv_sec_content', 'thumb' => '', 'folder' => '', 'icon_col' => '',
+  'search' => ['serv_sec_name', 'serv_sec_slug', 'serv_sec_content'],
+  'missing' => ['text' => ['Page text', "TRIM(a.serv_sec_content) = ''"], 'meta' => ['Meta description', "CHAR_LENGTH(TRIM(a.meta_description)) < 70"], 'image' => ['Sharing picture', "TRIM(a.meta_og_img) = ''"]],
+  'in_use_sql' => "", 'in_use_note' => '',
+  'content_file' => '',
+  'links' => [],
+  'sections' => [['The service', 'bi-briefcase', ''], ['Search engines and sharing', 'bi-search', 'What search engines and social networks show for this page.']],
+  'fields' => [
+  ['name' => 'name', 'col' => 'serv_sec_name', 'label' => 'Service name', 'type' => 'text', 'required' => true, 'placeholder' => 'Mortgage Advisory', 'ai' => 'heading'],
+  ['name' => 'content', 'col' => 'serv_sec_content', 'label' => 'Page text', 'type' => 'rich', 'max' => 0, 'required' => true, 'help' => 'Everything a visitor reads on the service page.', 'ai' => 'improve', 'guide' => true],
+  ['name' => 'slug', 'col' => 'serv_sec_slug', 'label' => 'Page address (slug)', 'type' => 'slug', 'from' => 'name', 'max' => 200, 'section' => 'Search engines and sharing'],
+  ['name' => 'meta_title', 'col' => 'meta_title', 'label' => 'Meta title', 'type' => 'text', 'count' => 60, 'ai' => 'meta_title', 'section' => 'Search engines and sharing'],
+  ['name' => 'meta_description', 'col' => 'meta_description', 'label' => 'Meta description', 'type' => 'textarea', 'max' => 0, 'count' => 160, 'ai' => 'meta_description', 'section' => 'Search engines and sharing'],
+  ['name' => 'meta_keyword', 'col' => 'meta_keyword', 'label' => 'Meta keywords', 'type' => 'text', 'ai' => 'keywords', 'section' => 'Search engines and sharing'],
+  ['name' => 'og_image', 'col' => 'meta_og_img', 'label' => 'Sharing picture', 'type' => 'image', 'folder' => 'assets/media/meta/', 'help' => 'Shown when the link is posted on WhatsApp, Facebook or LinkedIn; 1200 × 630 fits best.', 'section' => 'Search engines and sharing'],
+  ],
+];
+
+// This file is one of a set made from the same form: this copy changes one (add-service-section.php adds one).
+$mode = 'edit';   // 'add', 'edit', or 'single' for a page that has exactly one record
+$editing = $mode !== 'add';
+$t = $entity['table'];
+$id_col = $entity['id'];
+
+// "Mortgage Advisory" -> "mortgage-advisory"
+function ent_slug($text)
+{
+  return trim(preg_replace('/[^a-z0-9]+/', '-', strtolower(trim((string) $text))), '-');
+}
+// A small "How to edit" button next to the "Page text" label. It opens a pop-up that says where the text
+// shows, how to use the editor and, when the saved text has them, how to look after the boxes and the form in it.
+function ent_text_guide($html, $page_url, $page_name)
+{
+  $e = function ($text) { return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8'); };
+  $has_boxes = preg_match('/class="[^"]*\btoggle\b/i', (string) $html) && stripos((string) $html, 'accordion-inner') !== false;
+  $has_form = (bool) preg_match('/<(form|input|select|button)\b/i', (string) $html);
+  ob_start(); ?>
+  <span class="dre-guide-open">
+    <button type="button" class="dre-guide-btn" data-guide-open="dreTextGuide"><i class="bi bi-question-circle"></i> How to edit</button>
+    <?php if ($has_form): ?><span class="dre-guide-flag" title="This text has a form in it: read the guide before editing"><i class="bi bi-exclamation-triangle"></i> Has a form</span><?php endif; ?>
+  </span>
+  <dialog class="dre-guide-dialog" id="dreTextGuide" aria-labelledby="dreTextGuideTitle">
+    <div class="dre-guide-head">
+      <strong id="dreTextGuideTitle"><i class="bi bi-lightbulb"></i> How to edit this text</strong>
+      <button type="button" class="dre-guide-close" data-guide-close aria-label="Close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="dre-field-guide-body">
+      <p>
+        This is the text of the service page<?= $page_name !== '' ? ' &ldquo;' . $e($page_name) . '&rdquo;' : '' ?>, shown under its name.
+        <?php if ($page_url !== ''): ?><a href="<?= $e($page_url) ?>" target="_blank" rel="noopener">Open the page on the website <i class="bi bi-box-arrow-up-right"></i></a><?php endif; ?>
+      </p>
+
+      <h4>Everyday changes</h4>
+      <ul>
+        <li><b>Change words:</b> click in the text and type, like in Word.</li>
+        <li><b>Sub-heading:</b> click in the line, open the first menu on the toolbar (it shows the kind of line, for example <b>Paragraph</b> or <b>Div</b>) and pick <b>Headings &rsaquo; Heading 2</b>. Pick <b>Blocks &rsaquo; Paragraph</b> to make it normal text again.</li>
+        <li><b>Bold:</b> select the words and press <b>B</b>.</li>
+        <li><b>Link:</b> select the words, press the <b>chain</b> button and paste the address.</li>
+        <li><b>List:</b> press the <b>bullet list</b> or <b>numbered list</b> button.</li>
+        <li><b>Undo:</b> the curved arrow, or <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>Z</kbd>.</li>
+        <li><b>Copying from Word or Google Docs:</b> paste with <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>V</kbd>. That brings only the words, not other fonts and colours.</li>
+      </ul>
+
+      <?php if ($has_boxes): ?>
+        <h4>The boxes that open and close</h4>
+        <p>On the website each box shows a title, and its text opens when the title is clicked. In the editor all of them are shown open, one after another: a <b>title line</b>, then its <b>text</b>.</p>
+        <ul>
+          <li><b>Change a title or its text:</b> just type over it here.</li>
+          <li><b>Add a box:</b> press the <b>&lt;/&gt;</b> button (Source code, at the end of the toolbar). Copy one complete box, from <code>&lt;a class="toggle"</code> to the <code>&lt;/div&gt;</code> after its text, paste it after the last box, change the title and text, and press <b>Save</b> in that window.</li>
+          <li><b>Remove a box:</b> in the same window, delete its title line and its <code>&lt;div class="accordion-inner"&gt;&hellip;&lt;/div&gt;</code>.</li>
+        </ul>
+        <pre class="dre-field-guide-code">&lt;a class="toggle" href="#"&gt;Title of the box&lt;/a&gt;
+&lt;div class="accordion-inner"&gt;
+  &lt;p&gt;The text that opens.&lt;/p&gt;
+&lt;/div&gt;</pre>
+      <?php endif; ?>
+
+      <?php if ($has_form): ?>
+        <div class="dre-field-guide-warn">
+          <i class="bi bi-exclamation-triangle"></i>
+          <div><b>This text has a form in it</b> (the boxes visitors fill in and the button that sends it). Change the words around it, but do not delete, move or retype the form's boxes and button: without them the form stops sending enquiries.</div>
+        </div>
+      <?php endif; ?>
+
+      <h4>Before saving</h4>
+      <ul>
+        <li>The <b>eye</b> button (Preview) shows the text about as it will look.</li>
+        <li>Something went wrong? Do not save: reload this page and nothing is changed.</li>
+        <li>After saving, open the page on the website to check it.</li>
+      </ul>
+    </div>
+  </dialog>
+  <script>
+    // The pop-up: opens from the button, closes with the cross, the Esc key or a click outside it.
+    (function () {
+      var dialog = document.getElementById('dreTextGuide');
+      var opener = document.querySelector('[data-guide-open="dreTextGuide"]');
+      if (!dialog || !opener || typeof dialog.showModal !== 'function') {
+        if (opener) { opener.hidden = true; }
+        return;
+      }
+      opener.addEventListener('click', function () { dialog.showModal(); });
+      dialog.querySelector('[data-guide-close]').addEventListener('click', function () { dialog.close(); });
+      dialog.addEventListener('click', function (event) {
+        if (event.target === dialog) { dialog.close(); }
+      });
+    })();
+  </script>
+  <?php
+  return ob_get_clean();
+}
+// Text with its tags and empty spaces taken out, to tell whether an editor field really has words in it.
+function ent_plain($html)
+{
+  return trim(preg_replace('/\s+/', ' ', str_replace("\xC2\xA0", ' ', html_entity_decode(strip_tags((string) $html), ENT_QUOTES, 'UTF-8'))));
+}
+
+// Rich-text fields use the editors this panel already starts on these ids, in this order.
+$editor_ids = ['kt-tinymce-4', 'kt-tinymce-2', 'kt-tinymce-5', 'kt-tinymce-6', 'kt-tinymce-7'];
+$dom_ids = [];      // field name => id of its form control
+$fields = [];       // field name => its settings
+foreach ($entity['fields'] as $field) {
+  $field += ['max' => 255, 'required' => false, 'help' => '', 'placeholder' => '', 'ai' => '', 'section' => $entity['sections'][0][0], 'guide' => false, 'rows' => 3, 'count' => 0, 'folder' => '', 'options_sql' => '', 'from' => '', 'alt' => ''];
+  $fields[$field['name']] = $field;
+  $dom_ids[$field['name']] = $field['type'] === 'rich' ? array_shift($editor_ids) : 'f_' . $field['name'];
+}
+
+$id = 0;
+$details = null;
+if ($editing) {
+  $id = (int) base64_decode(is_string($_GET['edit'] ?? null) ? $_GET['edit'] : '', true);
+  $details = $id > 0 ? (set_query($conn, "SELECT * FROM $t WHERE $id_col = ?", [$id]) ?: []) : [];
+  $details = $details ? $details[0] : null;
+}
+$can_show_form = !$editing || $details;
+
+// Choices of the drop-down fields: field name => [value => label]
+$options = [];
+foreach ($fields as $name => $field) {
+  if ($field['type'] === 'select') {
+    $options[$name] = [];
+    foreach (set_query($conn, $field['options_sql']) ?: [] as $row) {
+      $row = array_values($row);
+      $options[$name][(string) $row[0]] = (string) $row[1];
+    }
+  }
+}
+
+$errors = [];
+$old = ['is_active' => $details ? ($details['is_active'] === '1' ? '1' : '') : '1'];
+foreach ($fields as $name => $field) {
+  if ($field['type'] === 'image') {
+    continue;
+  }
+  $old[$name] = $details ? (string) $details[$field['col']] : '';
+  if ($field['type'] === 'date') {
+    // "1970-01-01" is what an empty date was saved as.
+    $time = $details ? strtotime((string) $details[$field['col']]) : time();
+    $old[$name] = $time && $time > 86400 ? date('Y-m-d', $time) : ($details ? '' : date('Y-m-d'));
+  }
+}
+
+if ($can_show_form && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['save_entity'])) {
+
+  // ---------------------------------------------------------------
+  // 1. Read the form
+  // ---------------------------------------------------------------
+  foreach ($fields as $name => $field) {
+    if ($field['type'] === 'image') {
+      continue;
+    }
+    $value = isset($_POST[$name]) && is_string($_POST[$name]) ? trim($_POST[$name]) : '';
+    $old[$name] = in_array($field['type'], ['rich', 'textarea'], true) && $field['max'] === 0 ? $value : mb_substr($value, 0, $field['max'] > 0 ? $field['max'] : 255);
+    if ($field['type'] === 'textarea' && $field['max'] > 0) {
+      $old[$name] = mb_substr($value, 0, $field['max']);
+    }
+  }
+  $old['is_active'] = isset($_POST['is_active']) ? '1' : '';
+
+  // ---------------------------------------------------------------
+  // 2. Check it. Nothing is saved and no file is kept until everything is right.
+  // ---------------------------------------------------------------
+  if (!is_string($_POST['csrf'] ?? null) || !hash_equals($_SESSION['admin_csrf'], $_POST['csrf'])) {
+    $errors[] = 'The form expired. Please check your entries and save again.';
+  }
+  $data = [];
+  foreach ($fields as $name => $field) {
+    if ($field['type'] === 'image') {
+      continue;
+    }
+    $value = $old[$name];
+    $empty = $field['type'] === 'rich' ? ent_plain($value) === '' && stripos($value, '<img') === false : $value === '';
+    if ($field['required'] && $empty && $field['type'] !== 'slug') {
+      $errors[] = $field['label'] . ' is needed.';
+    }
+    if ($field['type'] === 'date') {
+      $time = $value !== '' ? strtotime($value) : false;
+      if ($value !== '' && $time === false) {
+        $errors[] = $field['label'] . ': choose a date.';
+      }
+      $value = $time ? date('Y-m-d', $time) : date('Y-m-d');
+    } elseif ($field['type'] === 'select') {
+      if ($value !== '' && !isset($options[$name][$value])) {
+        $errors[] = $field['label'] . ': choose one from the list.';
+      }
+      $value = $value === '' ? null : (ctype_digit($value) ? (int) $value : $value);
+    } elseif ($field['type'] === 'icon') {
+      // A list of class names, for example "fal fa-star". Nothing else is accepted.
+      if ($value !== '' && (!preg_match('/^[a-z0-9-]+( [a-z0-9-]+){0,3}$/', $value) || !preg_match('/\bfa-[a-z0-9-]+$/', $value))) {
+        $errors[] = $field['label'] . ': type the class names of an icon, for example "fal fa-star".';
+      }
+    } elseif ($field['type'] === 'slug') {
+      // A saved address is left exactly as it is unless it was changed here, because changing
+      // it changes the page's link. A new one is made from the name when left empty.
+      $saved = $details ? (string) $details[$field['col']] : '';
+      if (!($saved !== '' && $value === $saved)) {
+        $typed = $value !== '';
+        $value = ent_slug($typed ? $value : ($saved !== '' ? $saved : ($old[$field['from']] ?? '')));
+        if ($value === '' && ($old[$field['from']] ?? '') !== '') {
+          $errors[] = $field['label'] . ' needs letters or numbers.';
+        } elseif ($value !== '' && set_query($conn, "SELECT $id_col FROM $t WHERE TRIM({$field['col']}) = ? AND $id_col <> ? AND is_active = '1' LIMIT 1", [$value, $id])) {
+          $errors[] = 'Another live ' . $entity['one'] . ' already uses the page address "' . $value . '". Choose a different one, or hide the other one first.';
+        }
+      }
+    }
+    $data[$field['col']] = $value;
+  }
+
+  if (isset($_POST['seo_focus']) && is_string($_POST['seo_focus']) && trim($_POST['seo_focus']) !== '') {
+    $typed_focus = trim($_POST['seo_focus']);
+    if (empty($data['meta_keyword'])) {
+      $data['meta_keyword'] = mb_substr($typed_focus, 0, 255);
+      $old['meta_keyword'] = $data['meta_keyword'];
+    }
+  }
+
+  $to_move = [];      // [temporary file, final path]
+  $replaced = [];     // saved files that a new upload replaces
+  foreach ($fields as $name => $field) {
+    if ($field['type'] !== 'image') {
+      continue;
+    }
+    $saved = $details ? (string) $details[$field['col']] : '';
+    $data[$field['col']] = $saved;
+    list($extension, $error) = set_check_upload($_FILES[$name] ?? null, $field['label']);
+    if ($error !== '') {
+      $errors[] = $error;
+    } elseif ($extension !== '') {
+      if (trim($saved) !== '') {
+        $replaced[] = $field['folder'] . basename($saved);
+      }
+      $data[$field['col']] = $field['col'] . '_' . bin2hex(random_bytes(6)) . '.' . $extension;
+      $to_move[] = [$_FILES[$name]['tmp_name'], $field['folder'] . $data[$field['col']]];
+    } elseif ($field['required'] && trim($saved) === '') {
+      $errors[] = $field['label'] . ' is needed.';
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // 3. Save
+  // ---------------------------------------------------------------
+  if (!$errors) {
+    foreach ($to_move as $move) {
+      if (!is_dir(dirname($move[1]))) {
+        mkdir(dirname($move[1]), 0755, true);
+      }
+      if (!move_uploaded_file($move[0], $move[1])) {
+        $errors[] = 'A picture could not be stored on the server. Nothing was saved.';
+        break;
+      }
+    }
+  }
+
+  if (!$errors) {
+    $data['is_active'] = $old['is_active'] === '1' ? '1' : '2';
+    if ($editing) {
+      $old_data = $logger->getOldRecordData($t, $id);
+      $assignments = [];
+      foreach (array_keys($data) as $column) {
+        $assignments[] = "$column = ?";
+      }
+      $saved = set_query($conn, "UPDATE $t SET " . implode(', ', $assignments) . ", tstp = NOW() WHERE $id_col = ?", array_merge(array_values($data), [$id]));
+      $record_id = $id;
+    } else {
+      $saved = set_query($conn, "INSERT INTO $t (" . implode(', ', array_keys($data)) . ', tstp) VALUES (' . implode(', ', array_fill(0, count($data), '?')) . ', NOW())', array_values($data));
+      $record_id = $saved ? (int) mysqli_insert_id($conn) : 0;
+    }
+
+    if (!$saved) {
+      foreach ($to_move as $move) {
+        if (is_file($move[1])) {
+          @unlink($move[1]);
+        }
+      }
+      $errors[] = 'This could not be saved. Please try again.';
+    } else {
+      foreach ($replaced as $path) {
+        if (is_file($path)) {
+          @unlink($path);
+        }
+      }
+      $logger->log($editing ? 'UPDATE' : 'INSERT', $t, $record_id, $editing ? $old_data : null, $logger->getOldRecordData($t, $record_id), $entity['title'] . ($editing ? ' updated' : ' added') . ($entity['heading'] !== '' ? ': ' . ($data[$entity['heading']] ?? '') : ''));
+      if ($mode === 'single') {
+        header('Location: ' . BASE_URL . $entity['edit_file'] . '?edit=' . base64_encode($id) . '&saved=1');
+      } else {
+        header('Location: ' . BASE_URL . $entity['list_file'] . '?done=' . ($editing ? 'saved' : 'added'));
+      }
+      exit;
+    }
+  }
+}
+
+$just_saved = $mode === 'single' && $details && isset($_GET['saved']) && !$errors;
+$public_url = $entity['public_path'] !== '' ? BASE_URL_HOME . $entity['public_path'] : '';
+// Fields the AI helper reads to write a suggestion: the name field, and every longer text.
+$ai_title = '';
+$ai_texts = [];
+foreach ($fields as $name => $field) {
+  if ($field['col'] === $entity['heading'] || ($ai_title === '' && $entity['heading'] === '' && $field['type'] === 'text')) {
+    $ai_title = '#' . $dom_ids[$name];
+  }
+  if (in_array($field['type'], ['rich', 'textarea'], true) && $field['ai'] !== 'meta_description' && $field['ai'] !== 'keywords') {
+    $ai_texts[] = '#' . $dom_ids[$name];
+  }
+}
+$ai_labels = ['meta_title' => 'Suggest a title', 'meta_description' => 'Suggest a description', 'short_description' => 'Suggest a short description', 'keywords' => 'Suggest keywords', 'alt_text' => 'Suggest a description', 'heading' => 'Suggest a heading', 'improve' => 'Make this text clearer'];
+$uses_ai = (bool) array_filter(array_column($fields, 'ai'));
+?>
+<!--begin::Body-->
+
+<body id="kt_body"
+  class="header-fixed header-mobile-fixed subheader-enabled subheader-fixed aside-enabled aside-fixed aside-minimize-hoverable page-loading">
+  <!--begin::Main-->
+  <!--begin::Header Mobile-->
+  <div id="kt_header_mobile" class="header-mobile align-items-center header-mobile-fixed">
+    <!--begin::Logo-->
+    <a href="index.html">
+      <img alt="Logo" src="<?= BASE_URL ?>assets/media/logos/logo-light.png" />
+    </a>
+    <!--end::Logo-->
+    <!--begin::Toolbar-->
+    <div class="d-flex align-items-center">
+      <!--begin::Aside Mobile Toggle-->
+      <button class="btn p-0 burger-icon burger-icon-left" id="kt_aside_mobile_toggle">
+        <span></span>
+      </button>
+      <!--end::Aside Mobile Toggle-->
+      <!--begin::Header Menu Mobile Toggle-->
+      <button class="btn p-0 burger-icon ml-4" id="kt_header_mobile_toggle">
+        <span></span>
+      </button>
+      <!--end::Header Menu Mobile Toggle-->
+      <!--begin::Topbar Mobile Toggle-->
+      <button class="btn btn-hover-text-primary p-0 ml-2" id="kt_header_mobile_topbar_toggle">
+        <span class="svg-icon svg-icon-xl">
+          <!--begin::Svg Icon | path:<?= BASE_URL ?>assets/media/svg/icons/General/User.svg-->
+          <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px"
+            viewBox="0 0 24 24" version="1.1">
+            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+              <polygon points="0 0 24 0 24 24 0 24" />
+              <path
+                d="M12,11 C9.790861,11 8,9.209139 8,7 C8,4.790861 9.790861,3 12,3 C14.209139,3 16,4.790861 16,7 C16,9.209139 14.209139,11 12,11 Z"
+                fill="#000000" fill-rule="nonzero" opacity="0.3" />
+              <path
+                d="M3.00065168,20.1992055 C3.38825852,15.4265159 7.26191235,13 11.9833413,13 C16.7712164,13 20.7048837,15.2931929 20.9979143,20.2 C21.0095879,20.3954741 20.9979143,21 20.2466999,21 C16.541124,21 11.0347247,21 3.72750223,21 C3.47671215,21 2.97953825,20.45918 3.00065168,20.1992055 Z"
+                fill="#000000" fill-rule="nonzero" />
+            </g>
+          </svg>
+          <!--end::Svg Icon-->
+        </span>
+      </button>
+      <!--end::Topbar Mobile Toggle-->
+    </div>
+    <!--end::Toolbar-->
+  </div>
+  <!--end::Header Mobile-->
+  <div class="d-flex flex-column flex-root">
+    <!--begin::Page-->
+    <div class="d-flex flex-row flex-column-fluid page">
+      <!--begin::Aside-->
+      <?php include('includes/sidebar.php'); ?>
+      <!--end::Aside-->
+      <!--begin::Wrapper-->
+      <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+        <!--begin::Header-->
+        <div id="kt_header" class="header header-fixed">
+          <!--begin::Container-->
+          <div class="container-fluid d-flex align-items-stretch justify-content-between">
+            <!--begin::Header Menu Wrapper-->
+            <div class="header-menu-wrapper header-menu-wrapper-left" id="kt_header_menu_wrapper">
+              <!--begin::Header Menu-->
+              <div id="kt_header_menu" class="header-menu header-menu-mobile header-menu-layout-default">
+
+              </div>
+              <!--end::Header Menu-->
+            </div>
+            <!--end::Header Menu Wrapper-->
+            <!--begin::Topbar-->
+            <div class="topbar">
+
+              <!--begin::User-->
+              <div class="topbar-item">
+                <div class="btn btn-icon btn-icon-mobile w-auto btn-clean d-flex align-items-center btn-lg px-2"
+                  id="kt_quick_user_toggle">
+                  <span class="text-muted font-weight-bold font-size-base d-none d-md-inline mr-1">Hi,</span>
+                  <span
+                    class="text-dark-50 font-weight-bolder font-size-base d-none d-md-inline mr-3"><?= $_SESSION['username'] ?></span>
+                  <span class="symbol symbol-lg-35 symbol-25 symbol-light-success">
+                    <span
+                      class="symbol-label font-size-h5 font-weight-bold"><?= substr($_SESSION['username'], 0, 1) ?></span>
+                  </span>
+                </div>
+              </div>
+              <!--end::User-->
+            </div>
+            <!--end::Topbar-->
+          </div>
+          <!--end::Container-->
+        </div>
+        <!--end::Header-->
+        <!--begin::Content-->
+        <div class="content d-flex flex-column flex-column-fluid dre-dash-content" id="kt_content">
+
+          <!--begin::Entry-->
+          <div class="d-flex flex-column-fluid">
+            <!--begin::Container-->
+            <div class="container">
+              <!--begin::Form-->
+              <link href="<?= BASE_URL ?>assets/css/dre-dashboard.css?v=1" rel="stylesheet" type="text/css" />
+              <link href="<?= BASE_URL ?>assets/css/dre-form.css?v=3" rel="stylesheet" type="text/css" />
+              <link href="<?= BASE_URL ?>assets/css/dre-settings.css?v=1" rel="stylesheet" type="text/css" />
+              <link href="<?= BASE_URL ?>assets/css/dre-careers.css?v=1" rel="stylesheet" type="text/css" />
+              <link href="<?= BASE_URL ?>assets/css/dre-ai-assist.css?v=1" rel="stylesheet" type="text/css" />
+              <link href="<?= BASE_URL ?>assets/css/dre-seo-check.css?v=2" rel="stylesheet" type="text/css" />
+
+              <div class="dre-dash dre-form-page dre-settings-form">
+
+                <div class="dre-glass dre-glass-dark dre-hero">
+                  <div>
+                    <h1><?= $mode === 'single' ? set_e($entity['title']) : ($editing ? 'Edit ' : 'Add ') . set_e($entity['one']) ?></h1>
+                    <p><?= $mode === 'single' ? set_e($entity['blurb']) : ($editing ? ($details ? set_e($entity['heading'] !== '' ? $details[$entity['heading']] : $entity['title']) : 'This ' . set_e($entity['one']) . ' could not be found.') : 'Fields marked <b>*</b> are needed.') ?></p>
+                  </div>
+                  <div class="dre-actions">
+                    <?php if ($mode !== 'single'): ?>
+                      <a href="<?= BASE_URL . $entity['list_file'] ?>"><i class="bi bi-arrow-left"></i> Back to <?= set_e($entity['many']) ?></a>
+                    <?php endif; ?>
+                    <?php foreach ($entity['links'] ?? [] as $link): ?>
+                      <a href="<?= BASE_URL . $link[1] ?>"><i class="bi <?= set_e($link[2]) ?>"></i> <?= set_e($link[0]) ?></a>
+                    <?php endforeach; ?>
+                    <?php if ($public_url !== '' && ($mode === 'single' || $details)): ?>
+                      <a href="<?= set_e($public_url . (!empty($entity['public_slug']) && $details ? trim((string) $details[$entity['public_slug']]) : '')) ?>" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> View the page</a>
+                    <?php endif; ?>
+                  </div>
+                </div>
+
+                <?php if ($entity['site_note'] !== ''): ?>
+                  <div class="dre-form-alert dre-form-ok dre-site-note" role="note">
+                    <i class="bi bi-eye-slash"></i>
+                    <div><?= set_e($entity['site_note']) ?></div>
+                  </div>
+                <?php endif; ?>
+
+                <?php if (!$can_show_form): ?>
+                  <div class="dre-form-alert dre-form-bad" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <div><strong>This <?= set_e($mode === 'single' ? 'content' : $entity['one']) ?> could not be found.</strong> <?php if ($mode !== 'single'): ?><a href="<?= BASE_URL . $entity['list_file'] ?>">Back to <?= set_e($entity['many']) ?></a><?php else: ?>Open it from the menu.<?php endif; ?></div>
+                  </div>
+                <?php elseif ($just_saved): ?>
+                  <div class="dre-form-alert dre-form-ok" role="status" id="entSaved">
+                    <i class="bi bi-check-circle"></i>
+                    <div><strong>The changes were saved.</strong></div>
+                  </div>
+                <?php endif; ?>
+
+                <?php if ($errors): ?>
+                  <div class="dre-form-alert dre-form-bad" role="alert" id="entErrors" tabindex="-1">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <div>
+                      <strong>Not saved. Please fix <?= count($errors) === 1 ? 'this' : 'these ' . count($errors) . ' things' ?>:</strong>
+                      <ul>
+                        <?php foreach ($errors as $error): ?>
+                          <li><?= set_e($error) ?></li>
+                        <?php endforeach; ?>
+                      </ul>
+                      <em>Pictures have to be chosen again: a browser does not keep them after an error.</em>
+                    </div>
+                  </div>
+                <?php endif; ?>
+
+                <?php if ($can_show_form): ?>
+                <form action="<?= BASE_URL ?><?= $editing ? $entity['edit_file'] . '?edit=' . base64_encode($id) : $entity['add_file'] ?>" enctype="multipart/form-data" method="post" id="entity-form" class="dre-form">
+                  <input type="hidden" name="csrf" value="<?= set_e($_SESSION['admin_csrf']) ?>">
+                  <input type="hidden" name="save_entity" value="1">
+
+                  <?php foreach ($entity['sections'] as $section):
+                    $section_fields = array_filter($fields, function ($field) use ($section) { return $field['section'] === $section[0]; });
+                    if (!$section_fields) {
+                      continue;
+                    }
+                  ?>
+                    <section class="dre-glass dre-form-section">
+                      <h2><i class="bi <?= set_e($section[1]) ?>"></i> <?= set_e($section[0]) ?></h2>
+                      <?php if (!empty($section[2])): ?><p class="dre-form-note"><?= set_e($section[2]) ?></p><?php endif; ?>
+                      <?php foreach ($section_fields as $name => $field):
+                        $dom_id = $dom_ids[$name];
+                        $star = $field['required'] ? ' <b>*</b>' : '';
+                        $ai_button = $field['ai'] !== '' ? '<button type="button" class="dre-ai-btn" data-ai-task="' . set_e($field['ai']) . '" data-ai-target="#' . set_e($dom_id) . '" data-ai-title="' . set_e($ai_title) . '" data-ai-text="' . set_e(implode(',', $field['ai'] === 'improve' ? [] : $ai_texts)) . '" data-ai-page="' . set_e($entity['page_label']) . '"><i class="bi bi-stars"></i> ' . set_e($ai_labels[$field['ai']] ?? 'Suggest with AI') . '</button>' : '';
+                      ?>
+                        <?php if ($field['type'] === 'rich'): ?>
+                          <div class="dre-field">
+                            <label for="<?= set_e($dom_id) ?>"<?= $field['guide'] ? ' class="dre-guide-label"' : '' ?>><span><?= set_e($field['label']) ?><?= $star ?></span></label>
+                            <?php if ($field['guide']): ?>
+                              <?= ent_text_guide($old[$name], $public_url !== '' && $details && trim((string) ($details[$entity['public_slug']] ?? '')) !== '' ? $public_url . trim((string) $details[$entity['public_slug']]) : '', $details ? (string) ($details['serv_sec_name'] ?? '') : '') ?>
+                            <?php endif; ?>
+                            <textarea name="<?= set_e($name) ?>" class="tinymce-editor" id="<?= set_e($dom_id) ?>" rows="12"><?= set_e($old[$name]) ?></textarea>
+                            <?php if ($field['help'] !== ''): ?><small><?= set_e($field['help']) ?></small><?php endif; ?>
+                            <?= $ai_button ?>
+                          </div>
+                        <?php elseif ($field['type'] === 'textarea'): ?>
+                          <div class="dre-field">
+                            <label for="<?= set_e($dom_id) ?>"><span><?= set_e($field['label']) ?><?= $star ?></span></label>
+                            <textarea name="<?= set_e($name) ?>" id="<?= set_e($dom_id) ?>" rows="<?= (int) $field['rows'] ?>"<?= $field['max'] > 0 ? ' maxlength="' . (int) $field['max'] . '"' : '' ?><?= $field['count'] > 0 ? ' data-count="' . (int) $field['count'] . '"' : '' ?> placeholder="<?= set_e($field['placeholder']) ?>"<?= $field['required'] ? ' required' : '' ?>><?= set_e($old[$name]) ?></textarea>
+                            <?php if ($field['count'] > 0): ?><small class="dre-count"></small><?php endif; ?>
+                            <?php if ($field['help'] !== ''): ?><small><?= set_e($field['help']) ?></small><?php endif; ?>
+                            <?= $ai_button ?>
+                          </div>
+                        <?php elseif ($field['type'] === 'image'):
+                          $saved_name = $details ? trim((string) $details[$field['col']]) : '';
+                          $saved_url = $saved_name !== '' ? BASE_URL . $field['folder'] . rawurlencode($saved_name) : '';
+                        ?>
+                          <div class="dre-field">
+                            <label for="<?= set_e($dom_id) ?>"><span><?= set_e($field['label']) ?><?= $star ?></span></label>
+                            <input type="file" name="<?= set_e($name) ?>" id="<?= set_e($dom_id) ?>" accept="image/jpeg,image/png,image/webp,image/gif" class="dre-set-picture"<?= $field['required'] && $saved_name === '' ? ' required' : '' ?>>
+                            <small><?= set_e($field['help']) ?> JPG, PNG, WEBP or GIF, up to 5 MB.<?= $saved_name !== '' ? ' Leave empty to keep the current one.' : '' ?></small>
+                            <div class="dre-current"<?= $saved_name === '' ? ' hidden' : '' ?>>
+                              <img src="<?= set_e($saved_url) ?>" alt="" data-saved="<?= set_e($saved_url) ?>">
+                              <span><?= $saved_name !== '' ? 'Current picture.' : '' ?></span>
+                            </div>
+                          </div>
+                        <?php elseif ($field['type'] === 'select'): ?>
+                          <label class="dre-field">
+                            <span><?= set_e($field['label']) ?><?= $star ?></span>
+                            <select name="<?= set_e($name) ?>" id="<?= set_e($dom_id) ?>"<?= $field['required'] ? ' required' : '' ?>>
+                              <option value="">Choose one</option>
+                              <?php foreach ($options[$name] as $value => $label): ?>
+                                <option value="<?= set_e($value) ?>" <?= (string) $old[$name] === (string) $value ? 'selected' : '' ?>><?= set_e($label) ?></option>
+                              <?php endforeach; ?>
+                            </select>
+                            <?php if ($field['help'] !== ''): ?><small><?= set_e($field['help']) ?></small><?php endif; ?>
+                          </label>
+                        <?php elseif ($field['type'] === 'icon'):
+                          $icon_name = preg_match('/\bfa-(?!light|regular|thin|duotone|solid|brands)[a-z0-9-]+/', $old[$name], $match) ? $match[0] : '';
+                        ?>
+                          <div class="dre-field">
+                            <label for="<?= set_e($dom_id) ?>"><span><?= set_e($field['label']) ?><?= $star ?></span></label>
+                            <span class="dre-link-row"><i class="fas <?= set_e($icon_name) ?>" aria-hidden="true" data-icon-preview></i>
+                              <input type="text" name="<?= set_e($name) ?>" id="<?= set_e($dom_id) ?>" value="<?= set_e($old[$name]) ?>" maxlength="255" autocomplete="off" spellcheck="false" placeholder="fal fa-star" class="dre-ent-icon"<?= $field['required'] ? ' required' : '' ?>>
+                            </span>
+                            <small>The class names of a Font Awesome icon, for example &ldquo;fal fa-wallet&rdquo;. The website draws it in its light style; here it is shown in the solid style.</small>
+                          </div>
+                        <?php else: ?>
+                          <div class="dre-field">
+                            <label for="<?= set_e($dom_id) ?>"><span><?= set_e($field['label']) ?><?= $star ?></span></label>
+                            <input type="<?= $field['type'] === 'date' ? 'date' : 'text' ?>" name="<?= set_e($name) ?>" id="<?= set_e($dom_id) ?>" value="<?= set_e($old[$name]) ?>"<?= $field['type'] === 'date' ? '' : ' maxlength="' . (int) $field['max'] . '" autocomplete="off" placeholder="' . set_e($field['placeholder']) . '"' ?><?= $field['count'] > 0 ? ' data-count="' . (int) $field['count'] . '"' : '' ?><?= $field['type'] === 'slug' ? ' data-slug-from="#' . set_e($dom_ids[$field['from']] ?? '') . '" spellcheck="false"' : '' ?><?= $field['required'] && $field['type'] !== 'slug' ? ' required' : '' ?>>
+                            <?php if ($field['count'] > 0): ?><small class="dre-count"></small><?php endif; ?>
+                            <?php if ($field['type'] === 'slug'): ?>
+                              <small>The page will be at <code data-slug-preview="<?= set_e($public_url) ?>"><?= set_e($public_url) ?></code><?= $editing ? ' Changing it breaks links to the old address.' : ' Leave empty to make it from the name.' ?></small>
+                            <?php elseif ($field['help'] !== ''): ?>
+                              <small><?= set_e($field['help']) ?></small>
+                            <?php endif; ?>
+                            <?= $ai_button ?>
+                          </div>
+                        <?php endif; ?>
+                      <?php endforeach; ?>
+                      <?php if ($section[0] === 'Search engines and sharing'): ?>
+                        <?php
+                        $saved_focus = '';
+                        if (!empty($details['meta_keyword'])) {
+                          $kw_parts = explode(',', (string) $details['meta_keyword']);
+                          $saved_focus = trim($kw_parts[0]);
+                        }
+                        seo_check_panel($conn, [
+                          'prj_id' => 0,
+                          'focus' => isset($_POST['seo_focus']) && is_string($_POST['seo_focus']) && trim($_POST['seo_focus']) !== '' ? trim($_POST['seo_focus']) : $saved_focus,
+                          'url' => rtrim(BASE_URL_HOME, '/') . '/',
+                          'site' => 'DRE Homes'
+                        ]);
+                        ?>
+                      <?php endif; ?>
+                    </section>
+                  <?php endforeach; ?>
+
+                  <section class="dre-glass dre-form-section">
+                    <h2><i class="bi bi-send"></i> Publishing</h2>
+                    <label class="dre-toggle">
+                      <input type="checkbox" name="is_active" value="1" id="entActive" <?= $old['is_active'] === '1' ? 'checked' : '' ?>>
+                      <i></i>
+                      <span><strong><?= set_e($entity['active_label']) ?></strong><small><?= set_e($entity['active_off']) ?></small></span>
+                    </label>
+                  </section>
+
+                  <div class="dre-form-bar">
+                    <div class="dre-form-progress"><div id="entState"><?= $editing ? 'No unsaved changes' : 'Not saved yet' ?></div></div>
+                    <div class="dre-seo-lights" title="SEO check: click to see what can be better">
+                      <a href="#dreSeo" data-seo-light="seo"><i></i> SEO <em>Not checked</em></a>
+                      <a href="#dreSeo" data-seo-light="readability"><i></i> Readability <em>Not checked</em></a>
+                    </div>
+                    <div class="dre-form-bar-buttons">
+                      <button type="submit" class="dre-btn dre-btn-main"><i class="bi bi-check2"></i> <?= $editing ? 'Save changes' : 'Save ' . set_e($entity['one']) ?></button>
+                    </div>
+                  </div>
+                </form>
+                <?php endif; ?>
+              </div>
+              <!--end::Form-->
+
+            </div>
+            <!--end::Container-->
+          </div>
+          <!--end::Entry-->
+        </div>
+        <!--end::Content-->
+
+        <?php
+        include('includes/footer-inner.php');
+        ?>
+
+        <script src="<?= BASE_URL ?>assets/js/dre-seo-check.js?v=2"></script>
+
+        <?php if ($uses_ai && $can_show_form): ?>
+          <script>
+            // Where the "Suggest with AI" buttons send their requests. The key stays on the server.
+            window.DRE_AI_ASSIST = <?= json_encode(['endpoint' => BASE_URL . 'ajax/ai-assist.php', 'csrf' => $_SESSION['admin_csrf']], JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+          </script>
+          <script src="<?= BASE_URL ?>assets/js/dre-ai-assist.js?v=1"></script>
+        <?php endif; ?>
+        <script>
+          // Form helpers: character counts, the page address, picture previews, and a warning before leaving unsaved changes.
+          (function () {
+            var form = document.getElementById('entity-form');
+            if (!form) {
+              return;
+            }
+            var single = <?= json_encode($mode === 'single') ?>;
+            var dirty = false;
+            var state = document.getElementById('entState');
+            function changed() {
+              dirty = true;
+              state.textContent = 'Unsaved changes';
+              state.classList.add('dre-warn-text');
+            }
+
+            form.querySelectorAll('[data-count]').forEach(function (field) {
+              var target = parseInt(field.getAttribute('data-count'), 10);
+              var note = field.parentNode.querySelector('.dre-count');
+              function count() {
+                var length = field.value.length;
+                note.textContent = length + ' characters' + (length === 0 ? ' - aim for about ' + target + '.' : (length > target ? ' - about ' + target + ' reads best.' : '.'));
+                note.classList.toggle('dre-warn-text', length > target);
+              }
+              field.addEventListener('input', count);
+              count();
+            });
+
+            // The page address follows the name until someone types their own.
+            form.querySelectorAll('[data-slug-from]').forEach(function (slug) {
+              var source = document.querySelector(slug.getAttribute('data-slug-from'));
+              var preview = slug.parentNode.querySelector('[data-slug-preview]');
+              function slugify(text) {
+                return text.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+              }
+              function show() {
+                // A saved address is shown as it is; a new one is made from what is typed.
+                var value = slug.value !== '' ? (slug.value === slug.defaultValue ? slug.value : slugify(slug.value)) : (source ? slugify(source.value) : '');
+                preview.textContent = preview.getAttribute('data-slug-preview') + value;
+              }
+              slug.addEventListener('input', show);
+              if (source) { source.addEventListener('input', show); }
+              show();
+            });
+
+            form.querySelectorAll('.dre-ent-icon').forEach(function (input) {
+              var preview = input.parentNode.querySelector('[data-icon-preview]');
+              input.addEventListener('input', function () {
+                var match = /(?:^|\s)(fa-(?!light|regular|thin|duotone|solid|brands)[a-z0-9-]+)/.exec(input.value.trim());
+                preview.className = 'fas ' + (match ? match[1] : '');
+              });
+            });
+
+            form.querySelectorAll('.dre-set-picture').forEach(function (input) {
+              var box = input.parentNode.querySelector('.dre-current');
+              var img = box.querySelector('img');
+              var note = box.querySelector('span');
+              var savedNote = note.textContent;
+              input.addEventListener('change', function () {
+                var file = input.files[0];
+                var bad = '';
+                if (file && ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].indexOf(file.type) === -1) {
+                  bad = '"' + file.name + '" is not a JPG, PNG, WEBP or GIF picture.';
+                } else if (file && file.size > 5 * 1024 * 1024) {
+                  bad = '"' + file.name + '" is larger than 5 MB.';
+                }
+                input.setCustomValidity(bad);
+                input.classList.toggle('dre-invalid', bad !== '');
+                if (bad !== '') { input.reportValidity(); }
+                if (file && bad === '') {
+                  img.src = URL.createObjectURL(file);
+                  note.textContent = 'New picture, not saved yet.';
+                  box.hidden = false;
+                } else {
+                  img.src = img.getAttribute('data-saved');
+                  note.textContent = savedNote;
+                  box.hidden = img.getAttribute('data-saved') === '';
+                }
+              });
+            });
+
+            form.addEventListener('input', function (event) { event.target.classList.remove('dre-invalid'); changed(); });
+            form.addEventListener('change', changed);
+            window.addEventListener('load', function () {
+              setTimeout(function () {
+                if (window.tinymce) {
+                  window.tinymce.editors.forEach(function (editor) { editor.on('change keyup', changed); });
+                }
+              }, 1200);
+            });
+            var active = document.getElementById('entActive');
+            form.addEventListener('invalid', function (event) { event.target.classList.add('dre-invalid'); }, true);
+            form.addEventListener('submit', function (event) {
+              if (single && !active.checked && active.defaultChecked && !window.confirm('This content is switched off. The page will lose it. Save anyway?')) {
+                event.preventDefault();
+                return;
+              }
+              if (window.tinymce) { window.tinymce.triggerSave(); }
+              dirty = false;
+            });
+            window.addEventListener('beforeunload', function (event) {
+              if (dirty) { event.preventDefault(); event.returnValue = ''; }
+            });
+            if (document.getElementById('entSaved') && window.history.replaceState) {
+              // Reloading the page should not show "saved" again.
+              window.history.replaceState(null, '', window.location.href.replace(/&saved=1/, ''));
+            }
+            var errorBox = document.getElementById('entErrors');
+            if (errorBox) { errorBox.focus(); errorBox.scrollIntoView({ block: 'start' }); }
+          })();
+        </script>

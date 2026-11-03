@@ -1,0 +1,424 @@
+/* Leads page. Builds on dre-dashboard.css (glass cards, pills, colours). */
+.dre-leads .dre-glass {
+    height: auto;
+    margin-bottom: 18px;
+}
+.dre-leads-hero {
+    gap: 22px;
+}
+.dre-leads-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.dre-leads-stats div {
+    min-width: 86px;
+    padding: 10px 14px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    text-align: center;
+}
+.dre-leads-stats strong {
+    display: block;
+    font-size: 1.35rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+.dre-leads-stats span {
+    font-size: 0.78rem;
+    opacity: 0.85;
+}
+.dre-leads-notice {
+    margin-bottom: 18px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(95, 87, 76, 0.16);
+    color: var(--dd-main);
+    font-weight: 500;
+}
+
+/* Kind of enquiry: one row that scrolls sideways on a phone */
+.dre-leads-tabs {
+    display: flex;
+    gap: 8px;
+    margin: -4px -4px 10px;
+    padding: 4px 4px 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+.dre-leads .dre-leads-tabs a {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 14px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    color: var(--dd-main);
+    font-size: 0.9rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: background 0.15s ease;
+}
+.dre-leads .dre-leads-tabs a:hover {
+    background: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+}
+.dre-leads-tabs b {
+    padding: 1px 8px;
+    border-radius: 20px;
+    background: rgba(95, 87, 76, 0.12);
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+.dre-leads .dre-leads-tabs a.is-on {
+    background: linear-gradient(135deg, var(--dd-main), var(--dd-accent));
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(95, 87, 76, 0.26);
+}
+.dre-leads-tabs a.is-on b {
+    background: rgba(255, 255, 255, 0.24);
+}
+
+/* Search and dates */
+.dre-leads-filter {
+    display: grid;
+    grid-template-columns: minmax(220px, 2.2fr) repeat(2, minmax(140px, 1fr)) minmax(100px, 0.6fr) auto;
+    gap: 14px;
+    align-items: end;
+    padding: 18px 20px;
+}
+.dre-leads-filter label {
+    position: relative;
+    display: block;
+    margin: 0;
+}
+.dre-leads-filter label > span {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--dd-muted);
+    font-size: 0.78rem;
+    font-weight: 500;
+}
+.dre-leads-filter input,
+.dre-leads-filter select {
+    width: 100%;
+    height: 42px;
+    padding: 0 12px;
+    border: 1px solid rgba(95, 87, 76, 0.18);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--dd-ink);
+    font-size: 0.95rem;
+    outline: none;
+}
+.dre-leads-filter input:focus,
+.dre-leads-filter select:focus {
+    border-color: var(--dd-accent);
+    box-shadow: 0 0 0 3px rgba(171, 152, 137, 0.25);
+}
+.dre-leads-search i {
+    position: absolute;
+    left: 13px;
+    bottom: 12px;
+    color: var(--dd-muted);
+    pointer-events: none;
+}
+.dre-leads-search input {
+    padding-left: 38px;
+}
+.dre-leads-filter-buttons {
+    display: flex;
+    gap: 8px;
+}
+.dre-leads .dre-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    height: 42px;
+    padding: 0 16px;
+    border: 1px solid rgba(95, 87, 76, 0.18);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--dd-main);
+    font-size: 0.92rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+.dre-leads .dre-btn:hover {
+    background: #fff;
+    text-decoration: none;
+}
+.dre-leads .dre-btn-main {
+    border-color: transparent;
+    background: var(--dd-main);
+    color: #fff;
+}
+.dre-leads .dre-btn-main:hover {
+    background: #4a433a;
+}
+
+/* The list: a table on wide screens, one card per lead on narrow ones */
+.dre-leads-row {
+    display: grid;
+    grid-template-columns: minmax(180px, 1.2fr) minmax(200px, 1.3fr) minmax(220px, 2fr) 104px 176px;
+    gap: 16px;
+    align-items: start;
+    padding: 14px 6px;
+    border-bottom: 1px solid rgba(95, 87, 76, 0.10);
+}
+.dre-leads-row:last-child {
+    border-bottom: 0;
+}
+.dre-leads-row:not(.dre-leads-head):hover {
+    background: rgba(255, 255, 255, 0.45);
+    border-radius: 12px;
+}
+.dre-leads-head {
+    padding-top: 0;
+    padding-bottom: 10px;
+    color: var(--dd-muted);
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.dre-leads-row > div {
+    min-width: 0;
+}
+.dre-leads-who {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.dre-leads-who > div {
+    min-width: 0;
+}
+.dre-leads-who strong {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+.dre-leads .dre-leads-line {
+    display: block;
+    padding: 2px 0;
+    color: var(--dd-ink);
+    font-size: 0.92rem;
+    overflow-wrap: anywhere;
+}
+.dre-leads .dre-leads-line:hover {
+    color: var(--dd-main);
+}
+.dre-leads-line i {
+    margin-right: 6px;
+    color: var(--dd-accent);
+}
+.dre-leads-interest strong {
+    display: block;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+.dre-leads-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 6px;
+}
+.dre-leads-tags span {
+    padding: 2px 8px;
+    border-radius: 8px;
+    background: rgba(95, 87, 76, 0.08);
+    color: var(--dd-main);
+    font-size: 0.78rem;
+    overflow-wrap: anywhere;
+}
+.dre-leads-message {
+    margin: 6px 0 0;
+    color: var(--dd-muted);
+    font-size: 0.88rem;
+    overflow-wrap: anywhere;
+}
+.dre-leads-message summary {
+    cursor: pointer;
+    list-style: none;
+}
+.dre-leads-message summary::-webkit-details-marker {
+    display: none;
+}
+.dre-leads-message summary em {
+    color: var(--dd-main);
+    font-style: normal;
+    font-weight: 600;
+}
+.dre-leads-message[open] summary {
+    display: none;
+}
+.dre-leads-message p {
+    margin: 0;
+}
+.dre-leads-muted {
+    color: var(--dd-muted);
+    font-size: 0.88rem;
+}
+.dre-leads-date strong {
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+.dre-leads-date span {
+    color: var(--dd-muted);
+    font-size: 0.8rem;
+}
+.dre-leads-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+}
+.dre-leads-actions form {
+    margin: 0;
+}
+.dre-leads .dre-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 1px solid rgba(95, 87, 76, 0.14);
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--dd-main);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.dre-leads .dre-icon-btn:hover {
+    background: var(--dd-main);
+    color: #fff;
+    text-decoration: none;
+}
+.dre-leads .dre-icon-wa:hover {
+    background: #1f9d57;
+}
+.dre-leads .dre-icon-del {
+    color: #b9524a;
+}
+.dre-leads .dre-icon-del:hover {
+    background: #b9524a;
+    color: #fff;
+}
+
+.dre-leads-pages {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 18px;
+}
+.dre-leads .dre-leads-pages a,
+.dre-leads-pages span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 10px;
+    border-radius: 11px;
+    color: var(--dd-main);
+    font-weight: 500;
+}
+.dre-leads .dre-leads-pages a {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(95, 87, 76, 0.12);
+}
+.dre-leads .dre-leads-pages a:hover {
+    background: #fff;
+    text-decoration: none;
+}
+.dre-leads .dre-leads-pages a.is-on {
+    background: var(--dd-main);
+    border-color: var(--dd-main);
+    color: #fff;
+}
+
+@media (max-width: 1199px) {
+    .dre-leads-filter {
+        grid-template-columns: 1fr 1fr;
+    }
+    .dre-leads-search,
+    .dre-leads-filter-buttons {
+        grid-column: 1 / -1;
+    }
+    .dre-leads-row {
+        grid-template-columns: minmax(160px, 1fr) minmax(180px, 1.2fr) minmax(180px, 1.6fr) 96px;
+    }
+    .dre-leads-head > div:last-child {
+        display: none;
+    }
+    .dre-leads-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+    }
+}
+@media (max-width: 767px) {
+    .dre-leads-hero {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .dre-leads-stats div {
+        flex: 1;
+        min-width: 0;
+        padding: 8px 6px;
+    }
+    .dre-leads .dre-actions a {
+        justify-content: center;
+        width: 100%;
+    }
+    .dre-leads-head {
+        display: none;
+    }
+    .dre-leads-list {
+        padding: 14px;
+    }
+    /* Each lead becomes its own card. */
+    .dre-leads-row {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin-bottom: 12px;
+        padding: 14px;
+        border: 1px solid rgba(95, 87, 76, 0.12);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.55);
+    }
+    .dre-leads-row:last-child {
+        border-bottom: 1px solid rgba(95, 87, 76, 0.12);
+        margin-bottom: 0;
+    }
+    .dre-leads-date {
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+    }
+    .dre-leads-actions {
+        gap: 8px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(95, 87, 76, 0.10);
+    }
+    .dre-leads .dre-icon-btn {
+        width: 46px;
+        height: 44px;
+    }
+    .dre-leads-actions form {
+        margin-left: auto;
+    }
+    .dre-leads-filter input,
+    .dre-leads-filter select {
+        font-size: 16px;
+    }
+}

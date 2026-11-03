@@ -1,0 +1,128 @@
+/* Pending work page: what is still empty on each project. Builds on dre-projects.css. */
+.dre-pending .dre-proj-row {
+    grid-template-columns: minmax(260px, 2fr) minmax(160px, 1fr) 130px minmax(240px, 2fr) 104px;
+    align-items: start;
+}
+.dre-pending .dre-proj-head {
+    align-items: center;
+}
+
+.dre-pend-meter strong {
+    display: block;
+    font-size: 1.05rem;
+    color: var(--dd-ink);
+}
+.dre-pend-meter span {
+    display: block;
+    margin-top: 4px;
+    color: var(--dd-muted);
+    font-size: 0.8rem;
+}
+.dre-pend-bar {
+    height: 6px;
+    margin-top: 4px;
+    border-radius: 999px;
+    background: rgba(95, 87, 76, 0.14);
+    overflow: hidden;
+}
+.dre-pend-bar i {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--dd-good);
+}
+.dre-pend-warn .dre-pend-bar i {
+    background: var(--dd-warn);
+}
+.dre-pend-bad .dre-pend-bar i {
+    background: var(--dd-bad);
+}
+
+.dre-pend-done {
+    color: var(--dd-good);
+    font-weight: 600;
+}
+.dre-pend-missing summary {
+    cursor: pointer;
+    color: var(--dd-ink);
+    list-style-position: outside;
+}
+.dre-pend-missing summary:focus-visible {
+    outline: 2px solid var(--dd-accent);
+    outline-offset: 3px;
+    border-radius: 6px;
+}
+.dre-pend-sections {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 6px;
+}
+.dre-pend-sections .dre-pill b {
+    margin-left: 3px;
+    color: var(--dd-bad);
+}
+.dre-pend-missing details[open] .dre-pend-sections {
+    display: none;
+}
+.dre-pend-missing dl {
+    margin: 8px 0 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.55);
+    font-size: 0.86rem;
+}
+.dre-pend-missing dt {
+    color: var(--dd-main);
+    font-weight: 600;
+}
+.dre-pend-missing dd {
+    margin: 0 0 8px;
+    color: var(--dd-muted);
+}
+.dre-pend-missing dd:last-child {
+    margin-bottom: 0;
+}
+.dre-pending .dre-proj-actions .dre-btn {
+    white-space: nowrap;
+}
+
+/* This page has no tick-box column, so the shared small-screen rules are reset for it. */
+@media (max-width: 1399px) {
+    .dre-pending .dre-proj-head > div:last-child {
+        display: block;
+    }
+    .dre-pending .dre-proj-actions {
+        grid-column: auto;
+        justify-content: flex-end;
+    }
+}
+@media (max-width: 1199px) {
+    .dre-pending .dre-proj-row {
+        grid-template-columns: minmax(220px, 1.6fr) 120px minmax(220px, 2fr) 104px;
+    }
+    .dre-pending .dre-proj-where {
+        display: none;
+    }
+    .dre-pending .dre-proj-head > div:nth-child(2) {
+        display: none;
+    }
+}
+@media (max-width: 991px) {
+    .dre-pending .dre-proj-row {
+        grid-template-columns: 1fr;
+    }
+    .dre-pending .dre-proj-where,
+    .dre-pending .dre-proj-actions {
+        grid-column: auto;
+    }
+    .dre-pending .dre-proj-where {
+        display: block;
+    }
+    .dre-pending .dre-proj-actions {
+        justify-content: flex-start;
+    }
+    .dre-pend-meter {
+        max-width: 260px;
+    }
+}

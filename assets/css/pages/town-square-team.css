@@ -1,0 +1,291 @@
+/* Town Square Team | DRE Homes — page styles */
+/* ================= TOWN SQUARE TEAM PAGE ================= */
+.ts-hero {
+  min-height: 84vh;
+}
+.ts-hero .ph-bg {
+  filter: blur(3px) saturate(0.9);
+}
+.ts-hero .ph-bg::after {
+  background:
+    linear-gradient(180deg, rgba(var(--bg-rgb), 0.7), rgba(var(--bg-rgb), 0.5) 40%, var(--bg) 97%),
+    linear-gradient(90deg, rgba(var(--bg-rgb), 0.9), rgba(var(--bg-rgb), 0.35) 80%);
+}
+.ts-stats {
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 820px;
+}
+.branch {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  border-radius: 34px;
+  overflow: hidden;
+  padding: 0;
+}
+.br-tx {
+  padding: 56px 50px;
+}
+.br-img {
+  min-height: 520px;
+  background-size: cover;
+  background-position: center;
+}
+.br-info {
+  list-style: none;
+  display: grid;
+  gap: 14px;
+  margin: 26px 0 30px;
+}
+.br-info li {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  font-size: 15px;
+}
+.br-info small {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 2px;
+}
+.br-info a:hover {
+  color: var(--acc);
+}
+.bi {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid var(--stroke-acc);
+  display: grid;
+  place-items: center;
+  color: var(--acc);
+}
+.bi svg {
+  width: 19px;
+  height: 19px;
+}
+.t-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+  border-radius: 999px;
+  min-width: 300px;
+  height: 52px;
+}
+.t-search svg {
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+  flex: none;
+}
+.t-search input {
+  flex: 1;
+  border: 0;
+  background: none;
+  outline: none;
+  color: var(--text);
+  font: 15px var(--font);
+}
+.t-search input::placeholder {
+  color: var(--faint);
+}
+.t-filters {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 999px;
+  margin-bottom: 30px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  width: max-content;
+  max-width: 100%;
+}
+.t-filters button {
+  flex: none;
+  border: 0;
+  background: none;
+  padding: 11px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  transition: 0.25s;
+}
+.t-filters button span {
+  font-size: 11px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(var(--tint-rgb), 0.12);
+}
+.t-filters button.on {
+  background: var(--btn);
+  color: var(--btn-fg);
+}
+.t-filters button.on span {
+  background: rgba(255, 255, 255, 0.22);
+}
+.t-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+.tm {
+  position: relative;
+  display: block;
+  aspect-ratio: 3/4;
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid var(--stroke);
+  background: #888;
+  animation: tmIn 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes tmIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+.tm img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 15%;
+  transition: transform 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.tm:hover img {
+  transform: scale(1.06);
+}
+.tm:hover {
+  border-color: var(--stroke-acc);
+}
+.tm .cap {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  padding: 14px 16px;
+  border-radius: 16px;
+}
+.tm h3 {
+  font-weight: 500;
+  font-size: 17px;
+  line-height: 1.2;
+}
+.tm small {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--acc);
+  margin-top: 3px;
+}
+.tm .tgo {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--stroke-acc);
+  color: var(--acc);
+  opacity: 0;
+  transition: 0.3s;
+}
+.tm:hover .tgo,
+.tm:focus-visible .tgo {
+  opacity: 1;
+}
+.t-empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 60px 0;
+}
+@media (max-width: 1080px) {
+  .branch {
+    grid-template-columns: 1fr;
+  }
+  .br-img {
+    min-height: 320px;
+    order: -1;
+  }
+  .t-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .t-search {
+    min-width: 0;
+    width: 100%;
+  }
+}
+@media (max-width: 640px) {
+  .ts-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .ts-stats div {
+    border-bottom: 0 !important;
+    padding: 16px 12px;
+  }
+  .ts-stats strong {
+    font-size: 32px;
+  }
+  .ts-stats span {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+  }
+  .ts-stats div:nth-child(2n) {
+    border-right: 1px solid var(--stroke);
+  }
+  .ts-stats div:last-child {
+    border-right: 0;
+  }
+  .br-tx {
+    padding: 30px 22px;
+  }
+  .br-img {
+    min-height: 240px;
+  }
+  .t-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .tm {
+    border-radius: 18px;
+  }
+  .tm .cap {
+    left: 6px;
+    right: 6px;
+    bottom: 6px;
+    padding: 10px 12px;
+    border-radius: 12px;
+  }
+  .tm h3 {
+    font-size: 14px;
+  }
+  .tm small {
+    font-size: 9px;
+    letter-spacing: 0.06em;
+  }
+  .tm .tgo {
+    display: none;
+  }
+  .t-filters {
+    border-radius: 20px;
+    width: 100%;
+  }
+}

@@ -1,0 +1,122 @@
+/* Ask AI help notes & videos — manage-ai-help*.php, add/edit-ai-help*.php
+   Same colours and glass look as the rest of the admin (dre-dashboard.css / dre-form.css):
+   --dd-main:#5f574c, --dd-accent:#ab9889, --dd-ink:#2f2a25, --dd-muted:#7c7268,
+   --dd-good:#3f8f6b, --dd-bad:#b9524a. Needs the page wrapped in .dre-dash for the variables. */
+
+.aih-wrap { padding-bottom: 10px; }
+
+.aih-hero {
+	position: relative;
+	overflow: hidden;
+	border-radius: 20px;
+	padding: 26px 28px;
+	margin-bottom: 20px;
+	background: linear-gradient(135deg, rgba(95, 87, 76, 0.92), rgba(171, 152, 137, 0.82));
+	border: 1px solid rgba(255, 255, 255, 0.22);
+	color: #fff;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 18px;
+	box-shadow: 0 10px 34px rgba(73, 62, 50, 0.22);
+}
+.aih-hero-main { position: relative; display: flex; align-items: center; gap: 16px; z-index: 1; }
+.aih-hero-icon {
+	width: 52px; height: 52px; border-radius: 14px; flex-shrink: 0;
+	background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.3);
+	display: flex; align-items: center; justify-content: center; font-size: 22px;
+}
+.aih-hero h1 { font-size: 1.5rem; font-weight: 600; margin: 0 0 4px; color: #fff; }
+.aih-hero p { margin: 0; color: rgba(255, 255, 255, 0.82); font-size: 13.5px; max-width: 460px; }
+.aih-hero-actions { position: relative; z-index: 1; display: flex; gap: 10px; flex-wrap: wrap; }
+.aih-btn {
+	display: inline-flex; align-items: center; gap: 8px; border-radius: 12px; padding: 10px 16px;
+	font-size: 13.5px; font-weight: 500; text-decoration: none; border: 1px solid rgba(255, 255, 255, .30);
+	color: #fff; background: rgba(255, 255, 255, .16); backdrop-filter: blur(8px); transition: background .15s;
+}
+.aih-btn:hover { background: rgba(255, 255, 255, .30); color: #fff; text-decoration: none; }
+.aih-btn.aih-btn-main { background: #fff; color: var(--dd-main); border-color: transparent; }
+.aih-btn.aih-btn-main:hover { background: #fff; filter: brightness(.97); }
+
+.aih-stats { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.aih-stat {
+	flex: 1; min-width: 130px; border-radius: 16px; padding: 14px 16px;
+	background: rgba(255, 255, 255, 0.50); border: 1px solid rgba(255, 255, 255, 0.70);
+	box-shadow: 0 6px 18px rgba(73, 62, 50, 0.08);
+	backdrop-filter: blur(14px) saturate(140%);
+}
+.aih-stat strong { display: block; font-size: 1.45rem; font-weight: 600; color: var(--dd-ink); }
+.aih-stat span { font-size: 12px; color: var(--dd-muted); font-weight: 500; }
+
+.aih-alert {
+	display: flex; align-items: center; gap: 10px; border-radius: 16px; padding: 12px 18px; margin-bottom: 18px;
+	font-size: 13.5px; font-weight: 500; background: rgba(255, 255, 255, 0.8); border: 1px solid rgba(255, 255, 255, 0.7);
+}
+.aih-alert.aih-good { border-color: rgba(63, 143, 107, 0.35); }
+.aih-alert.aih-good i { color: var(--dd-good); }
+
+.aih-empty {
+	text-align: center; padding: 50px 20px; color: var(--dd-muted);
+	background: rgba(255, 255, 255, 0.5); border: 1px dashed rgba(171, 152, 137, 0.5); border-radius: 20px;
+	backdrop-filter: blur(14px);
+}
+.aih-empty i { font-size: 34px; color: var(--dd-accent); margin-bottom: 10px; display: block; }
+
+.aih-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
+
+.aih-card {
+	position: relative; overflow: hidden; border-radius: 18px; padding: 18px 18px 14px;
+	background: rgba(255, 255, 255, 0.52); border: 1px solid rgba(255, 255, 255, 0.72);
+	box-shadow: 0 8px 24px rgba(73, 62, 50, 0.08);
+	backdrop-filter: blur(16px) saturate(140%);
+	transition: transform .18s ease, box-shadow .18s ease;
+}
+.aih-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(73, 62, 50, 0.14); }
+.aih-card::before {
+	content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+	background: linear-gradient(180deg, var(--dd-accent), var(--dd-main));
+}
+.aih-card.aih-off::before { background: rgba(171, 152, 137, 0.35); }
+.aih-card.aih-off { opacity: .65; }
+
+.aih-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.aih-tag {
+	display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; color: var(--dd-main);
+	background: rgba(171, 152, 137, 0.22); border-radius: 999px; padding: 3px 10px;
+}
+.aih-badge { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 3px 10px; }
+.aih-badge.aih-on { background: rgba(63, 143, 107, 0.15); color: var(--dd-good); }
+.aih-badge.aih-off2 { background: rgba(124, 114, 104, 0.12); color: var(--dd-muted); }
+
+.aih-card h3 { font-size: 15.5px; font-weight: 600; color: var(--dd-ink); margin: 0 0 6px; line-height: 1.35; }
+.aih-card p { font-size: 12.5px; color: var(--dd-muted); margin: 0 0 10px; line-height: 1.5; max-height: 54px; overflow: hidden; }
+
+.aih-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.aih-chip { font-size: 11px; color: var(--dd-muted); background: rgba(124, 114, 104, 0.1); border-radius: 999px; padding: 3px 9px; }
+
+.aih-card-actions { display: flex; gap: 8px; border-top: 1px solid rgba(171, 152, 137, 0.25); padding-top: 10px; }
+.aih-icon-btn {
+	flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 10px;
+	padding: 7px 0; font-size: 12.5px; font-weight: 600; border: 1px solid rgba(171, 152, 137, 0.3);
+	background: rgba(255, 255, 255, 0.5); color: var(--dd-ink);
+	cursor: pointer; text-decoration: none; transition: background .15s;
+}
+.aih-icon-btn:hover { background: rgba(171, 152, 137, 0.25); color: var(--dd-main); text-decoration: none; }
+.aih-icon-btn.aih-danger:hover { background: rgba(185, 82, 74, 0.15); color: var(--dd-bad); }
+
+.aih-thumb {
+	position: relative; border-radius: 12px; overflow: hidden; margin-bottom: 10px; aspect-ratio: 16/9;
+	background: var(--dd-ink); display: flex; align-items: center; justify-content: center;
+}
+.aih-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.aih-thumb .aih-play {
+	position: absolute; width: 42px; height: 42px; border-radius: 50%; background: rgba(0, 0, 0, .5);
+	display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; pointer-events: none;
+}
+.aih-thumb-fallback { color: var(--dd-accent); font-size: 30px; }
+
+@media (max-width: 640px) {
+	.aih-hero { padding: 22px 18px; }
+	.aih-stats { flex-direction: column; }
+}

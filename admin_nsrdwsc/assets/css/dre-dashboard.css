@@ -1,0 +1,537 @@
+/* Admin dashboard: glass cards in the website's colours (#5f574c, #ab9889).
+   Everything is scoped to .dre-dash so no other admin page changes. */
+.dre-dash-content {
+    position: relative;
+    /* Soft colour areas behind the cards: this is what the glass blurs. They repeat down the page. */
+    background-color: #efe8e0;
+    background-image:
+        radial-gradient(620px 300px at 6% 330px, rgba(171, 152, 137, 0.60), transparent 65%),
+        radial-gradient(560px 280px at 97% 300px, rgba(95, 87, 76, 0.34), transparent 62%),
+        radial-gradient(640px 300px at 55% 820px, rgba(214, 190, 160, 0.70), transparent 64%),
+        radial-gradient(520px 260px at 10% 880px, rgba(95, 87, 76, 0.24), transparent 62%);
+    /* Each colour area ends well inside the 1200px tile, so the repeat has no visible edge. */
+    background-size: 100% 1200px;
+    background-repeat: repeat-y;
+}
+.dre-dash {
+    --dd-main: #5f574c;
+    --dd-accent: #ab9889;
+    --dd-ink: #2f2a25;
+    --dd-muted: #7c7268;
+    --dd-good: #3f8f6b;
+    --dd-warn: #c08a2e;
+    --dd-bad: #b9524a;
+    color: var(--dd-ink);
+    padding-bottom: 10px;
+}
+.dre-dash a {
+    color: var(--dd-main);
+}
+
+/* The glass surface */
+.dre-glass {
+    position: relative;
+    height: 100%;
+    padding: 22px 24px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.48);
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    box-shadow: 0 10px 34px rgba(73, 62, 50, 0.13), inset 0 1px 0 rgba(255, 255, 255, 0.65);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    backdrop-filter: blur(18px) saturate(140%);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.dre-glass-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 40px rgba(73, 62, 50, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+.dre-glass-dark {
+    background: linear-gradient(135deg, rgba(95, 87, 76, 0.90), rgba(140, 122, 106, 0.78));
+    border-color: rgba(255, 255, 255, 0.22);
+    color: #fff;
+}
+.dre-dash .row {
+    margin-bottom: 0;
+}
+.dre-dash .dre-col {
+    margin-bottom: 24px;
+}
+
+.dre-h {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.dre-h h3 {
+    margin: 0;
+    font-size: 1.12rem;
+    font-weight: 600;
+    color: var(--dd-ink);
+}
+.dre-h small {
+    display: block;
+    margin-top: 2px;
+    color: var(--dd-muted);
+    font-size: 0.82rem;
+    font-weight: 400;
+}
+.dre-h a {
+    flex: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Greeting */
+.dre-hero {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 26px 28px;
+}
+.dre-hero h1 {
+    margin: 0 0 4px;
+    font-size: 1.7rem;
+    font-weight: 600;
+    color: #fff;
+}
+.dre-hero p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.82);
+}
+.dre-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.dre-dash .dre-actions a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.30);
+    color: #fff;
+    font-weight: 500;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    transition: background 0.15s ease;
+}
+.dre-dash .dre-actions a:hover {
+    background: rgba(255, 255, 255, 0.30);
+    text-decoration: none;
+}
+.dre-dash .dre-actions a.dre-primary {
+    background: #fff;
+    color: var(--dd-main);
+}
+
+/* Number tiles */
+.dre-kpi {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+.dre-kpi-label {
+    color: var(--dd-muted);
+    font-size: 0.86rem;
+    font-weight: 500;
+}
+.dre-kpi-value {
+    margin: 4px 0 6px;
+    font-size: 2.1rem;
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--dd-ink);
+}
+.dre-kpi-note {
+    font-size: 0.82rem;
+    color: var(--dd-muted);
+}
+.dre-up {
+    color: var(--dd-good);
+    font-weight: 600;
+}
+.dre-down {
+    color: var(--dd-bad);
+    font-weight: 600;
+}
+.dre-icon {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--dd-main), var(--dd-accent));
+    color: #fff;
+    font-size: 1.15rem;
+    box-shadow: 0 6px 16px rgba(95, 87, 76, 0.28);
+}
+
+/* Small count tiles */
+.dre-mini {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+    gap: 12px;
+}
+.dre-dash .dre-mini a {
+    display: block;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.50);
+    border: 1px solid rgba(255, 255, 255, 0.70);
+    color: var(--dd-ink);
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+.dre-dash .dre-mini a:hover {
+    background: rgba(255, 255, 255, 0.82);
+    transform: translateY(-2px);
+    text-decoration: none;
+}
+.dre-mini strong {
+    display: block;
+    font-size: 1.45rem;
+    font-weight: 600;
+}
+.dre-mini span {
+    color: var(--dd-muted);
+    font-size: 0.82rem;
+}
+.dre-mini i {
+    float: right;
+    color: var(--dd-accent);
+    font-size: 1rem;
+}
+
+/* Month bars */
+.dre-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 210px;
+    padding-top: 22px;
+}
+.dre-bar {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    height: 100%;
+    min-width: 0;
+    text-align: center;
+}
+.dre-bar-fill {
+    min-height: 3px;
+    border-radius: 8px 8px 3px 3px;
+    background: linear-gradient(180deg, var(--dd-accent), var(--dd-main));
+    opacity: 0.86;
+    transition: opacity 0.15s ease;
+}
+.dre-bar:hover .dre-bar-fill {
+    opacity: 1;
+}
+.dre-bar-now .dre-bar-fill {
+    background: linear-gradient(180deg, #d9b98f, var(--dd-main));
+    opacity: 1;
+}
+.dre-bar-num {
+    margin-bottom: 4px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--dd-main);
+}
+.dre-bar-label {
+    margin-top: 6px;
+    font-size: 0.74rem;
+    color: var(--dd-muted);
+    white-space: nowrap;
+}
+
+/* Horizontal meters */
+.dre-meter {
+    margin-bottom: 13px;
+}
+.dre-meter:last-child {
+    margin-bottom: 0;
+}
+.dre-meter-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 5px;
+    font-size: 0.88rem;
+}
+.dre-meter-top span:last-child {
+    color: var(--dd-muted);
+    white-space: nowrap;
+}
+.dre-track {
+    height: 8px;
+    border-radius: 8px;
+    background: rgba(95, 87, 76, 0.13);
+    overflow: hidden;
+}
+.dre-track i {
+    display: block;
+    height: 100%;
+    border-radius: 8px;
+    background: linear-gradient(90deg, var(--dd-main), var(--dd-accent));
+}
+.dre-track i.dre-good {
+    background: linear-gradient(90deg, #2f7d5b, #6fb894);
+}
+.dre-track i.dre-warn {
+    background: linear-gradient(90deg, #b07a1f, #e0b665);
+}
+.dre-track i.dre-bad {
+    background: linear-gradient(90deg, #a8433b, #dc8a80);
+}
+
+/* Lists */
+.dre-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.dre-list li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(95, 87, 76, 0.10);
+}
+.dre-list li:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+}
+.dre-avatar {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: rgba(95, 87, 76, 0.12);
+    color: var(--dd-main);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.dre-list-main {
+    flex: 1;
+    min-width: 0;
+}
+.dre-list-main strong {
+    display: block;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.dre-list-main span {
+    display: block;
+    color: var(--dd-muted);
+    font-size: 0.82rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.dre-list-side {
+    flex: none;
+    text-align: right;
+    font-size: 0.78rem;
+    color: var(--dd-muted);
+}
+.dre-pill {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 20px;
+    background: rgba(95, 87, 76, 0.12);
+    color: var(--dd-main);
+    font-size: 0.74rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.dre-pill-good {
+    background: rgba(63, 143, 107, 0.16);
+    color: #2c7353;
+}
+.dre-pill-bad {
+    background: rgba(185, 82, 74, 0.16);
+    color: #9c3f38;
+}
+.dre-pill-ai {
+    background: linear-gradient(135deg, var(--dd-main), var(--dd-accent));
+    color: #fff;
+}
+.dre-empty {
+    padding: 22px 0;
+    color: var(--dd-muted);
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+/* AI numbers */
+.dre-facts {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.dre-facts div {
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.46);
+    border: 1px solid rgba(255, 255, 255, 0.66);
+}
+.dre-facts strong {
+    display: block;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+.dre-facts span {
+    color: var(--dd-muted);
+    font-size: 0.8rem;
+}
+
+@media (max-width: 767px) {
+    .dre-glass {
+        padding: 18px;
+        border-radius: 16px;
+    }
+    .dre-hero h1 {
+        font-size: 1.35rem;
+    }
+    .dre-kpi-value {
+        font-size: 1.7rem;
+    }
+    .dre-bars {
+        gap: 4px;
+    }
+    .dre-bar-num {
+        display: none;
+    }
+}
+/* Dashboard home page only (.dre-home): clickable number tiles and small-screen layout. */
+.dre-dash a.dre-tile {
+    display: block;
+    color: inherit;
+}
+.dre-dash a.dre-tile:hover {
+    text-decoration: none;
+}
+.dre-home .dre-col,
+.dre-home .dre-kpi > div {
+    min-width: 0;
+}
+.dre-home .dre-meter-top span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.dre-home .dre-h h3 {
+    min-width: 0;
+}
+.dre-home .dre-mini {
+    grid-template-columns: repeat(8, 1fr);
+}
+@media (max-width: 1199px) {
+    .dre-home .dre-mini {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+@media (max-width: 767px) {
+    .dre-home .dre-col {
+        margin-bottom: 16px;
+    }
+    .dre-home .dre-hero {
+        padding: 20px 18px;
+    }
+    .dre-home .dre-actions {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        width: 100%;
+    }
+    .dre-home .dre-actions a {
+        justify-content: center;
+        padding: 10px 8px;
+        text-align: center;
+    }
+    .dre-home .dre-actions a.dre-primary {
+        grid-column: 1 / -1;
+    }
+    .dre-home .dre-mini {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .dre-home .dre-bars {
+        height: 170px;
+    }
+    .dre-home .dre-bar-num {
+        display: block;
+        font-size: 0.66rem;
+    }
+    .dre-home .dre-bar-label {
+        font-size: 0.66rem;
+    }
+    .dre-home .dre-list-side {
+        max-width: 42%;
+    }
+}
+@media (max-width: 575px) {
+    /* Two number tiles side by side: tighter gutters, no icon. */
+    .dre-home > .row {
+        margin-left: -8px;
+        margin-right: -8px;
+    }
+    .dre-home > .row > .dre-col {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+    .dre-home .dre-tile {
+        padding: 14px;
+    }
+    .dre-home .dre-tile .dre-icon {
+        display: none;
+    }
+    .dre-home .dre-kpi-value {
+        font-size: 1.5rem;
+    }
+    .dre-home .dre-kpi-label,
+    .dre-home .dre-kpi-note {
+        font-size: 0.78rem;
+    }
+    .dre-home .dre-h {
+        flex-wrap: wrap;
+    }
+    .dre-home .dre-bars {
+        gap: 3px;
+    }
+    .dre-home .dre-list li {
+        gap: 10px;
+    }
+    .dre-home .dre-avatar {
+        width: 34px;
+        height: 34px;
+    }
+}
+/* Browsers without backdrop-filter get a more solid card so text stays readable. */
+@supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+    .dre-glass {
+        background: rgba(255, 255, 255, 0.86);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .dre-glass, .dre-dash .dre-mini a {
+        transition: none;
+    }
+}

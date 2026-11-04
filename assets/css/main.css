@@ -886,6 +886,10 @@ body.menu-open .dock {
 }
 
 .feature {
+  /* .feature is an <a> (the card links to the property) which is inline by default;
+     without this, its glass background/border render as separate per-line fragments
+     with their own rounded corners, showing as stray slivers above/below the photo. */
+  display: block;
   padding: 14px;
   border-radius: 30px;
   animation: bob 7s ease-in-out infinite;
@@ -953,8 +957,9 @@ body.menu-open .dock {
 }
 .mini-stat {
   position: absolute;
-  left: -46px;
-  bottom: 100px;
+  left: -32px;
+  bottom: 190px;
+  z-index: 2;
   padding: 16px 20px;
   border-radius: 20px;
   font-size: 12px;

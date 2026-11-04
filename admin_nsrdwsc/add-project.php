@@ -575,6 +575,7 @@ $picked = function ($list, $value) use (&$old_lists) {
               <link href="<?= BASE_URL ?>assets/css/dre-dashboard.css?v=1" rel="stylesheet" type="text/css" />
               <link href="<?= BASE_URL ?>assets/css/dre-form.css?v=1" rel="stylesheet" type="text/css" />
               <link href="<?= BASE_URL ?>assets/css/dre-seo-check.css?v=2" rel="stylesheet" type="text/css" />
+              <link href="<?= BASE_URL ?>assets/css/dre-ai-assist.css?v=1" rel="stylesheet" type="text/css" />
 
               <div class="dre-dash dre-form-page">
 
@@ -835,6 +836,7 @@ $picked = function ($list, $value) use (&$old_lists) {
                       <div class="dre-field">
                         <label for="kt-tinymce-2"><span>Overview</span></label>
                         <textarea name="proj_overview" class="tinymce-editor" id="kt-tinymce-2" rows="10"><?= $val('proj_overview') ?></textarea>
+                        <button type="button" class="dre-ai-btn" data-ai-task="improve" data-ai-target="#kt-tinymce-2" data-ai-title="#addpName" data-ai-page="Off-plan project"><i class="bi bi-stars"></i> Make this text clearer</button>
                       </div>
                       <div class="dre-field">
                         <label for="kt-tinymce-5"><span>Features and facilities</span></label>
@@ -978,21 +980,24 @@ $picked = function ($list, $value) use (&$old_lists) {
                         <input type="text" name="proj_slug" id="addpSlug" value="<?= $val('proj_slug') ?>" maxlength="200" autocomplete="off" placeholder="made from the project name">
                         <small>The page will be at <code id="addpUrl"><?= addp_e(BASE_URL_HOME) ?>property/</code></small>
                       </label>
-                      <label class="dre-field">
-                        <span>Meta title</span>
-                        <input type="text" name="meta_title" value="<?= $val('meta_title') ?>" maxlength="255" autocomplete="off" data-count="60">
-                        <small class="dre-count"></small>
-                      </label>
-                      <label class="dre-field">
-                        <span>Meta description</span>
+                      <div class="dre-field">
+                        <label><span>Meta title</span>
+                        <input type="text" name="meta_title" id="addpMetaTitle" value="<?= $val('meta_title') ?>" maxlength="255" autocomplete="off" data-count="60">
+                        <small class="dre-count"></small></label>
+                        <button type="button" class="dre-ai-btn" data-ai-task="meta_title" data-ai-target="#addpMetaTitle" data-ai-title="#addpName" data-ai-text="#kt-tinymce-2" data-ai-page="Off-plan project"><i class="bi bi-stars"></i> Suggest a title</button>
+                      </div>
+                      <div class="dre-field">
+                        <label for="addpMetaDesc"><span>Meta description</span></label>
                         <textarea name="meta_description" id="addpMetaDesc" rows="3" data-count="160"><?= $val('meta_description') ?></textarea>
                         <small class="dre-count"></small>
-                      </label>
+                        <button type="button" class="dre-ai-btn" data-ai-task="meta_description" data-ai-target="#addpMetaDesc" data-ai-title="#addpName" data-ai-text="#kt-tinymce-2" data-ai-page="Off-plan project"><i class="bi bi-stars"></i> Suggest a description</button>
+                      </div>
                       <div class="dre-form-grid dre-cols-2">
-                        <label class="dre-field">
-                          <span>Meta keywords</span>
-                          <input type="text" name="meta_keyword" value="<?= $val('meta_keyword') ?>" maxlength="255" autocomplete="off">
-                        </label>
+                        <div class="dre-field">
+                          <label><span>Meta keywords</span>
+                          <input type="text" name="meta_keyword" id="addpMetaKeyword" value="<?= $val('meta_keyword') ?>" maxlength="255" autocomplete="off"></label>
+                          <button type="button" class="dre-ai-btn" data-ai-task="keywords" data-ai-target="#addpMetaKeyword" data-ai-title="#addpName" data-ai-text="#kt-tinymce-2" data-ai-page="Off-plan project"><i class="bi bi-stars"></i> Suggest keywords</button>
+                        </div>
                         <label class="dre-field">
                           <span>Meta tags</span>
                           <textarea name="meta_tags" rows="2"><?= $val('meta_tags') ?></textarea>
@@ -1101,6 +1106,10 @@ $picked = function ($list, $value) use (&$old_lists) {
         ?>
 
         <script src="<?= BASE_URL ?>assets/js/dre-seo-check.js?v=1"></script>
+        <script>
+          window.DRE_AI_ASSIST = <?= json_encode(['endpoint' => BASE_URL . 'ajax/ai-assist.php', 'csrf' => $_SESSION['admin_csrf']], JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+        </script>
+        <script src="<?= BASE_URL ?>assets/js/dre-ai-assist.js?v=1"></script>
         <script>
           // Add project form: helpers that make it quicker to fill in. The server checks everything again on save.
           (function () {

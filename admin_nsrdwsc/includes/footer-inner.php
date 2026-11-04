@@ -167,16 +167,25 @@ if (empty($_SESSION['admin_csrf'])) {
 @keyframes dreAiPop{0%,100%{transform:scale(1)}50%{transform:scale(1.22)}}
 @keyframes dreAiPing{0%{transform:scale(1);opacity:.65}100%{transform:scale(1.55);opacity:0}}
 @keyframes dreAiTwinkle{0%,100%{transform:rotate(0) scale(1)}50%{transform:rotate(12deg) scale(1.15)}}
-#dreAiPanel{position:fixed;right:22px;bottom:86px;z-index:1090;width:340px;max-height:520px;background:#fdfbf9;border-radius:16px;box-shadow:0 12px 32px rgba(47,42,37,.22);display:none;flex-direction:column;overflow:hidden;font-family:Poppins,Helvetica,sans-serif;border:1px solid rgba(171,152,137,.3)}
-#dreAiPanel.open{display:flex}
-#dreAiPanel .dre-ai-head{background:linear-gradient(135deg,#5f574c,#ab9889);color:#fff;padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
-#dreAiPanel .dre-ai-head b{font-size:14px;font-weight:600}
-#dreAiPanel .dre-ai-head i{margin-right:4px}
-#dreAiPanel .dre-ai-head button{background:none;border:0;color:#fff;font-size:18px;cursor:pointer;line-height:1}
-#dreAiBody{flex:1;overflow-y:auto;padding:12px;background:#f3eee7;font-size:13px;color:#2f2a25}
-#dreAiBody .dre-ai-msg{margin-bottom:10px;padding:8px 10px;border-radius:10px;max-width:92%;line-height:1.4}
-#dreAiBody .dre-ai-msg.me{background:#5f574c;color:#fff;margin-left:auto}
-#dreAiBody .dre-ai-msg.bot{background:#fff;border:1px solid rgba(171,152,137,.3);color:#2f2a25}
+#dreAiPanel{position:fixed;right:24px;bottom:98px;z-index:1090;width:400px;max-width:calc(100vw - 32px);height:640px;max-height:calc(100vh - 140px);background:#fdfbf9;border-radius:20px;box-shadow:0 20px 50px rgba(47,42,37,.3),0 0 0 1px rgba(212,175,55,.15);display:none;flex-direction:column;overflow:hidden;font-family:Poppins,Helvetica,sans-serif;border:1px solid rgba(171,152,137,.3);opacity:0;transform:translateY(14px) scale(.97);transition:opacity .22s ease,transform .22s ease}
+#dreAiPanel.open{display:flex;opacity:1;transform:translateY(0) scale(1)}
+#dreAiPanel .dre-ai-head{position:relative;overflow:hidden;background:linear-gradient(135deg,#5f574c,#ab9889 60%,#d4af37);color:#fff;padding:16px 16px 14px;display:flex;align-items:center;justify-content:space-between}
+#dreAiPanel .dre-ai-head::after{content:'';position:absolute;inset:0;background:radial-gradient(120px 60px at 85% 0%,rgba(255,255,255,.35),transparent 70%)}
+#dreAiPanel .dre-ai-head-l{position:relative;z-index:1;display:flex;align-items:center;gap:10px}
+#dreAiPanel .dre-ai-av{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:16px;flex:none}
+#dreAiPanel .dre-ai-head b{font-size:14.5px;font-weight:700;display:block}
+#dreAiPanel .dre-ai-head small{font-size:11px;font-weight:500;opacity:.88;display:flex;align-items:center;gap:4px}
+#dreAiPanel .dre-ai-head small::before{content:'';width:7px;height:7px;border-radius:50%;background:#58e6a8;box-shadow:0 0 0 2px rgba(255,255,255,.4)}
+#dreAiPanel .dre-ai-head button{position:relative;z-index:1;background:rgba(255,255,255,.14);border:0;color:#fff;font-size:17px;width:28px;height:28px;border-radius:50%;cursor:pointer;line-height:1;transition:background .15s}
+#dreAiPanel .dre-ai-head button:hover{background:rgba(255,255,255,.28)}
+#dreAiBody{flex:1;overflow-y:auto;padding:16px 14px;background:linear-gradient(180deg,#f6f1ea,#f0e9e0);font-size:13.5px;color:#2f2a25;scroll-behavior:smooth}
+#dreAiBody .dre-ai-row{display:flex;align-items:flex-end;gap:8px;margin-bottom:14px}
+#dreAiBody .dre-ai-row.me{flex-direction:row-reverse}
+#dreAiBody .dre-ai-ava{width:26px;height:26px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;background:linear-gradient(135deg,#5f574c,#ab9889)}
+#dreAiBody .dre-ai-row.me .dre-ai-ava{background:linear-gradient(135deg,#d4af37,#ab9889)}
+#dreAiBody .dre-ai-msg{padding:10px 13px;border-radius:16px;max-width:78%;line-height:1.48;box-shadow:0 2px 8px rgba(73,62,50,.06)}
+#dreAiBody .dre-ai-msg.me{background:linear-gradient(135deg,#6b6153,#5f574c);color:#fff;border-bottom-right-radius:5px}
+#dreAiBody .dre-ai-msg.bot{background:#fff;border:1px solid rgba(171,152,137,.28);color:#2f2a25;border-bottom-left-radius:5px}
 #dreAiBody .dre-ai-msg.bot p{margin:0 0 6px}
 #dreAiBody .dre-ai-msg.bot p:last-child{margin-bottom:0}
 #dreAiBody .dre-ai-msg.bot ul,#dreAiBody .dre-ai-msg.bot ol{margin:4px 0 6px;padding-left:20px}
@@ -193,10 +202,27 @@ if (empty($_SESSION['admin_csrf'])) {
 #dreAiBody .dre-ai-action .dre-ai-confirm{background:#3f8f6b;color:#fff}
 #dreAiBody .dre-ai-action .dre-ai-cancel{background:#e4ddd4;color:#2f2a25}
 #dreAiBody .dre-ai-action button:disabled{opacity:.55;cursor:default}
-#dreAiForm{display:flex;border-top:1px solid rgba(171,152,137,.3);padding:8px;background:#fdfbf9}
-#dreAiForm input{flex:1;border:1px solid rgba(171,152,137,.4);border-radius:999px;padding:7px 12px;font-size:13px;font-family:inherit}
-#dreAiForm button{margin-left:6px;background:#5f574c;color:#fff;border:0;border-radius:999px;width:34px;cursor:pointer;flex:none}
-#dreAiForm button:hover{background:#4a433a}
+/* Typing dots shown while waiting for a reply */
+#dreAiBody .dre-ai-typing{display:inline-flex;gap:3px;padding:4px 2px}
+#dreAiBody .dre-ai-typing i{width:6px;height:6px;border-radius:50%;background:#ab9889;animation:dreAiTypingDot 1.1s ease-in-out infinite}
+#dreAiBody .dre-ai-typing i:nth-child(2){animation-delay:.15s}
+#dreAiBody .dre-ai-typing i:nth-child(3){animation-delay:.3s}
+@keyframes dreAiTypingDot{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-4px);opacity:1}}
+/* Suggestions dropdown ("as you type", like a hosting-panel search box) */
+#dreAiSugWrap{position:relative;flex:1}
+#dreAiSug{position:absolute;left:0;right:0;bottom:calc(100% + 8px);background:#fff;border-radius:14px;box-shadow:0 10px 28px rgba(47,42,37,.22);border:1px solid rgba(171,152,137,.3);overflow:hidden;display:none;max-height:220px;overflow-y:auto}
+#dreAiSug.show{display:block}
+#dreAiSug button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;text-align:left;border:0;background:none;padding:9px 13px;font-size:12.5px;color:#2f2a25;cursor:pointer;border-bottom:1px solid rgba(171,152,137,.18)}
+#dreAiSug button:last-child{border-bottom:0}
+#dreAiSug button:hover,#dreAiSug button.hi{background:rgba(212,175,55,.14)}
+#dreAiSug button b{font-weight:600;font-size:12.5px}
+#dreAiSug button span{font-size:11px;color:var(--dd-muted,#7c7268)}
+#dreAiForm{position:relative;display:flex;align-items:center;gap:6px;border-top:1px solid rgba(171,152,137,.3);padding:10px;background:#fdfbf9}
+#dreAiForm input{flex:1;border:1px solid rgba(171,152,137,.4);border-radius:999px;padding:9px 14px;font-size:13.5px;font-family:inherit;min-width:0}
+#dreAiForm input:focus{outline:0;border-color:#ab9889;box-shadow:0 0 0 3px rgba(171,152,137,.18)}
+#dreAiLang{border:1px solid rgba(171,152,137,.4);border-radius:999px;background:#fff;font-size:11px;font-weight:600;color:#5f574c;padding:0 4px;height:30px;flex:none;width:52px}
+#dreAiForm button{background:#5f574c;color:#fff;border:0;border-radius:50%;width:34px;height:34px;cursor:pointer;flex:none;display:flex;align-items:center;justify-content:center;transition:background .15s,transform .15s}
+#dreAiForm button:hover{background:#4a433a;transform:scale(1.05)}
 #dreAiMic.listening{background:#b9524a;animation:dreAiPop 1s ease-in-out infinite}
 </style>
 <div id="dreAiBtnWrap">
@@ -207,10 +233,26 @@ if (empty($_SESSION['admin_csrf'])) {
 	<span id="dreAiBadge">AI</span>
 </div>
 <div id="dreAiPanel" role="dialog" aria-label="Ask AI">
-	<div class="dre-ai-head"><b><i class="bi bi-robot"></i> Ask AI</b><button id="dreAiClose" aria-label="Close">&times;</button></div>
+	<div class="dre-ai-head">
+		<div class="dre-ai-head-l">
+			<span class="dre-ai-av"><i class="bi bi-robot"></i></span>
+			<span><b>Ask AI</b><small>Online &mdash; speaks any language</small></span>
+		</div>
+		<button id="dreAiClose" aria-label="Close">&times;</button>
+	</div>
 	<div id="dreAiBody"></div>
-	<form id="dreAiForm">
-		<input type="text" id="dreAiInput" maxlength="500" autocomplete="off" placeholder="Ask, or tap the mic to speak...">
+	<form id="dreAiForm" autocomplete="off">
+		<div id="dreAiSugWrap">
+			<div id="dreAiSug" role="listbox"></div>
+			<input type="text" id="dreAiInput" maxlength="500" autocomplete="off" placeholder="Ask in any language, or tap the mic to speak...">
+		</div>
+		<select id="dreAiLang" title="Voice language" aria-label="Voice language">
+			<option value="auto">Auto</option>
+			<option value="en-US">EN</option>
+			<option value="hi-IN">HI</option>
+			<option value="ar-AE">AR</option>
+			<option value="ur-PK">UR</option>
+		</select>
 		<button type="button" id="dreAiMic" aria-label="Speak your question" title="Speak"><i class="bi bi-mic"></i></button>
 		<button type="submit" aria-label="Send"><i class="bi bi-send"></i></button>
 	</form>
@@ -225,7 +267,8 @@ window.dreAiHistory = <?= json_encode(array_values($_SESSION['ai_help_chat'] ?? 
 		wrap = document.getElementById('dreAiBtnWrap'),
 		body = document.getElementById('dreAiBody'), form = document.getElementById('dreAiForm'),
 		input = document.getElementById('dreAiInput'), close = document.getElementById('dreAiClose'),
-		mic = document.getElementById('dreAiMic');
+		mic = document.getElementById('dreAiMic'), lang = document.getElementById('dreAiLang'),
+		sug = document.getElementById('dreAiSug');
 	function escHtml(s){
 		return s.replace(/[&<>"]/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; });
 	}
@@ -254,12 +297,24 @@ window.dreAiHistory = <?= json_encode(array_values($_SESSION['ai_help_chat'] ?? 
 		return html;
 	}
 	function add(text, who){
+		var row = document.createElement('div');
+		row.className = 'dre-ai-row ' + who;
+		var ava = document.createElement('span');
+		ava.className = 'dre-ai-ava';
+		ava.innerHTML = who === 'bot' ? '<i class="bi bi-robot"></i>' : '<i class="bi bi-person-fill"></i>';
 		var d = document.createElement('div');
 		d.className = 'dre-ai-msg ' + who;
 		if (who === 'bot') { d.innerHTML = formatAnswer(text); } else { d.textContent = text; }
-		body.appendChild(d);
+		row.appendChild(ava); row.appendChild(d);
+		body.appendChild(row);
 		body.scrollTop = body.scrollHeight;
 		return d;
+	}
+	// Three bouncing dots while waiting for the AI's reply, instead of a plain "Thinking..." line.
+	function addTyping(){
+		var d = add('', 'bot');
+		d.innerHTML = '<span class="dre-ai-typing"><i></i><i></i><i></i></span>';
+		return d.closest('.dre-ai-row');
 	}
 	// One proposed show/hide change (from propose_record_status_change): a Confirm/Cancel pair.
 	// Nothing changes until one of these two buttons is clicked — never from voice or typed "yes".
@@ -353,7 +408,7 @@ window.dreAiHistory = <?= json_encode(array_values($_SESSION['ai_help_chat'] ?? 
 		if (!q) { return; }
 		add(q, 'me');
 		input.value = '';
-		var thinking = add('Thinking...', 'bot');
+		var thinking = addTyping();
 		fetch('<?= BASE_URL ?>ajax/ai-help-chat.php', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -370,15 +425,63 @@ window.dreAiHistory = <?= json_encode(array_values($_SESSION['ai_help_chat'] ?? 
 	}
 	form.onsubmit = function(e){
 		e.preventDefault();
+		hideSug();
 		ask(input.value.trim());
 	};
+
+	// Suggestions, "as you type" (ai-help-suggest.php) — click one to ask it straight away.
+	var sugTimer = null, sugItems = [], sugHi = -1;
+	function hideSug(){ sug.classList.remove('show'); sug.innerHTML = ''; sugItems = []; sugHi = -1; }
+	function renderSug(){
+		sug.innerHTML = '';
+		sugItems.forEach(function(it, i){
+			var b = document.createElement('button');
+			b.type = 'button';
+			b.className = i === sugHi ? 'hi' : '';
+			b.innerHTML = '<b>' + escHtml(it.title) + '</b><span>' + escHtml(it.label) + '</span>';
+			b.onclick = function(){ hideSug(); ask(it.title); };
+			sug.appendChild(b);
+		});
+		sug.classList.toggle('show', sugItems.length > 0);
+	}
+	input.addEventListener('input', function(){
+		var q = input.value.trim();
+		clearTimeout(sugTimer);
+		if (q.length < 2) { hideSug(); return; }
+		sugTimer = setTimeout(function(){
+			fetch('<?= BASE_URL ?>ajax/ai-help-suggest.php?q=' + encodeURIComponent(q))
+				.then(function(r){ return r.json(); })
+				.then(function(r){
+					sugItems = (r && r.ok && r.items) || [];
+					sugHi = -1;
+					renderSug();
+				})
+				.catch(function(){});
+		}, 220);
+	});
+	input.addEventListener('keydown', function(e){
+		if (!sug.classList.contains('show')) { return; }
+		if (e.key === 'ArrowDown') { e.preventDefault(); sugHi = Math.min(sugHi + 1, sugItems.length - 1); renderSug(); }
+		else if (e.key === 'ArrowUp') { e.preventDefault(); sugHi = Math.max(sugHi - 1, 0); renderSug(); }
+		else if (e.key === 'Escape') { hideSug(); }
+		else if (e.key === 'Enter' && sugHi > -1) { e.preventDefault(); var it = sugItems[sugHi]; hideSug(); ask(it.title); }
+	});
+	document.addEventListener('click', function(e){
+		if (!sug.contains(e.target) && e.target !== input) { hideSug(); }
+	});
+
 	// Voice dictation: the mic fills the box and speaks for you, but a spoken "yes"/"confirm"
 	// is never enough on its own to change anything — that still needs an actual click above.
+	// Language: "Auto" follows the browser/OS language; EN/HI/AR/UR force dictation in that
+	// language specifically (the Web Speech API needs one explicit language per recording, it
+	// cannot detect the spoken language on its own) — the AI itself always replies in whatever
+	// language the question turns out to be in, regardless of which one was picked here.
+	try { lang.value = localStorage.getItem('dreAiLang') || 'auto'; } catch (e) {}
+	lang.onchange = function(){ try { localStorage.setItem('dreAiLang', lang.value); } catch (e) {} };
 	var SpeechRecognitionApi = window.SpeechRecognition || window.webkitSpeechRecognition;
 	if (SpeechRecognitionApi) {
 		var recognizer = new SpeechRecognitionApi();
-		recognizer.lang = 'en-US';
-		recognizer.interimResults = false;
+		recognizer.interimResults = true;
 		recognizer.maxAlternatives = 1;
 		var listening = false;
 		recognizer.onstart = function(){ listening = true; mic.classList.add('listening'); };
@@ -387,10 +490,11 @@ window.dreAiHistory = <?= json_encode(array_values($_SESSION['ai_help_chat'] ?? 
 		recognizer.onresult = function(event){
 			var said = event.results[0][0].transcript;
 			input.value = said;
-			ask(said.trim());
+			if (event.results[0].isFinal) { ask(said.trim()); }
 		};
 		mic.onclick = function(){
 			if (listening) { recognizer.stop(); return; }
+			recognizer.lang = (lang.value === 'auto' ? (navigator.language || 'en-US') : lang.value);
 			panel.classList.add('open'); wrap.classList.add('open'); greet();
 			try { recognizer.start(); } catch (err) { /* already starting */ }
 		};

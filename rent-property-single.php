@@ -381,5 +381,17 @@ include('common/header.php');
   </section>
 <?php } ?>
 
+    <dialog class="lb" id="lb" aria-label="Photo gallery">
+      <button class="lb-x" id="lbX" aria-label="Close">×</button
+      ><button class="lb-n lb-p" id="lbP" aria-label="Previous">←</button><img id="lbImg" alt="" /><button
+        class="lb-n lb-nx"
+        id="lbN"
+        aria-label="Next"
+      >
+        →
+      </button>
+      <p id="lbC"></p>
+    </dialog>
+
 <?php include('common/footer.php'); ?>
 

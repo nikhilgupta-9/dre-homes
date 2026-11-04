@@ -325,8 +325,13 @@ include('common/header.php');
         <h2 class="serif">Get the <em class="gold-text" id="dlT">brochure</em></h2>
         <p class="lead"><?= e($property['name']) ?><?= $property['developer'] !== '' ? ' · ' . e($property['developer']) : '' ?></p>
         <input name="name" placeholder="Your name" required="" />
-        <input name="phone" type="tel" placeholder="Your phone" required="" />
+        <input id="dlPhone" name="phone" type="tel" placeholder="Your phone" required="" />
+        <input type="hidden" name="phone_full" id="dlPhoneFull" />
+        <div class="err" id="dlPhoneErr" role="alert">Please enter a valid phone number.</div>
         <input name="email" type="email" placeholder="Your email" required="" />
+        <input type="hidden" name="item" id="dlItem" value="Brochure" />
+        <input type="hidden" name="project" value="<?= e($property['name']) ?>" />
+        <input type="hidden" name="page_url" value="<?= e($property['url']) ?>" />
         <button class="btn btn-gold" style="justify-content: center">Send it to me</button>
       </form>
     </dialog>

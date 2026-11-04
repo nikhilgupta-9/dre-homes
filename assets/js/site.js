@@ -262,6 +262,35 @@
   });
 
   /* =====================================================================
+     Home page — hero search ("Off Plan" / "Buy" / "Rent" tabs + location,
+     residence type and budget) sends the visitor to the matching listing page
+     with the filters pre-applied (read back near the bottom of this file).
+     ===================================================================== */
+  (function () {
+    const go = $("heroGo");
+    if (!go) return;
+    const base = typeof base_url !== "undefined" ? base_url : "/";
+    const PAGE = { "Off Plan": "offplan-properties", Buy: "buy-property", Rent: "rent-property" };
+    go.onclick = () => {
+      const tab = document.querySelector(".hero .tabs button.on"),
+        page = PAGE[tab ? tab.textContent.trim() : "Off Plan"] || "offplan-properties";
+      const p = new URLSearchParams();
+      const loc = ($("heroLoc").value || "").trim();
+      if (loc) p.set("q", loc);
+      const type = $("heroType").value;
+      if (type) p.set("type", type);
+      const budget = $("heroBudget").value;
+      if (budget) {
+        const [min, max] = budget.split("-");
+        if (min) p.set("min", min);
+        if (max) p.set("max", max);
+      }
+      const qs = p.toString();
+      location.href = base + page + (qs ? "?" + qs : "");
+    };
+  })();
+
+  /* =====================================================================
      Guides (buyer / seller / tenant / landlord): step checklist, progress, scrollspy
      ===================================================================== */
   (function () {
@@ -493,7 +522,7 @@
   })();
 
   /* =====================================================================
-     Google map loads only when clicked (map link = data-map on the #mapLoad button)
+     Google map auto-loads (map link = data-map on the #mapLoad button)
      Used by the property detail pages (single-property, buy/rent/ready/international
      -*-single.php); community-single.php embeds its map directly instead.
      ===================================================================== */
@@ -501,16 +530,14 @@
     const b = $("mapLoad"),
       w = $("mapWrap");
     if (!b || !w || !b.dataset.map) return;
-    b.onclick = () => {
-      const i = document.createElement("iframe");
-      i.src = b.dataset.map;
-      i.loading = "lazy";
-      i.referrerPolicy = "no-referrer-when-downgrade";
-      i.allowFullscreen = true;
-      i.title = "Map";
-      w.innerHTML = "";
-      w.appendChild(i);
-    };
+    const i = document.createElement("iframe");
+    i.src = b.dataset.map;
+    i.loading = "lazy";
+    i.referrerPolicy = "no-referrer-when-downgrade";
+    i.allowFullscreen = true;
+    i.title = "Map";
+    w.innerHTML = "";
+    w.appendChild(i);
   })();
 
   /* =====================================================================
@@ -957,6 +984,7 @@
           (b.onclick = () => {
             $("dlEy").textContent = "Download " + b.dataset.dl;
             $("dlT").textContent = b.dataset.dl.toLowerCase();
+            if ($("dlItem")) $("dlItem").value = b.dataset.dl;
             dl.showModal();
           }),
       );
@@ -964,10 +992,61 @@
       dl.addEventListener("click", (e) => {
         if (e.target === dl) dl.close();
       });
+      const dlPhoneEl = $("dlPhone");
+      let dlIti = null;
+      if (window.intlTelInput && dlPhoneEl) {
+        dlIti = intlTelInput(dlPhoneEl, {
+          initialCountry: "auto",
+          geoIpLookup: (ok) => (typeof detectCountry === "function" ? detectCountry(ok) : ok("ae")),
+          showSelectedDialCode: true,
+          dropdownContainer: document.body,
+          nationalMode: true,
+          autoPlaceholder: "aggressive",
+          utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/21.2.7/js/utils.min.js",
+        });
+        dlPhoneEl.addEventListener("input", () => {
+          dlPhoneEl.classList.remove("bad");
+          if ($("dlPhoneErr")) $("dlPhoneErr").classList.remove("on");
+        });
+      }
       $("dlForm").addEventListener("submit", (e) => {
         e.preventDefault();
+        const f = e.target;
+        if (dlIti && dlPhoneEl.value.trim() && window.intlTelInputUtils && !dlIti.isValidNumber()) {
+          dlPhoneEl.classList.add("bad");
+          if ($("dlPhoneErr")) $("dlPhoneErr").classList.add("on");
+          dlPhoneEl.focus();
+          return;
+        }
+        if (dlIti && $("dlPhoneFull")) $("dlPhoneFull").value = dlIti.getNumber();
+        const btn = f.querySelector("button[type=submit], button:not([type])"),
+          origText = btn ? btn.textContent : "";
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Sending…";
+        }
         const t = $("dlT").textContent;
-        e.target.innerHTML = `<span class="eyebrow">Thank you</span><h2 class="serif">Your ${esc(t)} is <em class="gold-text">on its way.</em></h2><p class="lead">${esc(e.target.dataset.done || "A DRE advisor will send it to you shortly.")}</p><button class="btn btn-gold" type="button" onclick="this.closest('dialog').close()" style="justify-content:center">Close</button>`;
+        const endpoint = (typeof base_url !== "undefined" ? base_url : "/") + "ajax/download_frm.php";
+        fetch(endpoint, { method: "POST", body: new FormData(f) })
+          .then((r) => r.json())
+          .then((res) => {
+            if (res && res.status === "success") {
+              f.innerHTML = `<span class="eyebrow">Thank you</span><h2 class="serif">Your ${esc(t)} is <em class="gold-text">on its way.</em></h2><p class="lead">${esc(f.dataset.done || "A DRE advisor will send it to you shortly.")}</p><button class="btn btn-gold" type="button" onclick="this.closest('dialog').close()" style="justify-content:center">Close</button>`;
+              return;
+            }
+            if (btn) {
+              btn.disabled = false;
+              btn.textContent = origText;
+            }
+            alert((res && res.msg) || "Something went wrong, please try again.");
+          })
+          .catch(() => {
+            if (btn) {
+              btn.disabled = false;
+              btn.textContent = origText;
+            }
+            alert("We could not send your request. Please check your connection and try again.");
+          });
       });
     }
     if ($("pdVideo"))
@@ -2302,7 +2381,54 @@
         $("listing").scrollIntoView({ behavior: "smooth" });
       },
     });
-    L.draw();
+    /* Pre-apply filters from the home page hero search (?q=&type=&min=&max=) */
+    (function () {
+      const hp = new URLSearchParams(location.search);
+      const q = hp.get("q"),
+        type = hp.get("type"),
+        min = +hp.get("min") || 0,
+        max = +hp.get("max") || 0;
+      let any = false;
+      if (q) {
+        $("qIn").value = q;
+        L.st.q = q;
+        any = true;
+      }
+      if (type) {
+        const b = $$("#tySeg button").find((x) => x.dataset.t.toLowerCase() === type.toLowerCase());
+        if (b) {
+          $$("#tySeg button").forEach((x) => x.classList.toggle("on", x === b));
+          L.st.ty = b.dataset.t;
+          any = true;
+        }
+      }
+      if (min) {
+        const opt = $$("option", $("pMin"))
+          .filter((o) => o.value && +o.value <= min)
+          .sort((a, b) => b.value - a.value)[0];
+        if (opt) {
+          $("pMin").value = opt.value;
+          L.st.min = +opt.value;
+          any = true;
+        }
+      }
+      if (max) {
+        const opt = $$("option", $("pMax"))
+          .filter((o) => o.value && +o.value >= max)
+          .sort((a, b) => a.value - b.value)[0];
+        if (opt) {
+          $("pMax").value = opt.value;
+          L.st.max = +opt.value;
+          any = true;
+        }
+      }
+      if (any) {
+        L.st.page = 1;
+        L.draw(true);
+      } else {
+        L.draw();
+      }
+    })();
   })();
 
   /* ---- Off-plan properties: emirate, developer, area, price, beds, favourites, page numbers ----
@@ -2458,7 +2584,45 @@
         $("listing").scrollIntoView({ behavior: "smooth" });
       },
     });
-    L.draw();
+    /* Pre-apply filters from the home page hero search (?q=&min=&max=) */
+    (function () {
+      const hp = new URLSearchParams(location.search);
+      const q = hp.get("q"),
+        min = +hp.get("min") || 0,
+        max = +hp.get("max") || 0;
+      let any = false;
+      if (q) {
+        $("qIn").value = q;
+        L.st.q = q;
+        any = true;
+      }
+      if (min) {
+        const opt = $$("option", $("pMin"))
+          .filter((o) => o.value && +o.value <= min)
+          .sort((a, b) => b.value - a.value)[0];
+        if (opt) {
+          $("pMin").value = opt.value;
+          L.st.min = +opt.value;
+          any = true;
+        }
+      }
+      if (max) {
+        const opt = $$("option", $("pMax"))
+          .filter((o) => o.value && +o.value >= max)
+          .sort((a, b) => a.value - b.value)[0];
+        if (opt) {
+          $("pMax").value = opt.value;
+          L.st.max = +opt.value;
+          any = true;
+        }
+      }
+      if (any) {
+        L.st.page = 1;
+        L.draw(true);
+      } else {
+        L.draw();
+      }
+    })();
   })();
 
   /* =====================================================================

@@ -29,6 +29,7 @@ foreach ($home_projects as &$p) {
   $p['card_img'] = !empty($p['home_card_img'])
     ? BASE_URL_IMG . 'project/home-card-img/' . $p['home_card_img']
     : BASE_URL_IMG . 'project/thumb/' . explode(',', $p['prj_thumb_img'])[0];
+  $p['card_url'] = BASE_URL . 'property/' . rawurlencode(trim((string) $p['proj_slug']));
 }
 unset($p);
 $hero_project = $home_projects[0] ?? null;
@@ -101,24 +102,24 @@ include('common/header.php');
             </datalist>
           </div>
           <div class="field">
-            <label>Residence</label><select>
-              <option>Any type</option>
-              <option>Apartment</option>
-              <option>Villa</option>
-              <option>Penthouse</option>
-              <option>Mansion</option>
+            <label>Residence</label><select id="heroType">
+              <option value="">Any type</option>
+              <option value="Apartment">Apartment</option>
+              <option value="Villa">Villa</option>
+              <option value="Penthouse">Penthouse</option>
+              <option value="Mansion">Mansion</option>
             </select>
           </div>
           <div class="field">
-            <label>Budget</label><select>
-              <option>Any budget</option>
-              <option>AED 1M – 3M</option>
-              <option>AED 3M – 10M</option>
-              <option>AED 10M – 30M</option>
-              <option>AED 30M+</option>
+            <label>Budget</label><select id="heroBudget">
+              <option value="">Any budget</option>
+              <option value="1000000-3000000">AED 1M – 3M</option>
+              <option value="3000000-10000000">AED 3M – 10M</option>
+              <option value="10000000-30000000">AED 10M – 30M</option>
+              <option value="30000000-">AED 30M+</option>
             </select>
           </div>
-          <button class="go">Search <span>→</span></button>
+          <button class="go" type="button" id="heroGo">Search <span>→</span></button>
         </div>
       </div>
       <div class="hero-stats glass">
@@ -129,7 +130,7 @@ include('common/header.php');
     </div>
     <div style="position: relative">
       <?php if ($hero_project) { ?>
-        <div class="feature glass acc-edge">
+        <a class="feature glass acc-edge" href="<?= e($hero_project['card_url']) ?>">
           <div class="ph" style="background-image: url(<?= e($hero_project['card_img']) ?>)"><span class="badge">Featured
               · Off plan</span></div>
           <div class="info">
@@ -139,7 +140,7 @@ include('common/header.php');
             </div>
             <div class="price banner-price"><span>From</span><b class=""><?= e($hero_project['card_price']) ?></b></div>
           </div>
-        </div>
+        </a>
         <div class="mini-stat glass"><strong class="gold-text"><?= e($hero_project['card_handover']) ?></strong>Handover
         </div>
       <?php } ?>
@@ -163,7 +164,7 @@ include('common/header.php');
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3" id="cards">
       <?php foreach ($home_projects as $p) { ?>
         <div class="col" data-c="<?= e($p['card_city']) ?>">
-          <article class="pcard">
+          <a class="pcard" href="<?= e($p['card_url']) ?>">
             <div class="bg" style="background-image: url(<?= e($p['card_img']) ?>)"></div>
             <span class="badge">Off plan</span><span class="fav">♡</span>
             <div class="pinfo glass on-img">
@@ -174,7 +175,7 @@ include('common/header.php');
                 <div style="text-align: right">Handover<strong><?= e($p['card_handover']) ?></strong></div>
               </div>
             </div>
-          </article>
+          </a>
         </div>
       <?php } ?>
     </div>
@@ -238,7 +239,7 @@ include('common/header.php');
         <span class="num gold-text">iii.</span>
         <h3>Premium rentals</h3>
         <p>In-demand residences across prime communities, matched to your lifestyle.</p>
-        <a href="#">Find a rental →</a>
+        <a href="<?= page_link('rent-property') ?>">Find a rental →</a>
       </div>
     </div>
   </div>

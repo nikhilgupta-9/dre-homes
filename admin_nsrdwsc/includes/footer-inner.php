@@ -150,18 +150,23 @@ if (empty($_SESSION['admin_csrf'])) {
 /* Colors match the admin's own theme (see admin_nsrdwsc/assets/css/dre-dashboard.css):
    --dd-main:#5f574c, --dd-accent:#ab9889, --dd-ink:#2f2a25, --dd-muted:#7c7268,
    --dd-good:#3f8f6b, --dd-bad:#b9524a. Hardcoded here since this widget sits outside .dre-dash. */
-#dreAiBtnWrap{position:fixed;right:22px;bottom:22px;z-index:1090;font-family:Poppins,Helvetica,sans-serif}
-#dreAiBtnWrap::before{content:'';position:absolute;inset:-6px;border-radius:50%;background:linear-gradient(135deg,#5f574c,#ab9889);opacity:.45;filter:blur(10px);animation:dreAiGlow 2.6s ease-in-out infinite}
-#dreAiBtn{position:relative;width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#5f574c,#ab9889);color:#fff;border:0;box-shadow:0 8px 20px rgba(95,87,76,.45);font-size:23px;display:flex;align-items:center;justify-content:center;cursor:pointer;animation:dreAiFloat 2.4s ease-in-out infinite;transition:transform .2s}
-#dreAiBtn:hover{transform:scale(1.07);box-shadow:0 10px 24px rgba(95,87,76,.55)}
-#dreAiBtn i{position:relative;z-index:1}
-#dreAiBadge{position:absolute;top:-4px;right:-4px;background:#b9524a;color:#fff;font-size:10px;font-weight:700;line-height:1;padding:3px 5px;border-radius:999px;border:2px solid #fff;z-index:2;animation:dreAiPop 1.8s ease-in-out infinite}
-#dreAiLabel{position:absolute;right:68px;bottom:16px;background:#2f2a25;color:#fff;font-size:12px;font-weight:600;padding:7px 12px;border-radius:999px;white-space:nowrap;box-shadow:0 6px 16px rgba(0,0,0,.2);opacity:0;transform:translateX(6px);transition:opacity .25s,transform .25s;pointer-events:none}
-#dreAiBtnWrap:hover #dreAiLabel{opacity:1;transform:translateX(0)}
-#dreAiBtnWrap.open #dreAiLabel,#dreAiBtnWrap.open #dreAiBadge{display:none}
-@keyframes dreAiFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-@keyframes dreAiGlow{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:.6;transform:scale(1.08)}}
-@keyframes dreAiPop{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+#dreAiBtnWrap{position:fixed;right:24px;bottom:24px;z-index:1090;font-family:Poppins,Helvetica,sans-serif}
+#dreAiBtnWrap::before{content:'';position:absolute;inset:-8px;border-radius:50%;background:linear-gradient(135deg,#d4af37,#ab9889,#5f574c);opacity:.55;filter:blur(12px);animation:dreAiGlow 2.6s ease-in-out infinite}
+#dreAiRing1,#dreAiRing2{position:absolute;inset:0;border-radius:50%;border:2px solid #d4af37;pointer-events:none;animation:dreAiPing 2.4s cubic-bezier(.3,.6,.3,1) infinite}
+#dreAiRing2{animation-delay:1.2s}
+#dreAiBtn{position:relative;width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#6b6153,#ab9889 55%,#d4af37);color:#fff;border:0;box-shadow:0 10px 26px rgba(95,87,76,.55),0 0 0 3px rgba(212,175,55,.35);font-size:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;animation:dreAiFloat 2.4s ease-in-out infinite;transition:transform .2s,box-shadow .2s}
+#dreAiBtn:hover{transform:scale(1.1);box-shadow:0 12px 30px rgba(95,87,76,.65),0 0 0 4px rgba(212,175,55,.5)}
+#dreAiBtn i{position:relative;z-index:1;animation:dreAiTwinkle 2.4s ease-in-out infinite}
+#dreAiBadge{position:absolute;top:-6px;right:-6px;background:linear-gradient(135deg,#d4af37,#b9524a);color:#fff;font-size:10px;font-weight:800;letter-spacing:.3px;line-height:1;padding:4px 7px;border-radius:999px;border:2px solid #fff;z-index:2;box-shadow:0 2px 6px rgba(0,0,0,.25);animation:dreAiPop 1.6s ease-in-out infinite}
+#dreAiLabel{position:absolute;right:76px;bottom:18px;background:#2f2a25;color:#fff;font-size:13px;font-weight:700;padding:9px 14px;border-radius:999px;white-space:nowrap;box-shadow:0 8px 20px rgba(0,0,0,.28);opacity:0;transform:translateX(10px) scale(.92);transition:opacity .25s,transform .25s;pointer-events:none}
+#dreAiLabel::after{content:'';position:absolute;right:-5px;top:50%;transform:translateY(-50%) rotate(45deg);width:9px;height:9px;background:#2f2a25}
+#dreAiBtnWrap:hover #dreAiLabel,#dreAiBtnWrap.show-label #dreAiLabel{opacity:1;transform:translateX(0) scale(1)}
+#dreAiBtnWrap.open #dreAiLabel,#dreAiBtnWrap.open #dreAiBadge,#dreAiBtnWrap.open #dreAiRing1,#dreAiBtnWrap.open #dreAiRing2{display:none}
+@keyframes dreAiFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes dreAiGlow{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:.75;transform:scale(1.12)}}
+@keyframes dreAiPop{0%,100%{transform:scale(1)}50%{transform:scale(1.22)}}
+@keyframes dreAiPing{0%{transform:scale(1);opacity:.65}100%{transform:scale(1.55);opacity:0}}
+@keyframes dreAiTwinkle{0%,100%{transform:rotate(0) scale(1)}50%{transform:rotate(12deg) scale(1.15)}}
 #dreAiPanel{position:fixed;right:22px;bottom:86px;z-index:1090;width:340px;max-height:520px;background:#fdfbf9;border-radius:16px;box-shadow:0 12px 32px rgba(47,42,37,.22);display:none;flex-direction:column;overflow:hidden;font-family:Poppins,Helvetica,sans-serif;border:1px solid rgba(171,152,137,.3)}
 #dreAiPanel.open{display:flex}
 #dreAiPanel .dre-ai-head{background:linear-gradient(135deg,#5f574c,#ab9889);color:#fff;padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
@@ -196,6 +201,8 @@ if (empty($_SESSION['admin_csrf'])) {
 </style>
 <div id="dreAiBtnWrap">
 	<span id="dreAiLabel">Ask AI &#10024;</span>
+	<span id="dreAiRing1" aria-hidden="true"></span>
+	<span id="dreAiRing2" aria-hidden="true"></span>
 	<button id="dreAiBtn" aria-label="Ask AI" title="Ask AI"><i class="bi bi-stars"></i></button>
 	<span id="dreAiBadge">AI</span>
 </div>
@@ -329,9 +336,19 @@ window.dreAiHistory = <?= json_encode(array_values($_SESSION['ai_help_chat'] ?? 
 	btn.onclick = function(){
 		panel.classList.toggle('open');
 		wrap.classList.toggle('open', panel.classList.contains('open'));
+		wrap.classList.remove('show-label');
 		if (panel.classList.contains('open')) { greet(); input.focus(); }
 	};
 	close.onclick = function(){ panel.classList.remove('open'); wrap.classList.remove('open'); };
+	// First time this tab sees the widget, pop the "Ask AI" label open on its own for a
+	// few seconds so admins notice it, instead of only showing it on hover.
+	try {
+		if (!sessionStorage.getItem('dreAiLabelShown')) {
+			sessionStorage.setItem('dreAiLabelShown', '1');
+			setTimeout(function(){ wrap.classList.add('show-label'); }, 700);
+			setTimeout(function(){ wrap.classList.remove('show-label'); }, 6000);
+		}
+	} catch (e) {}
 	function ask(q){
 		if (!q) { return; }
 		add(q, 'me');

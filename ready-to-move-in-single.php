@@ -108,12 +108,10 @@ include('common/header.php');
 <?php if (!empty($property['overview'])) { ?>
           <article id="overview" class="pd-sec reveal">
             <span class="eyebrow">About this property</span>
-            <p class="lead"><?= e($property['overview'][0]) ?></p>
-<?php if (count($property['overview']) > 1) { ?>
-            <div class="more-txt" id="ovMore">
-<?php foreach (array_slice($property['overview'], 1) as $p) { ?>
-              <p class="lead"><?= e($p) ?></p>
-<?php } ?>
+            <div class="lead"><?= $property['overview_first_html'] ?></div>
+<?php if ($property['overview_rest_html'] !== '') { ?>
+            <div class="more-txt lead" id="ovMore">
+              <?= $property['overview_rest_html'] ?>
             </div>
             <button class="rm" data-t="ovMore">Read more ↓</button>
 <?php } ?>

@@ -1172,6 +1172,35 @@ function plain_text($html)
 	return trim(preg_replace('/\s+/u', ' ', str_replace("\xC2\xA0", ' ', $text)));
 }
 
+// Admin rich text (TinyMCE HTML) -> safe HTML for direct output (9.3: the one exception
+// to e() on every printed value). Keeps paragraphs, basic emphasis, lists and links, so
+// a paragraph's alignment (e.g. "justify", set from the editor's toolbar) survives; every
+// other attribute — style, class, on*, javascript: links — is stripped.
+function clean_admin_html($html)
+{
+	$html = html_entity_decode((string) $html, ENT_QUOTES, 'UTF-8');
+	$html = strip_tags($html, '<p><b><strong><em><i><a><ul><ol><li><br>');
+
+	$html = preg_replace_callback('/<(p|a)\b([^>]*)>/i', function ($m) {
+		$tag = strtolower($m[1]);
+		$attrs = $m[2];
+		$safe = '';
+		if ($tag === 'p' && preg_match('/style\s*=\s*"([^"]*)"/i', $attrs, $sm)
+			&& preg_match('/text-align\s*:\s*(left|right|center|justify)/i', $sm[1], $am)) {
+			$safe = ' style="text-align:' . strtolower($am[1]) . '"';
+		}
+		if ($tag === 'a' && preg_match('/href\s*=\s*"([^"]*)"/i', $attrs, $hm) && preg_match('#^https?://#i', $hm[1])) {
+			$safe = ' href="' . htmlspecialchars($hm[1], ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener"';
+		}
+		return '<' . $tag . $safe . '>';
+	}, $html);
+
+	// Every other allowed tag keeps no attributes at all (b, strong, em, i, ul, ol, li, br)
+	$html = preg_replace('/<(b|strong|em|i|ul|ol|li|br)\b[^>]*>/i', '<$1>', $html);
+
+	return trim(preg_replace('/(<p[^>]*>)\s*(<\/p>)/i', '', $html));
+}
+
 // Admin rich text -> its <p> paragraphs as plain text (empty ones dropped)
 function text_paragraphs($html)
 {
@@ -1533,6 +1562,17 @@ function get_offplan_project($slug)
 	}
 
 	$overview = text_paragraphs($project['proj_overview']);
+	// HTML version for display: keeps paragraphs, bold and alignment (e.g. "justify") from
+	// the admin's editor — see 9.3. $overview itself stays plain paragraphs for the "has an
+	// Overview tab" check and the meta description fallback. Split so the page can still
+	// show the first paragraph with a "Read more" toggle for the rest, as before.
+	$overview_html = clean_admin_html($project['proj_overview']);
+	$overview_first_html = $overview_html;
+	$overview_rest_html = '';
+	if (preg_match('/^\s*(<p[^>]*>.*?<\/p>)(.*)$/is', $overview_html, $ov_m)) {
+		$overview_first_html = $ov_m[1];
+		$overview_rest_html = trim($ov_m[2]);
+	}
 	$amenities_text = text_paragraphs($project['proj_fea_fac_cont']);
 	$location_text = text_paragraphs($project['proj_loc_cont']);
 	$masterplan_text = text_paragraphs($project['proj_masterplan']);
@@ -1590,6 +1630,9 @@ function get_offplan_project($slug)
 		'masterplan_img' => $masterplan_img,
 		'masterplan_img_index' => $masterplan_img_index,
 		'overview' => $overview,
+		'overview_html' => $overview_html,
+		'overview_first_html' => $overview_first_html,
+		'overview_rest_html' => $overview_rest_html,
 		'amenities' => $amenities,
 		'amenities_text' => $amenities_text,
 		'location_text' => $location_text,
@@ -1981,9 +2024,13 @@ function get_buy_project($slug)
 	$clean_intro = preg_replace('/<p>\s*<strong>(?:Property Details|Amenities & Facilities|Amenities &amp; Facilities|Locations Nearby):?<\/strong><\/p>\s*<ul>.*?<\/ul>/is', '', $clean_intro);
 	$clean_intro = preg_replace('/<ul>.*?<\/ul>/is', '', $clean_intro);
 	$clean_intro = preg_replace('/<p>\s*About [^<]+<\/p>/is', '', $clean_intro);
+	// HTML version for display: keeps paragraphs and their alignment (e.g. "justify") from
+	// the admin's editor — see 9.3. $clean_intro itself stays plain text for meta_description.
+	$clean_intro_html = clean_admin_html($clean_intro);
 	$clean_intro = trim(strip_tags($clean_intro));
 	if ($clean_intro === '') {
 		$clean_intro = "DRE Homes is delighted to present this exceptional " . $beds_label . "-bedroom " . strtolower($type) . " in " . $community . ", Dubai. Offering modern finishes, comfortable living spaces, and easy access to premium lifestyle amenities.";
+		$clean_intro_html = '<p>' . e($clean_intro) . '</p>';
 	}
 
 	// Similar buy properties
@@ -2071,6 +2118,7 @@ function get_buy_project($slug)
 		'location_title' => $location,
 		'about_community_text' => $about_community_text,
 		'clean_intro' => $clean_intro,
+		'clean_intro_html' => $clean_intro_html,
 		'qr_img' => $qr_img,
 		'qr_link' => $qr_link,
 		'zone' => $zone,
@@ -2466,9 +2514,13 @@ function get_rent_project($slug)
 	$clean_intro = preg_replace('/<p>\s*<strong>(?:Property Details|Amenities & Facilities|Amenities &amp; Facilities|Locations Nearby|Property Highlights):?<\/strong><\/p>\s*<ul>.*?<\/ul>/is', '', $clean_intro);
 	$clean_intro = preg_replace('/<ul>.*?<\/ul>/is', '', $clean_intro);
 	$clean_intro = preg_replace('/<p>\s*About [^<]+<\/p>/is', '', $clean_intro);
+	// HTML version for display: keeps paragraphs and their alignment (e.g. "justify") from
+	// the admin's editor — see 9.3. $clean_intro itself stays plain text for meta_description.
+	$clean_intro_html = clean_admin_html($clean_intro);
 	$clean_intro = trim(strip_tags($clean_intro));
 	if ($clean_intro === '') {
 		$clean_intro = "DRE Homes is delighted to present this exceptional " . $beds_label . "-bedroom " . strtolower($type) . " for rent in " . $community . ", Dubai. Offering modern finishes, comfortable living spaces, and easy access to community lifestyle amenities.";
+		$clean_intro_html = '<p>' . e($clean_intro) . '</p>';
 	}
 
 	// Similar rent properties
@@ -2556,6 +2608,7 @@ function get_rent_project($slug)
 		'location_title' => $location,
 		'about_community_text' => $about_community_text,
 		'clean_intro' => $clean_intro,
+		'clean_intro_html' => $clean_intro_html,
 		'qr_img' => $qr_img,
 		'qr_link' => $qr_link,
 		'zone' => $zone,
@@ -2857,6 +2910,17 @@ function get_international_project($slug)
 	$overview_paras = text_paragraphs($project['proj_overview']);
 	if (empty($overview_paras)) {
 		$overview_paras = [$name . ' offers prestigious residences with multiple layouts and world-class facilities in ' . $location . ', backed by trusted DRE guidance.'];
+		$overview_html = '<p>' . e($overview_paras[0]) . '</p>';
+	} else {
+		// HTML version for display: keeps paragraphs, bold and alignment (e.g. "justify") from
+		// the admin's editor — see 9.3.
+		$overview_html = clean_admin_html($project['proj_overview']);
+	}
+	$overview_first_html = $overview_html;
+	$overview_rest_html = '';
+	if (preg_match('/^\s*(<p[^>]*>.*?<\/p>)(.*)$/is', $overview_html, $ov_m)) {
+		$overview_first_html = $ov_m[1];
+		$overview_rest_html = trim($ov_m[2]);
 	}
 
 	// Amenities from tbl_proj_featfac
@@ -2956,6 +3020,8 @@ function get_international_project($slug)
 		'photos' => $photos,
 		'side_photos' => $side_photos,
 		'overview' => $overview_paras,
+		'overview_first_html' => $overview_first_html,
+		'overview_rest_html' => $overview_rest_html,
 		'amenities' => $amenities,
 		'brochure' => $brochure,
 		'floorplan' => $floorplan,
@@ -3222,6 +3288,17 @@ function get_ready_project($slug)
 	$overview_paras = text_paragraphs($project['proj_overview']);
 	if (empty($overview_paras)) {
 		$overview_paras = [$name . ' offers prime ready-to-move-in residences with modern finishes and immediate handover in ' . $location . '.'];
+		$overview_html = '<p>' . e($overview_paras[0]) . '</p>';
+	} else {
+		// HTML version for display: keeps paragraphs, bold and alignment (e.g. "justify") from
+		// the admin's editor — see 9.3.
+		$overview_html = clean_admin_html($project['proj_overview']);
+	}
+	$overview_first_html = $overview_html;
+	$overview_rest_html = '';
+	if (preg_match('/^\s*(<p[^>]*>.*?<\/p>)(.*)$/is', $overview_html, $ov_m)) {
+		$overview_first_html = $ov_m[1];
+		$overview_rest_html = trim($ov_m[2]);
 	}
 
 	// Amenities from tbl_proj_featfac
@@ -3317,6 +3394,8 @@ function get_ready_project($slug)
 		'photos' => $photos,
 		'side_photos' => $side_photos,
 		'overview' => $overview_paras,
+		'overview_first_html' => $overview_first_html,
+		'overview_rest_html' => $overview_rest_html,
 		'amenities' => $amenities,
 		'brochure' => $brochure,
 		'floorplan' => $floorplan,

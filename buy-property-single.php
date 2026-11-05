@@ -116,9 +116,9 @@ include('common/header.php');
           <article id="overview" class="pd-sec reveal">
             <span class="eyebrow">About this property </span>
             <h2 class="serif">Get to know your next <em class="gold-text">investment</em></h2>
-            <p class="lead">
-              <?= e($property['clean_intro']) ?>
-            </p>
+            <div class="lead">
+              <?= $property['clean_intro_html'] ?>
+            </div>
 <?php if (!empty($property['features'])) { ?>
             <div class="feat-chips">
 <?php foreach ($property['features'] as $feat) { ?>

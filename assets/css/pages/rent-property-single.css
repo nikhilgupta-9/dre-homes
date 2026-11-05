@@ -160,6 +160,18 @@
 .pd-sec .lead {
   max-width: none;
   margin-bottom: 14px;
+  text-align: justify;
+}
+.pd-sec .lead p {
+  margin: 0 0 14px;
+}
+.pd-sec .lead p:last-child {
+  margin-bottom: 0;
+}
+.pd-sec .lead ul,
+.pd-sec .lead ol {
+  margin: 0 0 14px;
+  padding-left: 20px;
 }
 .more-txt {
   max-height: 0;

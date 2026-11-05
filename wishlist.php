@@ -14,7 +14,7 @@ $meta_tags = [
 // Reuses buy-property's card/filter styles (.ph-hero, .opg, .oc, .seg, .fsel) instead of
 // duplicating ~700 lines of shared CSS; wishlist.css adds only what's unique to this page.
 $page = [
-	'active' => 'properties',
+	'active' => 'wishlist', // no nav item matches this on purpose — wishlist isn't a listing page, so nothing should highlight
 	'css' => ['assets/css/pages/buy-property.css', 'assets/css/pages/wishlist.css'],
 ];
 

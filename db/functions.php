@@ -1495,14 +1495,21 @@ function get_offplan_project($slug)
 	if (!$photos) {
 		$photos[] = ['src' => project_media_url('thumb', explode(',', $project['prj_thumb_img'])[0]), 'title' => $name];
 	}
-	// Hero: the first photo big; beside it the second photo and the masterplan (or the last photo)
+	// Hero: the first photo big; beside it the second photo and the masterplan (or the last real
+	// photo). The location map screenshot never belongs here — it has its own card in the
+	// Location tab (9.10: single-property.php #location) — so it's skipped as a side photo.
 	$side = [];
 	if (count($photos) > 1) {
 		$side_indexes = [1];
 		if ($masterplan_img_index !== null && $masterplan_img_index > 1) {
 			$side_indexes[] = $masterplan_img_index;
-		} elseif (count($photos) > 2) {
-			$side_indexes[] = count($photos) - 1;
+		} else {
+			for ($i = count($photos) - 1; $i > 1; $i--) {
+				if ($i !== $location_img_index) {
+					$side_indexes[] = $i;
+					break;
+				}
+			}
 		}
 		foreach ($side_indexes as $n => $i) {
 			$side[] = $photos[$i] + ['index' => $i, 'show_all' => $n === count($side_indexes) - 1];

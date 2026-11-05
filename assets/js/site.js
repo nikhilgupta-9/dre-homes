@@ -49,6 +49,119 @@
     }
   };
   syncWishBadge(wishlistSlugs().length);
+
+  /* ---- Currency switcher (header .cur selects, incl. the mobile menu's copy): converts
+     every "AED 1,250,000"-style price on the page. main.js already replaces the literal
+     word "AED" with a <span class="aed"> icon (site-wide, including content added later),
+     leaving the number as the icon's very next text node — that's what gets converted
+     here, with the original AED figure cached on the icon so switching back is lossless. */
+  (function () {
+    const selects = $$(".cur");
+    if (!selects.length) return;
+    const CUR_COOKIE = "dre_currency";
+    const RATE_CACHE_KEY = "dre_rates_cache";
+    const RATE_CACHE_MS = 6 * 60 * 60 * 1000;
+    let rates = null;
+    let current = "AED";
+
+    function loadRatesFromStorage() {
+      try {
+        const raw = sessionStorage.getItem(RATE_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (Date.now() - parsed.t > RATE_CACHE_MS) return null;
+        return parsed.rates;
+      } catch (e) {
+        return null;
+      }
+    }
+    function saveRatesToStorage(r) {
+      try {
+        sessionStorage.setItem(RATE_CACHE_KEY, JSON.stringify({ t: Date.now(), rates: r }));
+      } catch (e) {}
+    }
+    function fetchRates() {
+      if (rates) return Promise.resolve(rates);
+      const cached = loadRatesFromStorage();
+      if (cached) {
+        rates = cached;
+        return Promise.resolve(rates);
+      }
+      const endpoint = (typeof base_url !== "undefined" ? base_url : "/") + "ajax/get-exchange-rates.php";
+      return fetch(endpoint)
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.status === "success" && d.rates) {
+            rates = d.rates;
+            saveRatesToStorage(rates);
+            return rates;
+          }
+          throw new Error("rates unavailable");
+        });
+    }
+
+    function convertOne(span) {
+      const numNode = span.nextSibling;
+      if (!numNode || numNode.nodeType !== 3) return;
+      if (span.dataset.aedOrig === undefined) {
+        const digits = numNode.nodeValue.replace(/[^\d.]/g, "");
+        if (!digits) return;
+        span.dataset.aedOrig = digits;
+        span.dataset.aedText = numNode.nodeValue;
+      }
+      if (current === "AED" || !rates || !rates[current]) {
+        span.hidden = false;
+        numNode.nodeValue = span.dataset.aedText;
+        return;
+      }
+      const orig = parseFloat(span.dataset.aedOrig);
+      if (!isFinite(orig)) return;
+      const converted = Math.round(orig * rates[current]).toLocaleString("en-US");
+      span.hidden = true;
+      numNode.nodeValue = current + " " + converted;
+    }
+
+    function convertAll() {
+      $$(".aed").forEach(convertOne);
+    }
+
+    // Prices added after the page loads (AJAX-rendered cards, paginated lists) get the
+    // same treatment the moment main.js turns their "AED" text into a .aed icon.
+    new MutationObserver((muts) => {
+      if (current === "AED") return;
+      for (const m of muts) {
+        for (const n of m.addedNodes) {
+          if (n.nodeType !== 1) continue;
+          if (n.classList && n.classList.contains("aed")) convertOne(n);
+          n.querySelectorAll && n.querySelectorAll(".aed").forEach(convertOne);
+        }
+      }
+    }).observe(document.body, { childList: true, subtree: true });
+
+    function setCurrency(code, persist) {
+      current = code;
+      selects.forEach((s) => (s.value = code));
+      if (persist) setCookie(CUR_COOKIE, code, 365);
+      if (code === "AED") {
+        convertAll();
+        return;
+      }
+      fetchRates()
+        .then(convertAll)
+        .catch(() => {
+          current = "AED";
+          selects.forEach((s) => (s.value = "AED"));
+        });
+    }
+
+    selects.forEach((s) => {
+      s.addEventListener("change", (e) => setCurrency(e.target.value, true));
+    });
+
+    const saved = getCookie(CUR_COOKIE) || "AED";
+    setCurrency(saved, false);
+  })();
+
   const label = (btn) =>
     (btn.firstChild && btn.firstChild.nodeType === 3 ? btn.firstChild.nodeValue : btn.textContent).trim();
   /* text of an element as written in the HTML (the Dirham symbol counts as "AED") */

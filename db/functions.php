@@ -6961,3 +6961,377 @@ function get_property_management_data()
 
 
 
+
+
+/* ---- Website Theme Settings ---- */
+
+/**
+ * Returns active website theme settings from tbl_theme_settings.
+ * Returns safe defaults if table does not exist or has no active row.
+ */
+function get_theme_settings()
+{
+	static $cached = null;
+	if ($cached !== null) {
+		return $cached;
+	}
+
+	$defaults = [
+		'theme_id' => 1,
+		'theme_name' => 'DRE Luxury Taupe',
+		'body_font_family' => 'Urbanist',
+		'heading_font_family' => 'Urbanist',
+		'custom_font_url' => '',
+		'base_font_size' => '16px',
+		'body_line_height' => '1.6',
+		'h1_font_size' => '56px',
+		'h2_font_size' => '40px',
+		'h3_font_size' => '24px',
+		'primary_color' => '#5f574c',
+		'accent_color' => '#E8C9A8',
+		'accent_color_2' => '#F5E9DC',
+		'accent_color_3' => '#DCC5A9',
+		'button_bg_color' => '#ab7752',
+		'button_text_color' => '#ffffff',
+		'button_border_radius' => '999px',
+		'night_bg_color' => '#14110e',
+		'night_text_color' => '#f4efe9',
+		'night_accent_color' => '#bfab95',
+		'card_border_radius' => '26px',
+		'default_mode' => 'night',
+		'custom_css' => '',
+		'is_active' => '1',
+	];
+
+	try {
+		$row = select_row('tbl_theme_settings', "is_active = '1' ORDER BY theme_id DESC");
+		if ($row) {
+			$cached = array_merge($defaults, $row);
+			return $cached;
+		}
+	} catch (Throwable $e) {
+		error_log('get_theme_settings failed: ' . $e->getMessage());
+	}
+
+	$cached = $defaults;
+	return $cached;
+}
+
+/**
+ * Helper to convert HEX color string to RGB comma-separated string (e.g. #5f574c -> 95, 87, 76)
+ */
+function hex_to_rgb_str($hex, $default = '95, 87, 76')
+{
+	$hex = ltrim(trim((string) $hex), '#');
+	if (strlen($hex) === 3) {
+		$r = hexdec(str_repeat(substr($hex, 0, 1), 2));
+		$g = hexdec(str_repeat(substr($hex, 1, 1), 2));
+		$b = hexdec(str_repeat(substr($hex, 2, 1), 2));
+		return "$r, $g, $b";
+	} elseif (strlen($hex) === 6) {
+		$r = hexdec(substr($hex, 0, 2));
+		$g = hexdec(substr($hex, 2, 2));
+		$b = hexdec(substr($hex, 4, 2));
+		return "$r, $g, $b";
+	}
+	return $default;
+}
+
+/**
+ * Returns Google Fonts HTML link tags for the chosen fonts.
+ */
+function get_theme_font_links($theme)
+{
+	$fonts = [];
+	$body = trim($theme['body_font_family'] ?? 'Urbanist');
+	$heading = trim($theme['heading_font_family'] ?? 'Urbanist');
+
+	// Standard system fonts do not need Google Font link
+	$system_fonts = ['Arial', 'Helvetica', 'Times New Roman', 'Georgia', 'system-ui', 'sans-serif', 'serif'];
+
+	if ($body && !in_array($body, $system_fonts, true)) {
+		$fonts[$body] = true;
+	}
+	if ($heading && !in_array($heading, $system_fonts, true)) {
+		$fonts[$heading] = true;
+	}
+
+	$html = '';
+	if (!empty($theme['custom_font_url'])) {
+		$html .= '<link rel="stylesheet" href="' . htmlspecialchars($theme['custom_font_url'], ENT_QUOTES, 'UTF-8') . '" />' . "\n";
+	}
+
+	if ($fonts) {
+		$families = [];
+		foreach (array_keys($fonts) as $f) {
+			$formatted = str_replace(' ', '+', $f);
+			$families[] = 'family=' . $formatted . ':ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&';
+		}
+		$url = 'https://fonts.googleapis.com/css2?' . implode('', $families) . 'display=swap';
+		$html .= '<link rel="preconnect" href="https://fonts.googleapis.com" />' . "\n";
+		$html .= '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />' . "\n";
+		$html .= '<link href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" rel="stylesheet" />' . "\n";
+	}
+
+	return $html;
+}
+
+/**
+ * Renders the inline dynamic CSS style tag according to active theme settings.
+ */
+function render_theme_css($theme)
+{
+	if (!$theme) {
+		return '';
+	}
+	$body_font = htmlspecialchars($theme['body_font_family'] ?? 'Urbanist', ENT_QUOTES, 'UTF-8');
+	$heading_font = htmlspecialchars($theme['heading_font_family'] ?? 'Urbanist', ENT_QUOTES, 'UTF-8');
+	$base_font_size = htmlspecialchars($theme['base_font_size'] ?? '16px', ENT_QUOTES, 'UTF-8');
+	$line_height = htmlspecialchars($theme['body_line_height'] ?? '1.6', ENT_QUOTES, 'UTF-8');
+	$h1_size = htmlspecialchars($theme['h1_font_size'] ?? '56px', ENT_QUOTES, 'UTF-8');
+	$h2_size = htmlspecialchars($theme['h2_font_size'] ?? '40px', ENT_QUOTES, 'UTF-8');
+	$h3_size = htmlspecialchars($theme['h3_font_size'] ?? '24px', ENT_QUOTES, 'UTF-8');
+
+	$primary_color = htmlspecialchars($theme['primary_color'] ?? '#5f574c', ENT_QUOTES, 'UTF-8');
+	$bg_rgb = hex_to_rgb_str($primary_color, '95, 87, 76');
+
+	$accent = htmlspecialchars($theme['accent_color'] ?? '#E8C9A8', ENT_QUOTES, 'UTF-8');
+	$accent_2 = htmlspecialchars($theme['accent_color_2'] ?? '#F5E9DC', ENT_QUOTES, 'UTF-8');
+	$accent_3 = htmlspecialchars($theme['accent_color_3'] ?? '#DCC5A9', ENT_QUOTES, 'UTF-8');
+
+	$btn_bg = htmlspecialchars($theme['button_bg_color'] ?? '#ab7752', ENT_QUOTES, 'UTF-8');
+	$btn_fg = htmlspecialchars($theme['button_text_color'] ?? '#ffffff', ENT_QUOTES, 'UTF-8');
+	$btn_r = htmlspecialchars($theme['button_border_radius'] ?? '999px', ENT_QUOTES, 'UTF-8');
+	$card_r = htmlspecialchars($theme['card_border_radius'] ?? '26px', ENT_QUOTES, 'UTF-8');
+
+	$night_bg = htmlspecialchars($theme['night_bg_color'] ?? '#14110e', ENT_QUOTES, 'UTF-8');
+	$night_bg_rgb = hex_to_rgb_str($night_bg, '20, 17, 14');
+	$night_text = htmlspecialchars($theme['night_text_color'] ?? '#f4efe9', ENT_QUOTES, 'UTF-8');
+	$night_fg_rgb = hex_to_rgb_str($night_text, '244, 239, 233');
+	$night_acc = htmlspecialchars($theme['night_accent_color'] ?? '#bfab95', ENT_QUOTES, 'UTF-8');
+
+	$custom_css = trim($theme['custom_css'] ?? '');
+
+	$css = <<<CSS
+<!-- Dynamic Website Theme Styles (Managed from Admin > Settings > Website Theme) -->
+<style id="dre-theme-dynamic-styles">
+:root {
+  --font: "{$body_font}", Urbanist, system-ui, sans-serif !important;
+  --heading-font: "{$heading_font}", "{$body_font}", Urbanist, system-ui, sans-serif !important;
+  --bg: {$primary_color};
+  --bg-rgb: {$bg_rgb};
+  --acc: {$accent};
+  --acc-2: {$accent_2};
+  --acc-3: {$accent_3};
+  --btn: {$btn_bg};
+  --btn-fg: {$btn_fg};
+  --r: {$card_r};
+}
+html {
+  font-size: {$base_font_size};
+}
+body {
+  font-family: var(--font) !important;
+  line-height: {$line_height} !important;
+}
+h1, h2, h3, h4, h5, h6, .serif, .display-1, .display-2, .display-3, .display-4 {
+  font-family: var(--heading-font) !important;
+}
+h1 { font-size: {$h1_size} !important; }
+h2 { font-size: {$h2_size} !important; }
+h3 { font-size: {$h3_size} !important; }
+.btn-primary, .btn-gold, button[type="submit"]:not(.btn-no-round), .btn-custom-theme {
+  background-color: var(--btn) !important;
+  color: var(--btn-fg) !important;
+  border-radius: {$btn_r} !important;
+}
+.btn, button, .tag, .pill {
+  border-radius: {$btn_r};
+}
+.glass, .card, .card-custom {
+  border-radius: var(--r);
+}
+html[data-mode="night"] {
+  --bg: {$night_bg};
+  --bg-rgb: {$night_bg_rgb};
+  --fg-rgb: {$night_fg_rgb};
+  --acc: {$night_acc};
+  --btn: {$btn_bg};
+  --btn-fg: {$btn_fg};
+}
+{$custom_css}
+</style>
+CSS;
+
+	return $css;
+}
+
+/* ---- Wishlist (heart / add-to-wishlist on property cards) ---- */
+
+// The clean URL prefix for each listing type, shared with get_single_community_data().
+function wishlist_type_routes()
+{
+	return [
+		1 => ['prefix' => 'property', 'label' => 'Off Plan'],
+		2 => ['prefix' => 'ready-to-move-in', 'label' => 'Ready To Move In'],
+		3 => ['prefix' => 'international-properties', 'label' => 'International'],
+		7 => ['prefix' => 'buy-property', 'label' => 'Buy'],
+		8 => ['prefix' => 'rent-property', 'label' => 'Rent'],
+	];
+}
+
+// Logs one add/remove action. The visitor's own list lives in their cookie — this is for
+// admin tracking only (Admin > Wishlist Activity): which properties and pages get wishlisted most.
+function save_wishlist_log($wish_uid, $slug, $action, $page_url)
+{
+	$slug = trim((string) $slug);
+	if ($slug === '' || !in_array($action, ['add', 'remove'], true)) {
+		return false;
+	}
+
+	$project = db_row("SELECT prj_id, prj_type_id, proj_name FROM tbl_proj WHERE proj_slug = ? LIMIT 1", [$slug]);
+
+	return db_query(
+		"INSERT INTO tbl_wishlist_log (wish_uid, prj_id, prj_type_id, proj_slug, proj_name, page_url, wish_action, ip_address, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+		[
+			$wish_uid,
+			$project ? (int) $project['prj_id'] : null,
+			$project ? (int) $project['prj_type_id'] : null,
+			$slug,
+			$project ? $project['proj_name'] : null,
+			$page_url !== '' ? substr($page_url, 0, 500) : null,
+			$action,
+			get_client_ip(),
+		]
+	) !== false;
+}
+
+// Property cards for the frontend wishlist page, from the slugs in the visitor's cookie.
+// Looks across every listing type (off-plan, ready, international, buy, rent) by slug.
+function get_wishlist_cards(array $slugs)
+{
+	$slugs = array_values(array_unique(array_filter(array_map('trim', $slugs))));
+	if (!$slugs) {
+		return [];
+	}
+
+	$placeholders = implode(',', array_fill(0, count($slugs), '?'));
+	$rows = db_all(
+		"SELECT p.prj_id, p.prj_type_id, p.proj_name, p.proj_name_on_card, p.proj_slug, p.prj_thumb_img,
+		        COALESCE(f.price_aed, p.proj_price, p.proj_start_price) AS proj_price,
+		        p.proj_bedroom, p.proj_shower, p.proj_area, p.proj_size, p.proj_location, p.property_type,
+		        c.comm_heading
+		 FROM tbl_proj p
+		 LEFT JOIN tbl_community c ON c.comm_id = p.prj_comm_id
+		 LEFT JOIN tbl_ai_proj_facts f ON f.prj_id = p.prj_id
+		 WHERE p.proj_slug IN ($placeholders) AND p.is_active = '1'",
+		$slugs
+	);
+
+	$routes = wishlist_type_routes();
+	$by_slug = [];
+	foreach ($rows as $row) {
+		$route = $routes[(int) $row['prj_type_id']] ?? $routes[1];
+		$name_on_card = trim((string) ($row['proj_name_on_card'] ?? ''));
+		$proj_name = trim((string) ($row['proj_name'] ?? ''));
+		$name = $name_on_card !== '' ? $name_on_card : $proj_name;
+		$slug = trim((string) $row['proj_slug']);
+
+		$price = (int) ($row['proj_price'] ?? 0);
+		$area = (int) ($row['proj_area'] ?: ($row['proj_size'] ?? 0));
+		$baths = (int) ($row['proj_shower'] ?? 0);
+		$bed_raw = trim((string) ($row['proj_bedroom'] ?? ''));
+		$is_studio = (strcasecmp($bed_raw, 'STD') === 0 || strcasecmp($bed_raw, 'Studio') === 0 || $bed_raw === '0');
+		$beds_num = $is_studio ? 0 : (int) $bed_raw;
+		$beds_label = $is_studio ? 'Studio' : ($beds_num > 0 ? $beds_num . ' bed' : '1 bed');
+
+		$thumbs_raw = trim((string) ($row['prj_thumb_img'] ?? ''));
+		$thumb = $thumbs_raw !== '' ? trim(explode(',', $thumbs_raw)[0]) : '';
+		$image = $thumb !== '' ? BASE_URL_IMG . 'project/thumb/' . rawurlencode($thumb) : BASE_URL . 'admin_nsrdwsc/assets/media/logos/logo-light.png';
+
+		$community = buy_property_clean_community($row['comm_heading'] ?? '', $row['proj_location'] ?? '');
+		$location = trim((string) ($row['proj_location'] ?? '')) ?: $community;
+
+		$by_slug[$slug] = [
+			'id' => (int) $row['prj_id'],
+			'type_id' => (int) $row['prj_type_id'],
+			'type_label' => $route['label'],
+			'name' => $name,
+			'slug' => $slug,
+			'url' => page_link($slug, $route['prefix'] . '/' . $slug),
+			'image' => $image,
+			'community' => $community,
+			'location' => $location,
+			'price' => $price,
+			'price_label' => $price > 0 ? 'AED ' . number_format($price) : 'Price on request',
+			'beds_label' => $beds_label,
+			'baths_num' => $baths,
+			'area' => $area,
+			'area_label' => $area > 0 ? number_format($area) . ' sq ft' : '',
+			'whatsapp' => buy_property_whatsapp_url($name, $price, BASE_URL . $route['prefix'] . '/' . $slug),
+		];
+	}
+
+	// Keep the cookie's own order (most recently added usually last/first depending on the JS).
+	$ordered = [];
+	foreach ($slugs as $slug) {
+		if (isset($by_slug[$slug])) {
+			$ordered[] = $by_slug[$slug];
+		}
+	}
+	return $ordered;
+}
+
+// Admin > Wishlist Activity: top wishlisted properties and top pages, from tbl_wishlist_log.
+function get_wishlist_admin_stats($days = 30)
+{
+	$days = max(1, (int) $days);
+
+	$top_properties = db_all(
+		"SELECT proj_slug, proj_name, prj_type_id,
+		        SUM(wish_action = 'add') AS adds,
+		        SUM(wish_action = 'remove') AS removes
+		 FROM tbl_wishlist_log
+		 WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+		 GROUP BY proj_slug, proj_name, prj_type_id
+		 ORDER BY adds DESC
+		 LIMIT 20",
+		[$days]
+	);
+
+	$top_pages = db_all(
+		"SELECT page_url, COUNT(*) AS adds
+		 FROM tbl_wishlist_log
+		 WHERE wish_action = 'add' AND page_url IS NOT NULL AND page_url != ''
+		   AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+		 GROUP BY page_url
+		 ORDER BY adds DESC
+		 LIMIT 20",
+		[$days]
+	);
+
+	$totals = db_row(
+		"SELECT
+		    SUM(wish_action = 'add') AS total_adds,
+		    SUM(wish_action = 'remove') AS total_removes,
+		    COUNT(DISTINCT wish_uid) AS unique_visitors
+		 FROM tbl_wishlist_log
+		 WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)",
+		[$days]
+	) ?: ['total_adds' => 0, 'total_removes' => 0, 'unique_visitors' => 0];
+
+	$routes = wishlist_type_routes();
+	foreach ($top_properties as &$row) {
+		$row['type_label'] = $routes[(int) $row['prj_type_id']]['label'] ?? '';
+		$row['url'] = page_link($row['proj_slug'], ($routes[(int) $row['prj_type_id']]['prefix'] ?? 'property') . '/' . $row['proj_slug']);
+	}
+	unset($row);
+
+	return [
+		'days' => $days,
+		'totals' => $totals,
+		'top_properties' => $top_properties,
+		'top_pages' => $top_pages,
+	];
+}

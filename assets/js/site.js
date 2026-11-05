@@ -22,6 +22,33 @@
   const digits = (v) => +String(v).replace(/[^\d]/g, "") || 0;
   const fillRange = (r) => r.style.setProperty("--p", ((r.value - r.min) / (r.max - r.min)) * 100 + "%");
   const SUGS = (window.__SUGS = window.__SUGS || []);
+  /* Wishlist cookie (shared across every listing type, 1 year) */
+  const WISH_COOKIE = "dre_wishlist";
+  const getCookie = (name) => {
+    const m = document.cookie.match("(?:^|; )" + name + "=([^;]*)");
+    return m ? decodeURIComponent(m[1]) : "";
+  };
+  const setCookie = (name, value, days) => {
+    const d = new Date();
+    d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
+    document.cookie = name + "=" + encodeURIComponent(value) + "; expires=" + d.toUTCString() + "; path=/; SameSite=Lax";
+  };
+  const wishlistSlugs = () => {
+    try {
+      const v = JSON.parse(getCookie(WISH_COOKIE) || "[]");
+      return Array.isArray(v) ? v : [];
+    } catch (e) {
+      return [];
+    }
+  };
+  const syncWishBadge = (count) => {
+    const badge = $("navWishCount");
+    if (badge) {
+      badge.textContent = count;
+      badge.hidden = count === 0;
+    }
+  };
+  syncWishBadge(wishlistSlugs().length);
   const label = (btn) =>
     (btn.firstChild && btn.firstChild.nodeType === 3 ? btn.firstChild.nodeValue : btn.textContent).trim();
   /* text of an element as written in the HTML (the Dirham symbol counts as "AED") */
@@ -2112,25 +2139,32 @@
 
   /* ---- Favourites (♥) for the Buy and Off-plan lists ---- */
   function favourites(key, onChange) {
-    let favs = new Set();
-    try {
-      favs = new Set(JSON.parse(localStorage.getItem(key) || "[]"));
-    } catch (e) {}
+    // One shared wishlist (cookie, 1 year) across every listing page — a property added
+    // on the Buy page shows up the same way on Rent, Off Plan, etc. `key` (data-fav-key)
+    // is kept as a no-op argument so existing call sites don't need to change.
+    let favs = new Set(wishlistSlugs());
     const paint = () => {
       $$(".oc-fav").forEach((x) => {
         const on = favs.has(x.dataset.u);
         x.setAttribute("aria-pressed", on);
         x.textContent = on ? "♥" : "♡";
       });
-      $("favCount").textContent = favs.size;
+      const favCount = $("favCount");
+      if (favCount) favCount.textContent = favs.size;
+      syncWishBadge(favs.size);
     };
     const toggle = (u) => {
-      favs.has(u) ? favs.delete(u) : favs.add(u);
-      try {
-        localStorage.setItem(key, JSON.stringify([...favs]));
-      } catch (e) {}
+      const adding = !favs.has(u);
+      adding ? favs.add(u) : favs.delete(u);
+      setCookie(WISH_COOKIE, JSON.stringify([...favs]), 365);
       paint();
       onChange();
+      const wishEndpoint = (typeof base_url !== "undefined" ? base_url : "/") + "ajax/wishlist_frm.php";
+      fetch(wishEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "slug=" + encodeURIComponent(u) + "&action=" + (adding ? "add" : "remove") + "&page=" + encodeURIComponent(location.href),
+      }).catch(() => {});
     };
     paint();
     return { has: (u) => favs.has(u), toggle };
@@ -3359,5 +3393,221 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 });
+
+/* ---- Community / Developer detail pages (#pmGrid, #pjGrid): wishlist heart on each
+   project card. These aren't the Buy/Rent/Off-plan grid (no #opGrid), so they don't get
+   a favourites() instance from the blocks above — wire them up the same way here. ---- */
+(function () {
+  ["pmGrid", "pjGrid"].forEach((id) => {
+    const grid = $(id);
+    if (!grid) return;
+    const fav = favourites("dre-wishlist", () => {});
+    grid.addEventListener("click", (e) => {
+      const f = e.target.closest(".oc-fav");
+      if (f) fav.toggle(f.dataset.u);
+    });
+  });
+})();
+
+/* ---- Wishlist heart on cards that are NOT a listing-page grid (home, community/developer
+   detail pages): each .oc-fav here sits inside its own <a> card, so a tap must stop that
+   link from firing before toggling the cookie. ---- */
+(function () {
+  const favButtons = $$(".fav.oc-fav, .pd-fav.oc-fav");
+  if (!favButtons.length) return;
+  const fav = favourites("dre-wishlist", () => {});
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".fav.oc-fav, .pd-fav.oc-fav");
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    fav.toggle(btn.dataset.u);
+  });
+})();
+
+/* ---- My Wishlist page (wishlist.php, #wsGrid): tabs by type, sort, toast + undo,
+   aggregate WhatsApp enquiry — same UX as the Buy/Rent listing pages' filter bar. ---- */
+(function () {
+  const grid = $("wsGrid");
+  if (!grid) return;
+  const mainEl = $("wsMain"),
+    emptyEl = $("wsEmpty"),
+    loadingEl = $("wsLoading"),
+    errorEl = $("wsError"),
+    countEl = $("wsCount"),
+    tabsEl = $("wsTabs"),
+    sortEl = $("wsSort"),
+    clearBtn = $("wishClearAll"),
+    enqA = $("wsEnquire"),
+    toastEl = $("wsToast"),
+    toastMsg = $("wsToastMsg"),
+    undoBtn = $("wsUndo");
+  const endpoint = (typeof base_url !== "undefined" ? base_url : "/") + "ajax/get-wishlist.php";
+  const logEndpoint = (typeof base_url !== "undefined" ? base_url : "/") + "ajax/wishlist_frm.php";
+  const TYPE_LABELS = { 1: "Off-plan", 2: "Ready", 3: "International", 7: "Buy", 8: "Rent" };
+
+  const st = { tab: "", sort: "saved" };
+  let items = [];
+  let undoItems = [];
+  let toastTimer = 0;
+
+  const logAction = (slug, action) =>
+    fetch(logEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "slug=" + encodeURIComponent(slug) + "&action=" + action + "&page=" + encodeURIComponent(location.href),
+    }).catch(() => {});
+
+  function plural(n, word) {
+    return n + " " + word + (n === 1 ? "" : "s");
+  }
+
+  function cardHtml(p) {
+    return (
+      '<article class="oc" data-k="' + p.type_id + '" data-u="' + esc(p.slug) + '">' +
+      '<a class="oc-img" href="' + esc(p.url) + '"><img src="' + esc(p.image) + '" alt="' + esc(p.name) + '" loading="lazy">' +
+      '<span class="badge">' + esc(p.type_label) + "</span>" +
+      (p.community ? '<span class="oc-loc"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 00-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 00-7-7zm0 9.5A2.5 2.5 0 1112 6.5a2.5 2.5 0 010 5z"></path></svg>' + esc(p.community) + "</span>" : "") +
+      "</a>" +
+      '<button class="oc-fav" type="button" aria-pressed="true" aria-label="Remove ' + esc(p.name) + ' from wishlist" title="Remove from wishlist">♥</button>' +
+      '<div class="oc-b"><h3><a href="' + esc(p.url) + '">' + esc(p.name) + "</a></h3>" +
+      '<div class="specs"><span>' + esc(p.beds_label) + "</span>" +
+      (p.baths_num > 0 ? "<span>" + p.baths_num + " bath</span>" : "") +
+      (p.area_label ? "<span>" + esc(p.area_label) + "</span>" : "") +
+      "</div>" +
+      '<div class="oc-meta"><div class="pr"><small>Price</small><b>' + esc(p.price_label) + "</b></div></div>" +
+      '<div class="oc-act"><a class="btn btn-glass" href="' + esc(p.url) + '">View details →</a>' +
+      '<a class="oc-wa" href="' + esc(p.whatsapp) + '" target="_blank" rel="noopener" aria-label="Enquire about ' + esc(p.name) + ' on WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm4.5 12.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 01-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 2s.8 2.3.9 2.5c.1.2 1.6 2.5 4 3.5 1.5.6 2.1.7 2.8.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.4-.2z"></path></svg></a>' +
+      "</div></div></article>"
+    );
+  }
+
+  function shown() {
+    const list = items.filter((x) => !st.tab || String(x.type_id) === st.tab);
+    const priced = (a, b, dir) => (!a.price) - (!b.price) || dir * (a.price - b.price); // "Price on request" homes go last
+    list.sort((a, b) => {
+      if (st.sort === "low") return priced(a, b, 1);
+      if (st.sort === "high") return priced(a, b, -1);
+      if (st.sort === "name") return a.name.localeCompare(b.name);
+      return 0; // "saved" keeps the cookie's own order
+    });
+    return list;
+  }
+
+  function updateBar() {
+    $$("button", tabsEl).forEach((b) => {
+      const n = b.dataset.k ? items.filter((x) => String(x.type_id) === b.dataset.k).length : items.length;
+      b.querySelector("small").textContent = n;
+      b.hidden = !!b.dataset.k && !n;
+      b.classList.toggle("on", b.dataset.k === st.tab);
+    });
+    const list = shown();
+    countEl.textContent = plural(list.length, "saved home");
+    mainEl.hidden = !items.length;
+    emptyEl.hidden = !!items.length;
+    const MAX = 15;
+    const lines = list.slice(0, MAX).map((x, i) => i + 1 + ". " + x.name + " (" + x.price_label + ")");
+    if (list.length > MAX) lines.push("…and " + (list.length - MAX) + " more");
+    enqA.href = "https://wa.me/" + enqA.dataset.wa + "?text=" + encodeURIComponent(enqA.dataset.text + "\n" + lines.join("\n"));
+  }
+
+  function render() {
+    if (st.tab && !items.some((x) => String(x.type_id) === st.tab)) st.tab = "";
+    grid.innerHTML = shown().map(cardHtml).join("");
+    updateBar();
+  }
+
+  function toast(msg) {
+    toastMsg.textContent = msg;
+    toastEl.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => (toastEl.hidden = true), 7000);
+  }
+
+  function removeItems(list) {
+    undoItems = list.map((x) => x);
+    const removedSlugs = list.map((x) => x.slug);
+    const favs = wishlistSlugs().filter((s) => !removedSlugs.includes(s));
+    setCookie(WISH_COOKIE, JSON.stringify(favs), 365);
+    syncWishBadge(favs.length);
+    items = items.filter((x) => list.indexOf(x) < 0);
+    removedSlugs.forEach((s) => logAction(s, "remove"));
+  }
+
+  grid.addEventListener("click", (e) => {
+    const f = e.target.closest(".oc-fav");
+    if (!f) return;
+    const el = f.closest(".oc");
+    const x = items.filter((i) => i.slug === el.dataset.u)[0];
+    if (!x) return;
+    removeItems([x]);
+    render();
+    toast("Removed " + x.name);
+  });
+
+  tabsEl.onclick = (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    st.tab = b.dataset.k;
+    render();
+  };
+  sortEl.onchange = (e) => {
+    st.sort = e.target.value;
+    render();
+  };
+  if (clearBtn) {
+    clearBtn.onclick = () => {
+      const n = items.length;
+      removeItems(items.slice());
+      render();
+      toast("Removed " + plural(n, "home"));
+    };
+  }
+  undoBtn.onclick = () => {
+    const restore = wishlistSlugs().concat(undoItems.map((x) => x.slug));
+    setCookie(WISH_COOKIE, JSON.stringify([...new Set(restore)]), 365);
+    syncWishBadge(restore.length);
+    items = items.concat(undoItems);
+    undoItems.forEach((x) => logAction(x.slug, "add"));
+    undoItems = [];
+    toastEl.hidden = true;
+    render();
+  };
+
+  function load() {
+    errorEl.hidden = true;
+    const slugs = wishlistSlugs();
+    if (!slugs.length) {
+      loadingEl.hidden = true;
+      items = [];
+      render();
+      return;
+    }
+    fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "slugs=" + encodeURIComponent(JSON.stringify(slugs)),
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        items = d.items || [];
+        loadingEl.hidden = true;
+        render();
+      })
+      .catch(() => {
+        errorEl.hidden = false;
+        loadingEl.hidden = true;
+        items = [];
+        render();
+        emptyEl.hidden = true;
+      });
+  }
+
+  window.addEventListener("pageshow", (e) => {
+    if (e.persisted) load();
+  });
+
+  load();
+})();
 
 })();

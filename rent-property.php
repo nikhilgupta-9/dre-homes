@@ -31,7 +31,8 @@ $hero_subtitle = (!empty($meta_tags['meta_description']) && $meta_tags['meta_des
 
 $page = [
   'active' => 'properties',
-  'css' => ['assets/css/pages/rent-property.css'],
+  'css' => ['assets/css/suggest.css', 'assets/css/pages/rent-property.css'],
+  'js' => ['assets/js/suggest.js'],
 ];
 
 include('common/header.php');

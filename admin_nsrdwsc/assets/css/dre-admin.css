@@ -27,6 +27,31 @@ body#kt_body {
     box-shadow: 4px 0 28px rgba(73, 62, 50, 0.10);
     -webkit-backdrop-filter: blur(18px) saturate(140%);
     backdrop-filter: blur(18px) saturate(140%);
+    /* The menu has grown past one screen's height. `.aside` is a fixed-height flex column
+       (position: fixed; top:0; bottom:0), but Bootstrap's .flex-column-fluid on the menu
+       wrapper sets flex-shrink:0, so the wrapper never shrinks to the remaining space and
+       the bottom menu items (e.g. Logs) end up rendered below the viewport with no way to
+       reach them — the sidebar is fixed, so page scroll never brings it into view. Forcing
+       the wrapper to shrink (min-height:0) and scroll on its own fixes that, independent of
+       whether the theme's own PerfectScrollbar plugin initializes. */
+    height: 100vh;
+}
+#kt_aside.dre-aside .aside-menu-wrapper {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+/* The theme's menu-scroll plugin (KTLayoutAsideMenu -> PerfectScrollbar) sets a fixed
+   height + overflow:hidden as an inline style on #kt_aside_menu, then constructs
+   `new PerfectScrollbar(...)` — a class this build never actually loads, so it throws
+   and leaves that bad inline height/overflow in place with no scrollbar. That inline
+   style otherwise wins over any plain CSS rule here, hard-clipping the menu list right
+   where the bad height ends. Override it with !important so .aside-menu-wrapper above
+   is the only thing controlling the scroll area. */
+#kt_aside.dre-aside #kt_aside_menu {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
 }
 #kt_aside.dre-aside .brand {
     background: transparent;

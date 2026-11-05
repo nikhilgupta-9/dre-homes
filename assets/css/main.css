@@ -609,6 +609,43 @@ nav {
   color: var(--text);
   font: 600 12px var(--font);
 }
+.nav-wish {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--stroke);
+  background: rgba(var(--tint-rgb), 0.08);
+  color: var(--text);
+  flex-shrink: 0;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.nav-wish:hover {
+  background: var(--acc);
+  border-color: var(--acc);
+  color: #1a140f;
+}
+.nav-wish svg {
+  width: 19px;
+  height: 19px;
+}
+.nav-wish-count {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--acc);
+  color: #1a140f;
+  font: 700 11px var(--font);
+  line-height: 18px;
+  text-align: center;
+}
 .cur option {
   background: #fff;
   color: #000;
@@ -890,6 +927,7 @@ body.menu-open .dock {
      without this, its glass background/border render as separate per-line fragments
      with their own rounded corners, showing as stray slivers above/below the photo. */
   display: block;
+  position: relative;
   padding: 14px;
   border-radius: 30px;
   animation: bob 7s ease-in-out infinite;
@@ -1258,6 +1296,41 @@ body.menu-open .dock {
   color: var(--text);
   backdrop-filter: blur(14px);
   border: 1px solid var(--stroke);
+}
+/* Wishlist heart on a property detail page's photo gallery (.pd-gal is position:relative
+   on every detail page: single-property, buy/rent-property-single, ready-to-move-in-single,
+   international-properties-single, community/developer detail pages).
+   Scoped as ".pd-gal .pd-fav" (not just ".pd-fav") because every per-page gallery CSS
+   (e.g. property-palace-residences-hillside.css) has a generic ".pd-gal button" rule
+   (position:relative, cursor:zoom-in, border-radius:26px, overflow:hidden, background:#888)
+   that outranks a plain ".pd-fav" class selector and was turning this into a real grid
+   item — pushing the gallery photos into the wrong columns — instead of a floating button. */
+.pd-gal .pd-fav {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 3;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(20, 17, 14, 0.55);
+  color: #fff;
+  font-size: 20px;
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  overflow: visible;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.pd-gal .pd-fav:hover {
+  transform: scale(1.08);
+  background: var(--acc);
+  color: #1a140f;
+}
+.pd-gal .pd-fav[aria-pressed="true"] {
+  color: #e8554a;
 }
 .pinfo {
   position: relative;

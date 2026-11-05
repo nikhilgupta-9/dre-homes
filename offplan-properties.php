@@ -26,7 +26,8 @@ $hero_subtitle = !empty($meta_tags['meta_description'])
 
 $page = [
     'active' => 'properties',
-    'css' => ['assets/css/pages/offplan-properties.css'],
+    'css' => ['assets/css/suggest.css', 'assets/css/pages/offplan-properties.css'],
+    'js' => ['assets/js/suggest.js'],
 ];
 
 include('common/header.php');

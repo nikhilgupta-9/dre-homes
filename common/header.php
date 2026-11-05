@@ -12,6 +12,7 @@ $home_meta = select_row('tbl_tags', 'id=7 and is_active=1') ?: [];
 $footer_info = select_row('tbl_footer_info', 'is_active=1') ?: [];
 $footer_details = $footer_info; // alias for compatibility
 $meta_tags = $meta_tags ?? [];
+$theme_settings = get_theme_settings();
 $page = ($page ?? []) + ['active' => '', 'css' => [], 'js' => []];
 
 $path = trim(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '', '/');
@@ -144,19 +145,23 @@ $toll_free = $footer_info['footer_contact_number'] ?? '800 37373';
 
     <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,200;0,300;0,400;0,500;0,600;1,200;1,300&amp;display=swap" rel="stylesheet" />
+    <?= get_theme_font_links($theme_settings) ?>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
-    <meta name="theme-color" content="#14110e" />
+    <meta name="theme-color" content="<?= !empty($theme_settings['night_bg_color']) ? htmlspecialchars($theme_settings['night_bg_color'], ENT_QUOTES, 'UTF-8') : '#14110e' ?>" />
     <script>
-      /* Dark mode is the default; respect a visitor's saved day/night choice before paint. */
+      /* Respect saved mode or default mode from theme settings before paint. */
       try {
-        var savedMode = localStorage.getItem("dre-mode");
+        var defaultMode = "<?= !empty($theme_settings['default_mode']) ? $theme_settings['default_mode'] : 'night' ?>";
+        var savedMode = localStorage.getItem("dre-mode") || defaultMode;
         if (savedMode !== "day") {
           document.documentElement.dataset.mode = "night";
-          document.querySelector('meta[name="theme-color"]').content = "#14110e";
+          document.querySelector('meta[name="theme-color"]').content = "<?= !empty($theme_settings['night_bg_color']) ? htmlspecialchars($theme_settings['night_bg_color'], ENT_QUOTES, 'UTF-8') : '#14110e' ?>";
         } else {
-          document.querySelector('meta[name="theme-color"]').content = "#5f574c";
+          document.documentElement.dataset.mode = "day";
+          document.querySelector('meta[name="theme-color"]').content = "<?= !empty($theme_settings['primary_color']) ? htmlspecialchars($theme_settings['primary_color'], ENT_QUOTES, 'UTF-8') : '#5f574c' ?>";
         }
       } catch (e) {
         document.documentElement.dataset.mode = "night";
@@ -176,6 +181,8 @@ $toll_free = $footer_info['footer_contact_number'] ?? '800 37373';
     <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/21.2.7/js/intlTelInput.min.js"></script>
     <link rel="stylesheet" href="assets/css/style.css" />
     
+    <!-- Dynamic Website Theme Overrides -->
+    <?= render_theme_css($theme_settings) ?>
   </head>
   <body>
     <!-- Google Tag Manager (noscript) -->
@@ -324,6 +331,12 @@ $toll_free = $footer_info['footer_contact_number'] ?? '800 37373';
           </ul>
 
           <div class="nav-r currency-wrap">
+            <a href="<?= BASE_URL ?>wishlist" class="nav-wish" aria-label="Your wishlist">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"></path>
+              </svg>
+              <span class="nav-wish-count" id="navWishCount" hidden>0</span>
+            </a>
             <select class="cur" id="global-currency-select" aria-label="Currency">
               <?php foreach ($currencies as $cur): ?>
               <option value="<?= $cur ?>"><?= $cur ?></option>

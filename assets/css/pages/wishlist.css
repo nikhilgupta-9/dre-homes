@@ -1,0 +1,166 @@
+/* Wishlist page. Builds on buy-property.css (.opg, .oc, .oc-fav, .seg, .fsel — already loaded). */
+.ws-hero {
+  min-height: 50vh;
+  padding-bottom: 50px;
+}
+.ws-hero h1 {
+  font-size: clamp(42px, 5.6vw, 84px);
+  max-width: 1100px;
+}
+.ws-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 26px;
+}
+.ws-count {
+  font-size: 15px;
+  color: var(--muted);
+  margin-right: auto;
+}
+.ws-bar .seg {
+  flex-wrap: wrap;
+}
+.seg button[hidden] {
+  display: none;
+}
+.seg button small {
+  margin-left: 5px;
+  font-size: 11px;
+  opacity: 0.7;
+}
+.ws-sort {
+  flex: none;
+  min-width: 190px;
+}
+.ws-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 30px;
+}
+.ws-enq svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.ws-clear {
+  border: 0;
+  background: none;
+  padding: 10px 4px;
+  color: var(--muted);
+  font: 600 13px var(--font);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.ws-clear:hover {
+  color: var(--acc);
+}
+.ws-note {
+  margin-top: 18px;
+  font-size: 13px;
+  color: var(--faint);
+}
+.ws-empty {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 54px 34px;
+  border-radius: 28px;
+  text-align: center;
+}
+.ws-empty .ic {
+  display: block;
+  font-size: 40px;
+  line-height: 1;
+  margin-bottom: 16px;
+  color: var(--acc);
+}
+.ws-empty h2 {
+  font-size: clamp(28px, 3.4vw, 42px);
+  margin-bottom: 10px;
+}
+.ws-empty p {
+  color: var(--muted);
+  margin-bottom: 26px;
+}
+.ws-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.ws-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 1050;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: var(--btn);
+  color: var(--btn-fg);
+  font-size: 14px;
+  box-shadow: 0 18px 40px var(--shadow);
+}
+.ws-toast[hidden] {
+  display: none;
+}
+.ws-toast span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ws-toast button {
+  flex: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font: 700 14px var(--font);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.ws-loading,
+.ws-error {
+  text-align: center;
+  color: var(--muted);
+  padding: 40px 0;
+}
+.ws-loading[hidden],
+.ws-error[hidden] {
+  display: none;
+}
+@media (max-width: 640px) {
+  .ws-hero {
+    min-height: auto;
+    padding: 140px 0 36px;
+  }
+  .ws-count {
+    width: 100%;
+  }
+  .ws-bar .seg,
+  .ws-sort {
+    width: 100%;
+  }
+  .seg button {
+    flex: 1;
+  }
+  .ws-enq {
+    width: 100%;
+    justify-content: center;
+  }
+  .ws-actions {
+    justify-content: center;
+  }
+}

@@ -131,6 +131,7 @@ include('common/header.php');
     <div style="position: relative">
       <?php if ($hero_project) { ?>
         <a class="feature glass acc-edge" href="<?= e($hero_project['card_url']) ?>">
+          <button type="button" class="fav oc-fav" data-u="<?= e(trim((string) $hero_project['proj_slug'])) ?>" aria-pressed="false" aria-label="Save <?= e($hero_project['card_name']) ?> to your wishlist">♡</button>
           <div class="ph" style="background-image: url(<?= e($hero_project['card_img']) ?>)"><span class="badge">Featured
               · Off plan</span></div>
           <div class="info">
@@ -166,7 +167,7 @@ include('common/header.php');
         <div class="col" data-c="<?= e($p['card_city']) ?>">
           <a class="pcard" href="<?= e($p['card_url']) ?>">
             <div class="bg" style="background-image: url(<?= e($p['card_img']) ?>)"></div>
-            <span class="badge">Off plan</span><span class="fav">♡</span>
+            <span class="badge">Off plan</span><button type="button" class="fav oc-fav" data-u="<?= e(trim((string) $p['proj_slug'])) ?>" aria-pressed="false" aria-label="Save <?= e($p['card_name']) ?> to your wishlist">♡</button>
             <div class="pinfo glass on-img">
               <h3><?= e($p['card_name']) ?></h3>
               <p class="loc"><?= e($p['card_loc']) ?></p>

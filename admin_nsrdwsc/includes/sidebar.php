@@ -22,6 +22,7 @@ $dre_menu = [
 		['Dashboard', 'bi-speedometer2', 'dashboard.php', ['dashboard.php']],
 		['Leads', 'bi-person-lines-fill', 'manage-leads.php', ['manage-leads.php', 'edit-leads.php'], 'only' => 1],
 		['AI Chats', 'bi-chat-dots', 'manage-ai-chats.php', ['manage-ai-chats.php'], 'only' => 1],
+		['Wishlist Activity', 'bi-heart', 'manage-wishlist.php', ['manage-wishlist.php'], 'only' => 1],
 	],
 
 	'Properties' => [
@@ -149,6 +150,7 @@ $dre_menu = [
 			['Help Videos', 'manage-ai-help-video.php', ['manage-ai-help-video.php', 'add-ai-help-video.php', 'edit-ai-help-video.php']],
 		]],
 		['SEO Meta Tags', 'bi-tags', 'manage-tags.php', ['manage-tags.php', 'edit-tags.php']],
+		['Website Theme', 'bi-palette', 'manage-theme.php', ['manage-theme.php'], 'only' => 1],
 		['Header & Footer', 'bi-window-desktop', [
 			['Header Info', 'edit-header-info.php' . $dre_edit, ['edit-header-info.php']],
 			['Footer Info', 'edit-footer-info.php' . $dre_edit, ['edit-footer-info.php']],
@@ -190,7 +192,13 @@ $dre_menu = [
 	<!--begin::Aside Menu-->
 	<div class="aside-menu-wrapper flex-column-fluid" id="kt_aside_menu_wrapper">
 		<!--begin::Menu Container-->
-		<div id="kt_aside_menu" class="aside-menu my-2" data-menu-vertical="1" data-menu-scroll="1" data-menu-dropdown-timeout="500">
+		<!-- data-menu-scroll left off on purpose: KTLayoutAsideMenu's scroll setup calls
+		     `new PerfectScrollbar(...)`, a class this theme build never actually loads, so it
+		     throws right after setting a bad fixed height + overflow:hidden inline style on
+		     this element — and since nothing here wraps each layout init in try/catch, that
+		     uncaught error also stops every init queued after it (Subheader, Content, Footer...).
+		     Scrolling is handled by plain CSS on .aside-menu-wrapper in dre-admin.css instead. -->
+		<div id="kt_aside_menu" class="aside-menu my-2" data-menu-vertical="1" data-menu-dropdown-timeout="500">
 			<!--begin::Menu Nav-->
 			<ul class="menu-nav">
 				<?php foreach ($dre_menu as $dre_section => $dre_entries):

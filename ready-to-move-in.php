@@ -19,7 +19,8 @@ $page = [
     'active' => 'properties',
     'title' => $meta_tags['meta_title'] ?? 'Ready to move in Properties | DRE Real Estate | Dubai | Buy, Sell or Rent Property',
     'description' => $meta_tags['meta_description'] ?? 'Ready-to-move-in apartments, villas and townhouses from Dubai’s leading developers — no waiting for handover.',
-    'css' => ['assets/css/pages/ready-to-move-in.css'],
+    'css' => ['assets/css/suggest.css', 'assets/css/pages/ready-to-move-in.css'],
+    'js' => ['assets/js/suggest.js'],
 ];
 
 include('common/header.php');

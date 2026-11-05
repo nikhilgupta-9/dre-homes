@@ -1,0 +1,24 @@
+/* Wishlist Activity page. Builds on dre-dashboard.css and dre-leads.css (glass cards, pills, KPI tiles). */
+
+/* Good/bad tints for the add/remove KPI tile icons (dre-dashboard.css's .dre-icon is brand-gradient by default) */
+.dre-icon-good {
+	background: linear-gradient(135deg, #3f8f6b, #6cc79a);
+	box-shadow: 0 6px 16px rgba(63, 143, 107, 0.3);
+}
+.dre-icon-bad {
+	background: linear-gradient(135deg, #b9524a, #e08178);
+	box-shadow: 0 6px 16px rgba(185, 82, 74, 0.3);
+}
+
+.dre-wishlist .dre-list-main span {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	align-items: center;
+}
+.dre-wishlist .dre-list-side {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 4px;
+}

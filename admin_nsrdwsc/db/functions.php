@@ -740,6 +740,7 @@ function admin_page_directory()
 		'open_positions' => ['Open positions', 'manage-position.php'],
 		'users' => ['Admin users', 'manage-user.php'],
 		'tags' => ['SEO meta tags', 'manage-tags.php'],
+		'theme' => ['Website theme settings', 'manage-theme.php'],
 		'help_notes' => ['Ask AI help notes', 'manage-ai-help.php'],
 		'help_videos' => ['Ask AI help videos', 'manage-ai-help-video.php'],
 		'activity_log' => ['Activity log', 'manage-loggs.php'],
@@ -770,4 +771,94 @@ function admin_report_open_page(array $args)
 	}
 	[$label, $file] = $directory[$page];
 	return ['opened' => true, 'label' => $label, 'edit_page' => $file];
+}
+
+/* ---- Wishlist Activity (Admin > Wishlist Activity): read-only tracking from the
+   frontend's tbl_wishlist_log — the visitor's own wishlist lives in their cookie, this
+   table only logs every add/remove so the team can see what gets saved most. ---- */
+function wishlist_admin_stats($conn, $days = 30)
+{
+	$days = max(1, (int) $days);
+
+	$type_routes = [
+		1 => ['label' => 'Off Plan', 'prefix' => 'property'],
+		2 => ['label' => 'Ready To Move In', 'prefix' => 'ready-to-move-in'],
+		3 => ['label' => 'International', 'prefix' => 'international-properties'],
+		7 => ['label' => 'Buy', 'prefix' => 'buy-property'],
+		8 => ['label' => 'Rent', 'prefix' => 'rent-property'],
+	];
+
+	$top_properties = [];
+	$stmt = mysqli_prepare($conn, "
+		SELECT proj_slug, proj_name, prj_type_id,
+		       SUM(wish_action = 'add') AS adds,
+		       SUM(wish_action = 'remove') AS removes
+		FROM tbl_wishlist_log
+		WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+		GROUP BY proj_slug, proj_name, prj_type_id
+		ORDER BY adds DESC
+		LIMIT 20
+	");
+	if ($stmt) {
+		mysqli_stmt_bind_param($stmt, 'i', $days);
+		mysqli_stmt_execute($stmt);
+		$res = mysqli_stmt_get_result($stmt);
+		while ($row = mysqli_fetch_assoc($res)) {
+			$route = $type_routes[(int) $row['prj_type_id']] ?? ['label' => '', 'prefix' => 'property'];
+			$row['type_label'] = $route['label'];
+			$row['url'] = BASE_URL_HOME . $route['prefix'] . '/' . $row['proj_slug'];
+			$top_properties[] = $row;
+		}
+		mysqli_stmt_close($stmt);
+	}
+
+	$top_pages = [];
+	$stmt = mysqli_prepare($conn, "
+		SELECT page_url, COUNT(*) AS adds
+		FROM tbl_wishlist_log
+		WHERE wish_action = 'add' AND page_url IS NOT NULL AND page_url != ''
+		  AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+		GROUP BY page_url
+		ORDER BY adds DESC
+		LIMIT 20
+	");
+	if ($stmt) {
+		mysqli_stmt_bind_param($stmt, 'i', $days);
+		mysqli_stmt_execute($stmt);
+		$res = mysqli_stmt_get_result($stmt);
+		while ($row = mysqli_fetch_assoc($res)) {
+			$top_pages[] = $row;
+		}
+		mysqli_stmt_close($stmt);
+	}
+
+	$totals = ['total_adds' => 0, 'total_removes' => 0, 'unique_visitors' => 0];
+	$stmt = mysqli_prepare($conn, "
+		SELECT SUM(wish_action = 'add') AS total_adds,
+		       SUM(wish_action = 'remove') AS total_removes,
+		       COUNT(DISTINCT wish_uid) AS unique_visitors
+		FROM tbl_wishlist_log
+		WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+	");
+	if ($stmt) {
+		mysqli_stmt_bind_param($stmt, 'i', $days);
+		mysqli_stmt_execute($stmt);
+		$res = mysqli_stmt_get_result($stmt);
+		$row = mysqli_fetch_assoc($res);
+		if ($row) {
+			$totals = [
+				'total_adds' => (int) $row['total_adds'],
+				'total_removes' => (int) $row['total_removes'],
+				'unique_visitors' => (int) $row['unique_visitors'],
+			];
+		}
+		mysqli_stmt_close($stmt);
+	}
+
+	return [
+		'days' => $days,
+		'totals' => $totals,
+		'top_properties' => $top_properties,
+		'top_pages' => $top_pages,
+	];
 }

@@ -1,0 +1,307 @@
+/* Manage Theme page: hero, preset chips, control cards, color pickers and the live preview pane.
+   Builds on dre-dashboard.css, dre-form.css and dre-settings.css. */
+
+.dre-theme-mgmt {
+    max-width: 1560px;
+    margin: 0 auto;
+}
+
+/* ---- Hero banner ---- */
+.dre-theme-hero {
+    background: linear-gradient(135deg, rgba(95, 87, 76, 0.95), rgba(46, 40, 34, 0.95));
+    border-radius: 20px;
+    padding: 28px 32px;
+    color: #fff;
+    margin-bottom: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 14px 34px rgba(40, 30, 20, 0.22);
+}
+.dre-theme-hero h1 {
+    letter-spacing: -0.01em;
+}
+.dre-theme-hero .btn-outline-light {
+    border-color: rgba(255, 255, 255, 0.5);
+    white-space: nowrap;
+}
+.dre-theme-hero .btn-outline-light:hover {
+    background: #fff;
+    color: var(--dd-main, #5f574c);
+}
+
+/* ---- Quick presets: horizontal scroll strip so it never wraps awkwardly ---- */
+.dre-preset-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.dre-preset-label {
+    flex: 0 0 auto;
+}
+.dre-preset-scroll {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+}
+.dre-preset-scroll::-webkit-scrollbar {
+    height: 5px;
+}
+.dre-preset-scroll::-webkit-scrollbar-thumb {
+    background: rgba(171, 119, 82, 0.35);
+    border-radius: 999px;
+}
+.dre-preset-chip {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid rgba(95, 87, 76, 0.18);
+    color: #433c34;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(50, 40, 30, 0.06);
+}
+.dre-preset-chip:hover,
+.dre-preset-chip:focus-visible {
+    background: #ab7752;
+    border-color: #ab7752;
+    color: #fff;
+    transform: translateY(-1px);
+    text-decoration: none;
+    box-shadow: 0 6px 16px rgba(171, 119, 82, 0.3);
+}
+.dre-preset-chip .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6) inset;
+}
+
+/* ---- Control cards ---- */
+.dre-theme-card {
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 20px;
+    padding: 26px 28px;
+    margin-bottom: 22px;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 10px 30px rgba(50, 40, 30, 0.07);
+    transition: box-shadow 0.25s ease;
+}
+.dre-theme-card:hover {
+    box-shadow: 0 14px 38px rgba(50, 40, 30, 0.1);
+}
+.dre-theme-card h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #433c34;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    padding-bottom: 12px;
+}
+.dre-theme-card h3 i {
+    color: #ab7752;
+    font-size: 1.2rem;
+}
+
+/* ---- Color pickers: swatch + hex field merged into one pill, like the rest of the admin's inputs ---- */
+.color-input-group {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid #E4E6EF;
+    border-radius: 0.42rem;
+    background: #fff;
+    overflow: hidden;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.color-input-group:hover {
+    border-color: #ab7752;
+}
+.color-input-group:focus-within {
+    border-color: #ab7752;
+    box-shadow: 0 0 0 3px rgba(171, 119, 82, 0.15);
+}
+.color-input-group .form-control {
+    min-width: 0;
+    flex: 1 1 auto;
+    border: none;
+    border-left: 1px solid #E4E6EF;
+    border-radius: 0;
+    background: #F3F6F9;
+    box-shadow: none;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    letter-spacing: 0.02em;
+}
+.color-input-group .form-control:focus {
+    box-shadow: none;
+    background: #EBEDF3;
+}
+.color-picker-swatch {
+    flex: 0 0 48px;
+    width: 48px;
+    height: 100%;
+    min-height: 40px;
+    padding: 4px;
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+    background: #fff;
+    -webkit-appearance: none;
+    appearance: none;
+}
+.color-picker-swatch::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+.color-picker-swatch::-webkit-color-swatch {
+    border: none;
+    border-radius: 6px;
+}
+
+/* ---- Save / reset action bar ---- */
+.dre-theme-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 32px;
+}
+.dre-theme-actions .btn {
+    white-space: nowrap;
+}
+
+/* ---- Live preview pane ---- */
+.dre-preview-pane {
+    position: sticky;
+    top: 90px;
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 18px 45px rgba(20, 15, 10, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    transition: background-color 0.3s ease;
+}
+.dre-preview-pane .preview-toolbar {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.dre-preview-box {
+    padding: 28px;
+    min-height: 480px;
+    transition: background-color 0.4s ease, color 0.4s ease;
+}
+.preview-card-item {
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    margin-top: 20px;
+    transition: border-radius 0.3s ease;
+}
+.preview-gold-text {
+    background: linear-gradient(100deg, var(--pv-acc-3, #DCC5A9), var(--pv-acc-2, #F5E9DC) 50%, var(--pv-acc, #E8C9A8) 75%, var(--pv-acc-3, #DCC5A9));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-weight: 700;
+}
+.preview-badge {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.15);
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+/* ====================================================================
+   Responsive: the controls/preview row is a Bootstrap flex `.row`, so
+   bumping the preview column's flex `order` ahead of the controls on
+   small screens means visitors see the live result immediately instead
+   of after scrolling through every control first.
+   ==================================================================== */
+@media (max-width: 991.98px) {
+    .dre-theme-mgmt .row > [class*="col-"] {
+        width: 100%;
+    }
+    .dre-theme-preview-col {
+        order: -1;
+        margin-bottom: 24px;
+    }
+    .dre-preview-pane {
+        position: static;
+        top: auto;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .dre-theme-hero {
+        padding: 22px 20px;
+        border-radius: 16px;
+    }
+    .dre-theme-hero h1 {
+        font-size: 1.3rem;
+    }
+    .dre-theme-hero .btn-outline-light {
+        width: 100%;
+        justify-content: center;
+    }
+    .dre-preset-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    .dre-theme-card {
+        padding: 20px 18px;
+        border-radius: 16px;
+    }
+    .dre-theme-card h3 {
+        font-size: 1rem;
+    }
+    .color-input-group {
+        flex-wrap: nowrap;
+    }
+    .dre-theme-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+    .dre-theme-actions .btn {
+        width: 100%;
+        justify-content: center;
+        display: flex;
+        align-items: center;
+    }
+    .dre-preview-box {
+        min-height: auto;
+        padding: 22px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .dre-theme-hero .d-flex {
+        gap: 14px !important;
+    }
+    .preview-toolbar .font-size-sm {
+        font-size: 0.78rem !important;
+    }
+}

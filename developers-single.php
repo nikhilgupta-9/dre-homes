@@ -336,6 +336,7 @@ include('common/header.php');
                 <?= htmlspecialchars($prj['community']) ?>
               </span>
             </a>
+            <button type="button" class="oc-fav" data-u="<?= htmlspecialchars($prj['slug']) ?>" aria-pressed="false" aria-label="Save <?= htmlspecialchars($prj['name']) ?> to your wishlist">♡</button>
             <div class="oc-b">
               <!-- <span class="oc-dev">By <?= htmlspecialchars($dev['dev_heading']) ?></span> -->
               <h3><a href="<?= htmlspecialchars($prj['url']) ?>"><?= htmlspecialchars($prj['name']) ?></a></h3>

@@ -1389,7 +1389,7 @@ function get_offplan_projects()
 		 LEFT JOIN tbl_community c ON c.comm_id = p.prj_comm_id
 		 LEFT JOIN tbl_ai_proj_facts f ON f.prj_id = p.prj_id
 		 WHERE p.prj_type_id = 1 AND p.is_active = '1'
-		 ORDER BY p.proj_markfeat = '1' DESC, p.proj_posted_on DESC, p.prj_id DESC"
+		 ORDER BY p.proj_posted_on DESC, p.prj_id DESC"
 	);
 	$projects = [];
 	foreach ($rows as $row) {

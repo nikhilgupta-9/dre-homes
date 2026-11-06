@@ -91,9 +91,11 @@ include('common/header.php');
       <div class="wrap pd-grid">
         <div class="pd-main">
           <div class="pd-tabs glass" id="pdTabs">
-            <a href="#overview" class="on">Overview</a><a href="#amenities">Amenities</a><a href="#location">Location</a
-            ><a href="#masterplan">Masterplan</a
-            ><a href="#downloads">Downloads</a><a href="#enquire">Enquire</a>
+            <a href="#overview" class="on">Overview</a>
+            <?php if (!empty($property['amenities'])) { ?><a href="#amenities">Amenities</a><?php } ?>
+            <?php if (!empty($property['location_available'])) { ?><a href="#location">Location</a><?php } ?>
+            <?php if (!empty($property['brochure']) || !empty($property['floorplan']) || !empty($property['payplan'])) { ?><a href="#downloads">Downloads</a><?php } ?>
+            <a href="#enquire">Enquire</a>
           </div>
 
           <!-- <div class="facts reveal">
@@ -133,6 +135,7 @@ include('common/header.php');
           </article>
 <?php } ?>
 
+<?php if (!empty($property['location_available'])) { ?>
           <article id="location" class="pd-sec reveal">
             <span class="eyebrow">Property Location</span>
             <h2 class="serif">Destination: <em class="gold-text"><?= e($property['location']) ?>.</em></h2>
@@ -159,22 +162,10 @@ include('common/header.php');
               </ol>
             </div>
           </article>
-          <article id="masterplan" class="pd-sec reveal">
-            <span class="eyebrow">Property Masterplan</span>
-            <h2 class="serif">Planned for <em class="gold-text">everyday ease.</em></h2>
+<?php } ?>
 
-            <p class="lead">
-              Carefully planned to balance comfort and practicality, the master plan of Paradise View 2 creates a modern
-              and organized living environment. The development features thoughtfully arranged residential spaces
-              designed to maximize functionality and convenience. Open areas and landscaped spaces are integrated
-              throughout the community to create a refreshing atmosphere. The layout ensures smooth accessibility while
-              maintaining privacy for residents. Amenities are strategically placed for easy and convenient access.
-              Dedicated zones for leisure and family activities add to the overall lifestyle experience. Well-planned
-              pathways and internal roads allow seamless movement within the development. Parking facilities are
-              efficiently designed to support everyday convenience.
-            </p>
-          </article>
 
+<?php if (!empty($property['brochure']) || !empty($property['floorplan']) || !empty($property['payplan'])) { ?>
           <article id="downloads" class="pd-sec reveal">
             <span class="eyebrow">Downloads</span>
             <h2 class="serif">Get the <em class="gold-text">full details.</em></h2>
@@ -201,6 +192,7 @@ include('common/header.php');
               </button>
             </div>
           </article>
+<?php } ?>
 
           <span id="contact" aria-hidden="true"></span>
           <article id="enquire" class="pd-sec reveal">

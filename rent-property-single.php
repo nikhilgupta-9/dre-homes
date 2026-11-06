@@ -103,7 +103,7 @@ include('common/header.php');
         <a href="#overview" class="on">Overview</a>
         <a href="#details">Details</a>
         <a href="#amenities">Amenities</a>
-        <a href="#location">Location</a>
+        <?php if (!empty($property['location_available'])) { ?><a href="#location">Location</a><?php } ?>
         <a href="#enquire">Book a viewing</a>
       </div>
 
@@ -197,6 +197,7 @@ include('common/header.php');
         </ul>
       </article>
 
+      <?php if (!empty($property['location_available'])) { ?>
       <article id="location" class="pd-sec reveal">
         <span class="eyebrow">Property Location</span>
         <h2 class="serif"><?= e($property['community']) ?>, <em class="gold-text">Dubai.</em></h2>
@@ -227,6 +228,7 @@ include('common/header.php');
           </div>
         <?php } ?>
       </article>
+      <?php } ?>
 
       <span id="contact" aria-hidden="true"></span>
       <article id="enquire" class="pd-sec reveal">

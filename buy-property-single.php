@@ -101,8 +101,12 @@ include('common/header.php');
       <div class="wrap pd-grid">
         <div class="pd-main">
           <div class="pd-tabs glass" id="pdTabs">
-            <a href="#overview" class="on">Overview</a><a href="#details">Details</a><a href="#amenities">Amenities</a
-            ><a href="#location">Location</a><a href="#mortgage">Mortgage</a><a href="#enquire">Book a viewing</a>
+            <a href="#overview" class="on">Overview</a>
+            <a href="#details">Details</a>
+            <a href="#amenities">Amenities</a>
+            <?php if (!empty($property['location_available'])) { ?><a href="#location">Location</a><?php } ?>
+            <?php if ((int) $property['price'] > 0) { ?><a href="#mortgage">Mortgage</a><?php } ?>
+            <a href="#enquire">Book a viewing</a>
           </div>
 
           <!-- <div class="facts facts5 reveal">
@@ -195,6 +199,7 @@ include('common/header.php');
             </ul>
           </article>
 
+<?php if (!empty($property['location_available'])) { ?>
           <article id="location" class="pd-sec reveal">
             <span class="eyebrow">Property Location</span>
             <h2 class="serif"><?= e($property['location_title']) ?></h2>
@@ -228,6 +233,8 @@ include('common/header.php');
 <?php } ?>
           </article>
 
+<?php } ?>
+<?php if ((int) $property['price'] > 0) { ?>
           <article id="mortgage" class="pd-sec reveal">
             <span class="eyebrow">Instant mortgage estimate</span>
             <h2 class="serif">What could you <em class="gold-text">pay monthly?</em></h2>
@@ -263,6 +270,7 @@ include('common/header.php');
               </div>
             </div>
           </article>
+<?php } ?>
 
           <span id="contact" aria-hidden="true"></span>
           <article id="enquire" class="pd-sec reveal">

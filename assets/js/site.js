@@ -2637,7 +2637,7 @@
         const d = el.dataset,
           p = +d.p;
         return (
-          (!st.q || (d.name + " " + d.d + " " + (d.l || "")).toLowerCase().includes(st.q.toLowerCase())) &&
+          (!st.q || [d.projectName, d.name, d.d, d.l, d.e].some((v) => (v || "").toLowerCase().includes(st.q.toLowerCase()))) &&
           (!st.em || d[segKey] === st.em) &&
           (!st.dev || d.d === st.dev) &&
           (!st.loc || d.l === st.loc) &&
@@ -2647,7 +2647,26 @@
           (!st.fav || fav.has(d.u))
         );
       },
-      sorts: PRICE_SORTS,
+      sorts: {
+        ...PRICE_SORTS,
+        feat: (a, b) => {
+          const q = L.st.q.toLowerCase();
+          if (!q) return a.__i - b.__i;
+          const rank = (el) => {
+            const d = el.dataset;
+            const project = (d.projectName || "").toLowerCase();
+            const card = (d.name || "").toLowerCase();
+            if (project === q) return 0;
+            if (project.startsWith(q)) return 1;
+            if (project.includes(q)) return 2;
+            if (card === q) return 3;
+            if (card.startsWith(q)) return 4;
+            if (card.includes(q)) return 5;
+            return 6;
+          };
+          return rank(a) - rank(b) || a.__i - b.__i;
+        },
+      },
       render: (view, shown, st, scroll) => {
         grid.className = "opg" + (st.view === "list" ? " list" : "");
         $("opEmpty").hidden = view.length > 0;

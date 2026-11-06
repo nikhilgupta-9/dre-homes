@@ -170,6 +170,7 @@ include('common/header.php');
 
             data-u="<?= e($p['slug']) ?>"
             data-name="<?= e($p['name']) ?>"<?= $i >= $cards_per_page ? "\n            hidden=\"\"" : '' ?>
+            data-project-name="<?= e($p['project_name']) ?>"
 
           >
             <a class="oc-img" href="<?= e($p['url']) ?>"

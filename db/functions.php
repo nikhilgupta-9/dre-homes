@@ -1410,6 +1410,7 @@ function get_offplan_projects()
 
 		$projects[] = [
 			'name' => $name,
+			'project_name' => $proj_name,
 			'slug' => trim((string) ($row['proj_slug'] ?? '')),
 			'url' => BASE_URL . 'property/' . rawurlencode(trim((string) ($row['proj_slug'] ?? ''))),
 			'img' => $thumb_url,
@@ -1580,6 +1581,9 @@ function get_offplan_project($slug)
 	if (!preg_match('#^https://www\.google\.com/maps/embed\?#', $map_url)) {
 		$map_url = '';
 	}
+	$location_available = trim((string) ($project['proj_location'] ?? '')) !== ''
+		|| trim((string) ($project['comm_heading'] ?? '')) !== ''
+		|| $map_url !== '';
 
 	// More from the same developer
 	$similar = [];
@@ -1613,6 +1617,7 @@ function get_offplan_project($slug)
 		'developer_short' => short_developer_name($developer),
 		'developer_url' => $project['dev_slug'] ? BASE_URL . 'developer/' . rawurlencode($project['dev_slug']) : '',
 		'location' => $location,
+		'location_available' => $location_available,
 		'place' => $location . ($emirate !== '' && $emirate !== 'UAE' && stripos($location, $emirate) === false ? ', ' . $emirate : ''),
 		'price' => $price,
 		'price_label' => price_label($price),
@@ -1644,9 +1649,9 @@ function get_offplan_project($slug)
 		'sections' => array_filter([
 			'overview' => $overview ? 'Overview' : '',
 			'amenities' => ($amenities || $amenities_text) ? 'Amenities' : '',
-			'location' => ($location_text || $location_img || $map_url) ? 'Location' : '',
+			'location' => ($location !== '' || $location_text || $location_img || $map_url) ? 'Location' : '',
 			'masterplan' => ($masterplan_img || $masterplan_text) ? 'Masterplan' : '',
-			'mortgage' => 'Mortgage',
+			'mortgage' => $price > 0 ? 'Mortgage' : '',
 			'enquire' => 'Enquire',
 		]),
 		'similar' => $similar,
@@ -1932,6 +1937,9 @@ function get_buy_project($slug)
 	if (!preg_match('#^https://www\.google\.com/maps/embed\?#', $map_url)) {
 		$map_url = '';
 	}
+	$location_available = trim((string) ($project['proj_location'] ?? '')) !== ''
+		|| trim((string) ($project['comm_heading'] ?? '')) !== ''
+		|| $map_url !== '';
 
 	// Parse Overview, Features, Amenities, Locations Nearby
 	$overview_raw = (string) ($project['proj_overview'] ?? '');
@@ -2092,6 +2100,7 @@ function get_buy_project($slug)
 		'type' => $type,
 		'community' => $community,
 		'location' => $location,
+		'location_available' => $location_available,
 		'place' => $location,
 		'reference' => $reference,
 		'price' => $price,
@@ -2416,6 +2425,9 @@ function get_rent_project($slug)
 	if (!preg_match('#^https://www\.google\.com/maps/embed\?#', $map_url)) {
 		$map_url = '';
 	}
+	$location_available = trim((string) ($project['proj_location'] ?? '')) !== ''
+		|| trim((string) ($project['comm_heading'] ?? '')) !== ''
+		|| $map_url !== '';
 
 	// Sub heading / view info
 	$sub_heading = trim((string) ($project['proj_sub_heading'] ?? ''));
@@ -2583,6 +2595,7 @@ function get_rent_project($slug)
 		'type' => $type,
 		'community' => $community,
 		'location' => $location,
+		'location_available' => $location_available,
 		'place' => $location,
 		'reference' => $reference,
 		'price' => $price,
@@ -2954,6 +2967,7 @@ function get_international_project($slug)
 	if (!preg_match('#^https://www\.google\.com/maps/embed\?#', $map_url)) {
 		$map_url = '';
 	}
+	$location_available = trim((string) ($project['proj_location'] ?? '')) !== '' || $map_url !== '';
 
 	$sim_rows = db_all(
 		"SELECT p.prj_id, p.proj_name, p.proj_name_on_card, p.proj_slug, p.prj_thumb_img,
@@ -3011,6 +3025,7 @@ function get_international_project($slug)
 		'country' => $country,
 		'flag' => $flag,
 		'location' => $location,
+		'location_available' => $location_available,
 		'developer' => $dev_name,
 		'developer_slug' => $project['dev_slug'] ?? '',
 		'price' => $price_num,
@@ -3333,6 +3348,7 @@ function get_ready_project($slug)
 	if (!preg_match('#^https://www\.google\.com/maps/embed\?#', $map_url)) {
 		$map_url = '';
 	}
+	$location_available = $loc !== '' || $comm !== '' || $map_url !== '';
 
 	// Similar ready to move in projects
 	$sim_rows = db_all(
@@ -3386,6 +3402,7 @@ function get_ready_project($slug)
 		'developer' => $dev_name,
 		'developer_slug' => $project['dev_slug'] ?? '',
 		'location' => $location,
+		'location_available' => $location_available,
 		'type' => $type,
 		'price' => $price_num,
 		'price_label' => $price_label,

@@ -177,7 +177,8 @@ include('common/header.php');
           </article>
 <?php } ?>
 
-          <!-- <article id="mortgage" class="pd-sec reveal">
+<?php if (isset($property['sections']['mortgage'])) { ?>
+          <article id="mortgage" class="pd-sec reveal">
             <span class="eyebrow">Mortgage estimate</span>
             <h2 class="serif">What could you <em class="gold-text">pay monthly?</em></h2>
             <div class="mort glass">
@@ -202,7 +203,8 @@ include('common/header.php');
                 <a class="btn btn-glass" href="<?= page_link('mortgage-advisory') ?>">Talk to a mortgage advisor →</a>
               </div>
             </div>
-          </article> -->
+          </article>
+<?php } ?>
 
           <span id="contact" aria-hidden="true"></span>
           <article id="enquire" class="pd-sec reveal">

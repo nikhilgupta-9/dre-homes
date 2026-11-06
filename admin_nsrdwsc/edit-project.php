@@ -18,7 +18,9 @@ if (empty($_SESSION['admin_csrf'])) {
 
 function addp_e($text)
 {
-  return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
+  // Database text fields are nullable; normalize them before escaping so PHP 8.1+
+  // never receives null as htmlspecialchars()'s first argument.
+  return htmlspecialchars((string) ($text ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
 // Runs a prepared query and returns its rows (or true for a write).

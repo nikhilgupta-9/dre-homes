@@ -200,8 +200,8 @@ $where = ['tp.prj_type_id IN (1, 2, 3, 4)'];
 $params = [];
 if ($f_search !== '') {
 	$like = '%' . addcslashes($f_search, '%_\\') . '%';
-	$where[] = '(tp.proj_name LIKE ? OR tp.proj_location LIKE ? OR tp.proj_slug LIKE ? OR td.dev_heading LIKE ? OR tc.comm_heading LIKE ?)';
-	array_push($params, $like, $like, $like, $like, $like);
+	$where[] = '(tp.proj_name LIKE ? OR tp.proj_name_on_card LIKE ? OR tp.proj_location LIKE ? OR tp.proj_slug LIKE ? OR td.dev_heading LIKE ? OR tc.comm_heading LIKE ?)';
+	array_push($params, $like, $like, $like, $like, $like, $like);
 }
 if ($f_status !== '') {
 	$where[] = $f_status === 'active' ? "tp.is_active = '1'" : "tp.is_active <> '1'";
@@ -255,7 +255,7 @@ $offset = ($f_page - 1) * $f_per_page;
 
 $projects = proj_query(
 	$conn,
-	"SELECT tp.prj_id, tp.prj_type_id, tp.proj_name, tp.proj_location, tp.proj_slug, tp.proj_bedroom, tp.proj_price, tp.prj_thumb_img,
+	"SELECT tp.prj_id, tp.prj_type_id, tp.proj_name, tp.proj_name_on_card, tp.proj_location, tp.proj_slug, tp.proj_bedroom, tp.proj_price, tp.prj_thumb_img,
 		tp.meta_description, tp.is_active, tp.proj_showonhomepage, tp.app_sync_status, tp.app_sync_date, tp.tstp,
 		td.dev_heading AS proj_dev_name, tc.comm_heading AS proj_comm_name, $price_sql AS price_number, $genie_sql AS genie_id, $seo_sql AS seo_score
 	$from_sql $list_where_sql ORDER BY $order_sql LIMIT ?, ?",
@@ -641,6 +641,7 @@ if ($push_message === 'push_success') {
 														</a>
 														<div>
 															<a class="dre-proj-name" href="<?= BASE_URL ?>edit-project.php?edit=<?= base64_encode($id) ?>"><?= proj_e($row['proj_name']) ?></a>
+											<?php if (trim((string) ($row['proj_name_on_card'] ?? '')) !== '' && strcasecmp(trim((string) $row['proj_name_on_card']), trim((string) $row['proj_name'])) !== 0): ?><span class="dre-proj-sub">Card name: <?= proj_e($row['proj_name_on_card']) ?></span><?php endif; ?>
 															<span class="dre-proj-sub"><i class="bi bi-geo-alt"></i> <?= trim((string) $row['proj_location']) !== '' ? proj_e($row['proj_location']) : 'No location' ?></span>
 															<div class="dre-proj-pills">
 																<span class="dre-pill"><?= proj_e($proj_types[$type_id] ?? 'Other') ?></span>

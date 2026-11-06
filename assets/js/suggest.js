@@ -54,25 +54,30 @@
         box.style.top = r.bottom + 8 + "px";
       }
     };
-    function search(q) {
+    function search(q, source = cfg.items) {
       const n = norm(q.trim());
       const per = cfg.per || 4,
         max = cfg.max || 9;
       const groups = {};
       let out = [];
       const src = n
-        ? cfg.items
+        ? source
             .map((it) => {
               const t = norm(it.t),
                 s = norm(it.s || ""),
-                k = norm(it.k || "");
+                k = norm(it.k || ""),
+                terms = n.split(/\s+/).filter(Boolean),
+                allInTitle = terms.every((term) => t.includes(term)),
+                allInDetails = terms.every((term) => t.includes(term) || s.includes(term) || k.includes(term));
               let sc = t.startsWith(n)
-                ? 3
+                ? 5
                 : t.split(/[\s,·-]+/).some((w) => w.startsWith(n))
-                  ? 2
+                  ? 4
                   : t.includes(n)
-                    ? 1.5
-                    : s.includes(n) || k.includes(n)
+                    ? 3
+                    : allInTitle
+                      ? 2.5
+                      : allInDetails
                       ? 1
                       : 0;
               return [sc, it];
@@ -91,9 +96,11 @@
       });
       return { groups, out };
     }
-    function render() {
+    let requestId = 0,
+      requestTimer = 0;
+    function render(source) {
       const q = input.value;
-      const { groups, out } = search(q);
+      const { groups, out } = search(q, source || cfg.items);
       items = [].concat(...Object.values(groups));
       act = out.length && q.trim() ? 0 : -1;
       let h = "";
@@ -134,6 +141,33 @@
       open = true;
       input.setAttribute("aria-expanded", "true");
     }
+    function updateSuggestions() {
+      if (!cfg.ajax || input.value.trim().length < 2) {
+        clearTimeout(requestTimer);
+        requestId++;
+        render();
+        return;
+      }
+      const id = ++requestId;
+      clearTimeout(requestTimer);
+      requestTimer = setTimeout(() => {
+        const body = new URLSearchParams({ q: input.value.trim() });
+        fetch(cfg.ajax, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: body.toString(),
+        })
+          .then((r) => r.json())
+          .then((data) => {
+            if (id !== requestId || !open || !Array.isArray(data.items)) return;
+            render(data.items);
+            place();
+          })
+          .catch(() => {
+            if (id === requestId) render();
+          });
+      }, 180);
+    }
     function hide() {
       box.classList.remove("open");
       open = false;
@@ -153,7 +187,10 @@
       suppress = false;
       if (cfg.onPick) cfg.onPick(it, input);
     }
-    input.addEventListener("focus", show);
+    input.addEventListener("focus", () => {
+      show();
+      updateSuggestions();
+    });
     input.addEventListener("input", () => {
       if (suppress) return;
       if (!open) show();
@@ -161,6 +198,7 @@
         render();
         place();
       }
+      updateSuggestions();
     });
     input.addEventListener("keydown", (e) => {
       if (!open && (e.key === "ArrowDown" || e.key === "ArrowUp")) {

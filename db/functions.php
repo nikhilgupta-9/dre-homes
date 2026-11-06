@@ -1769,6 +1769,7 @@ function get_buy_projects()
 		$projects[] = [
 			'id' => (int) $row['prj_id'],
 			'name' => $name,
+			'project_name' => $proj_name,
 			'slug' => $slug,
 			'url' => $url,
 			'images' => $images,
@@ -2257,6 +2258,7 @@ function get_rent_projects()
 		$projects[] = [
 			'id' => (int) $row['prj_id'],
 			'name' => $name,
+			'project_name' => $proj_name,
 			'slug' => $slug,
 			'url' => $url,
 			'images' => $images,
@@ -3154,6 +3156,7 @@ function get_ready_projects()
 		$projects[] = [
 			'id' => (int) $row['prj_id'],
 			'name' => $name,
+			'project_name' => trim((string) ($row['proj_name'] ?? '')),
 			'slug' => $slug,
 			'url' => $url,
 			'image' => $image,

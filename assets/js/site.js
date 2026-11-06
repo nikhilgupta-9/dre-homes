@@ -175,6 +175,29 @@
   const text = (el, sel) => (sel ? $$(sel, el).map(plain).join(" ") : plain(el)).toLowerCase();
   const plural = (n, one, many) => n + " " + (n === 1 ? one : many || one + "s");
 
+  /* Ready-to-move-in suggestions are registered independently of the shared
+     listing controls, so a control-specific issue cannot disable autocomplete. */
+  (function () {
+    const grid = $("opGrid"),
+      input = $("qIn"),
+      segment = $("emSeg");
+    if (!grid || !input || !segment || segment.dataset.key !== "ty") return;
+    const cards = [...grid.children].filter((el) => el.matches(".oc"));
+    SUGS.push({
+      input: "qIn",
+      popTitle: "Ready properties",
+      per: 9,
+      max: 9,
+      items: cards.map((c) => ({
+        t: c.dataset.projectName || c.dataset.name || plain(c.querySelector("h3")),
+        s: [c.dataset.name, c.dataset.d, c.dataset.l, c.dataset.ty].filter(Boolean).join(" · "),
+        g: "Properties",
+        img: c.querySelector("img")?.src || "",
+        href: c.querySelector("h3 a")?.getAttribute("href") || "",
+      })),
+    });
+  })();
+
   /* Put the Private Consultation form in view and focus the name field */
   function goContact() {
     const c = $("contact");
@@ -2363,9 +2386,11 @@
       test: (el, st) => {
         const d = el.dataset,
           p = +d.p,
-          bn = d.bn === undefined ? null : +d.bn;
+          bn = d.bn === undefined ? null : +d.bn,
+          terms = st.q.toLowerCase().trim().split(/\s+/).filter(Boolean),
+          searchable = [d.projectName, d.name, text(el, "h3"), d.c, d.l, d.d, d.ty].join(" ").toLowerCase();
         return (
-          (!st.q || (text(el, "h3") + " " + (d.l || "")).toLowerCase().includes(st.q.toLowerCase())) &&
+          (!terms.length || terms.every((term) => searchable.includes(term))) &&
           (!st.ty || d.ty === st.ty) &&
           (!st.loc || d.c === st.loc) &&
           (!st.min || (p && p >= st.min)) &&
@@ -2540,16 +2565,15 @@
       popular: comms.slice(0, 6).map(comm),
       items: [
         ...comms.map(comm),
-        ...cardSug(
-          L,
-          "Listings",
-          (c) =>
-            c.dataset.ty +
-            " · " +
-            (c.dataset.bn === "0" ? "Studio" : c.dataset.bn + " bed") +
-            " · AED " +
-            (+c.dataset.p).toLocaleString("en-US"),
-        ),
+        ...L.items.map((c) => ({
+          t: c.dataset.projectName || c.dataset.name || plain(c.querySelector("h3")),
+          s: [c.dataset.name, c.dataset.c, c.dataset.l, c.dataset.ty, c.dataset.d]
+            .filter(Boolean)
+            .join(" · "),
+          g: "Listings",
+          img: c.querySelector("img").src,
+          href: c.querySelector("h3 a").getAttribute("href"),
+        })),
       ],
       onPick: (it) => {
         if (it.g !== "Communities") return;
@@ -2635,9 +2659,11 @@
       delay: (i) => i * 45 + "ms",
       test: (el, st) => {
         const d = el.dataset,
-          p = +d.p;
+          p = +d.p,
+          terms = st.q.toLowerCase().trim().split(/\s+/).filter(Boolean),
+          searchable = [d.projectName, d.name, d.d, d.l, d.e, d.ty].join(" ").toLowerCase();
         return (
-          (!st.q || [d.projectName, d.name, d.d, d.l, d.e].some((v) => (v || "").toLowerCase().includes(st.q.toLowerCase()))) &&
+          (!terms.length || terms.every((term) => searchable.includes(term))) &&
           (!st.em || d[segKey] === st.em) &&
           (!st.dev || d.d === st.dev) &&
           (!st.loc || d.l === st.loc) &&
@@ -2656,12 +2682,9 @@
             const d = el.dataset;
             const project = (d.projectName || "").toLowerCase();
             const card = (d.name || "").toLowerCase();
-            if (project === q) return 0;
-            if (project.startsWith(q)) return 1;
-            if (project.includes(q)) return 2;
-            if (card === q) return 3;
-            if (card.startsWith(q)) return 4;
-            if (card.includes(q)) return 5;
+            const terms = q.split(/\s+/).filter(Boolean);
+            if (terms.every((term) => project.includes(term))) return project === q ? 0 : 1;
+            if (terms.every((term) => card.includes(term))) return card === q ? 2 : 3;
             return 6;
           };
           return rank(a) - rank(b) || a.__i - b.__i;
@@ -2751,13 +2774,20 @@
     const dc = count((el) => el.dataset.d),
       lc = count((el) => el.dataset.l || "");
     const devs = Object.keys(dc).sort((a, b) => dc[b] - dc[a]);
-    SUGS.push({
+    if (segKey === "e") SUGS.push({
       input: "qIn",
+      ajax: (typeof base_url !== "undefined" ? base_url : "/") + "ajax/offplan-suggestions.php",
       popTitle: "Popular projects",
-      per: 4,
+      per: 9,
       max: 9,
       items: [
-        ...cardSug(L, "Projects", (c) => c.dataset.d + " · " + (c.dataset.l || c.dataset.e)),
+        ...L.items.map((c) => ({
+          t: c.dataset.projectName || plain(c.querySelector("h3")),
+          s: [c.dataset.name, c.dataset.d, c.dataset.l || c.dataset.e].filter(Boolean).join(" · "),
+          g: "Projects",
+          img: c.querySelector("img").src,
+          href: c.querySelector("h3 a").getAttribute("href"),
+        })),
         ...devs.map((d) => ({
           t: d,
           s: plural(dc[d], "project") + " in this collection",

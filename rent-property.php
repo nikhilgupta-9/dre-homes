@@ -254,6 +254,7 @@ include('common/header.php');
     <div class="opg" id="opGrid" aria-live="polite" data-fav-key="dre-favs-rent">
       <?php foreach ($projects as $i => $p) { ?>
         <article class="oc" data-i="0" data-ty="<?= e($p['type']) ?>" data-c="<?= e($p['community']) ?>"
+          data-name="<?= e($p['name']) ?>" data-project-name="<?= e($p['project_name']) ?>"
           data-p="<?= $p['price'] ?>" data-bn="<?= $p['beds_num'] ?>" data-bt="<?= $p['baths_num'] ?>"
           data-a="<?= $p['area'] ?>" data-ppf="<?= $p['ppf'] ?>" data-u="<?= e($p['slug']) ?>"
           data-l="<?= e($p['location']) ?>" <?= !empty($p['is_featured']) ? 'data-x="1"' : '' ?>   <?= $i >= $cards_per_page ? 'hidden=""' : '' ?>>

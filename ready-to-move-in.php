@@ -170,6 +170,7 @@ include('common/header.php');
             data-p="<?= (int) $p['price'] ?>"
             data-u="<?= e($p['slug']) ?>"
             data-name="<?= e($p['name']) ?>"
+            data-project-name="<?= e($p['project_name']) ?>"
             data-ty="<?= e($p['type']) ?>"
             data-bmin="<?= (int) $p['bmin'] ?>"
             data-bmax="<?= (int) $p['bmax'] ?>"

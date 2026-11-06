@@ -22,6 +22,10 @@ include('common/header.php');
 ?>
     <!-- ===== WISHLIST: HERO ===== -->
     <header class="ph-hero op-hero ws-hero">
+      <div
+        class="ph-bg"
+        style="background-image: url('https://drehomes.com/admin_nsrdwsc/assets/media/developer/dev_img_8134_dre-developers.jpeg');"
+      ></div>
       <div class="wrap">
         <div class="crumbs" role="navigation" aria-label="Breadcrumb">
           <a href="<?= BASE_URL ?>">Home</a><span>/</span><span aria-current="page">Wishlist</span>
@@ -55,6 +59,12 @@ include('common/header.php');
                 <option value="name">Name: A to Z</option>
               </select>
             </label>
+            <button class="ws-clear" id="wishClearAll" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 6h18M8 6V4h8v2m3 0-.9 14H5.9L5 6m4 4v6m6-6v6" />
+              </svg>
+              Clear all
+            </button>
           </div>
           <div class="opg" id="wsGrid" aria-live="polite"></div>
           <div class="ws-actions">
@@ -69,7 +79,6 @@ include('common/header.php');
               ><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm4.5 12.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 01-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 2s.8 2.3.9 2.5c.1.2 1.6 2.5 4 3.5 1.5.6 2.1.7 2.8.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.4-.2z"></path></svg>Enquire about
               these on WhatsApp</a
             >
-            <button class="ws-clear" id="wishClearAll" type="button">Clear wishlist</button>
           </div>
           <p class="ws-note">Your wishlist is saved on this device for a year — come back any time.</p>
         </div>

@@ -264,7 +264,11 @@
      ===================================================================== */
   function makeList(o) {
     const grid = o.grid;
-    const items = [...grid.children].filter((el) => el.nodeType === 1);
+    const templates = o.mode === "infinite" ? [...grid.querySelectorAll(":scope > template")]: [];
+    const items = templates.length
+      ? templates.map((template) => template.content.firstElementChild).filter(Boolean)
+      : [...grid.children].filter((el) => el.nodeType === 1);
+    templates.forEach((template) => template.remove());
     items.forEach((el, i) => (el.__i = i));
     const st = Object.assign({ page: 1, n: o.per || Infinity, sort: "" }, o.state || {});
     let view = [],
@@ -273,7 +277,7 @@
       view = items.filter((el) => o.test(el, st));
       const sorter = o.sorts && o.sorts[st.sort];
       if (sorter) view = view.slice().sort(sorter);
-      if (st.sort !== lastSort) {
+      if (st.sort !== lastSort && o.mode !== "infinite") {
         (sorter ? items.slice().sort(sorter) : items).forEach((el) => grid.appendChild(el));
         lastSort = st.sort;
       }
@@ -282,9 +286,24 @@
         st.pages = Math.max(1, Math.ceil(view.length / o.per));
         st.page = Math.min(st.page, st.pages);
         shown = view.slice((st.page - 1) * o.per, st.page * o.per);
-      } else if (o.mode === "more") shown = view.slice(0, st.n);
+      } else if (o.mode === "more" || o.mode === "infinite") shown = view.slice(0, st.n);
       const vis = new Set(shown);
-      items.forEach((el) => (el.hidden = !vis.has(el)));
+      if (o.mode === "infinite") {
+        items.forEach((el) => {
+          if (!vis.has(el)) el.remove();
+        });
+        shown.forEach((el, index) => {
+          const current = grid.children[index];
+          if (current !== el) grid.insertBefore(el, current || null);
+          const img = el.querySelector("img[data-src]");
+          if (img) {
+            img.src = img.dataset.src;
+            img.removeAttribute("data-src");
+          }
+        });
+      } else {
+        items.forEach((el) => (el.hidden = !vis.has(el)));
+      }
       if (o.delay) shown.forEach((el, i) => (el.style.animationDelay = o.delay(i)));
       if (o.render) o.render(view, shown, st, scroll);
     }
@@ -1759,10 +1778,10 @@
     const chips = $$("#blCat button");
     const L = makeList({
       grid,
-      mode: "pages",
+      mode: "infinite",
       per: 9,
       state: { q: "", c: "", y: "", sort: "new" },
-      delay: (i) => i * 35 + "ms",
+      delay: (i) => i * 75 + "ms",
       test: (el, st) =>
         (!st.q || text(el, "h3, .bc-b > p, .btag").includes(st.q.toLowerCase())) &&
         (!st.c || el.dataset.c === st.c) &&
@@ -1775,30 +1794,41 @@
         L.items.forEach((el) => $$("h3 a, .bc-b > p", el).forEach((x) => mark(x, shown.includes(el) ? st.q : "")));
         $("blEmpty").hidden = view.length > 0;
         $("blCount").innerHTML = view.length
-          ? `Showing <b>${(st.page - 1) * 9 + 1}–${Math.min(st.page * 9, view.length)}</b> of <b>${view.length}</b> articles${st.c ? ` in <b>${esc(st.c)}</b>` : ""}${st.y ? ` from <b>${st.y}</b>` : ""}`
+          ? `Showing <b>1–${shown.length}</b> of <b>${view.length}</b> articles${st.c ? ` in <b>${esc(st.c)}</b>` : ""}${st.y ? ` from <b>${st.y}</b>` : ""}`
           : "";
-        pager($("blPager"), st.page, st.pages, "span");
+        const pagerEl = $("blPager");
+        pagerEl.hidden = shown.length >= view.length;
+        pagerEl.textContent = pagerEl.hidden ? "" : "Scroll to load more articles";
+        pagerEl.setAttribute("aria-label", "More articles load as you scroll");
         $("blClear").hidden = !(st.q || st.c || st.y || st.sort !== "new");
         chips.forEach((b) => b.classList.toggle("on", b.dataset.c === st.c));
-        if (scroll) $("blCat").scrollIntoView({ behavior: "smooth", block: "start" });
+        if (scroll) $("articles").scrollIntoView({ behavior: "smooth", block: "start" });
       },
     });
     recount(chips, L.items, (el, b) => !b.dataset.c || el.dataset.c === b.dataset.c);
-    $("blCat").onclick = (e) => {
+    if ($("blCat")) $("blCat").onclick = (e) => {
       const b = e.target.closest("button");
       if (b) L.set("c", b.dataset.c);
     };
     $("blQ").oninput = (e) => L.set("q", e.target.value.trim());
     $("blY").onchange = (e) => L.set("y", e.target.value);
     $("blS").onchange = (e) => L.set("sort", e.target.value);
-    $("blPager").onclick = (e) => {
-      const b = e.target.closest("button[data-p]");
-      if (!b || b.disabled) return;
-      L.st.page = +b.dataset.p;
-      L.draw(true);
-    };
+    if ("IntersectionObserver" in window) {
+      const loadMoreObserver = new IntersectionObserver((entries) => {
+        if (!entries.some((entry) => entry.isIntersecting) || L.st.n >= L.view.length) return;
+        L.st.n += 9;
+        L.draw();
+      }, { rootMargin: "120px 0px" });
+      loadMoreObserver.observe($("blPager"));
+    } else {
+      $("blPager").onclick = () => {
+        if (L.st.n >= L.view.length) return;
+        L.st.n += 9;
+        L.draw();
+      };
+    }
     function clear() {
-      Object.assign(L.st, { q: "", c: "", y: "", sort: "new", page: 1 });
+      Object.assign(L.st, { q: "", c: "", y: "", sort: "new", page: 1, n: 9 });
       $("blQ").value = "";
       $("blY").value = "";
       $("blS").value = "new";
@@ -1843,7 +1873,7 @@
               .find((n) => n.nodeType === 3 && n.nodeValue.trim())
               .nodeValue.trim(),
           g: "Articles",
-          img: c.querySelector("img").src,
+          img: c.querySelector("img").dataset.src || c.querySelector("img").getAttribute("src") || "",
           href: c.querySelector("h3 a").getAttribute("href"),
         })),
       ],

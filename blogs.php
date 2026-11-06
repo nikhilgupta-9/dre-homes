@@ -156,6 +156,7 @@ include('common/header.php');
         </div>
         <div class="bl-grid" id="blGrid" aria-live="polite">
           <?php foreach ($data['blogs'] as $b): ?>
+          <template>
           <article
             class="bc glass"
             data-c="<?= htmlspecialchars($b['category']) ?>"
@@ -165,7 +166,7 @@ include('common/header.php');
           >
             <a class="bc-img" href="<?= htmlspecialchars($b['url']) ?>" tabindex="-1" aria-hidden="true">
               <img
-                src="<?= htmlspecialchars($b['thumb_img']) ?>"
+                data-src="<?= htmlspecialchars($b['thumb_img']) ?>"
                 alt="<?= htmlspecialchars($b['thumb_alt']) ?>"
                 loading="lazy"
               />
@@ -186,6 +187,7 @@ include('common/header.php');
               <div class="bc-f"><a href="<?= htmlspecialchars($b['url']) ?>">Read article →</a></div>
             </div>
           </article>
+          </template>
           <?php endforeach; ?>
         </div>
         <div class="op-empty glass" id="blEmpty" hidden="">

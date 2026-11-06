@@ -48,17 +48,30 @@
   flex: none;
 }
 .ws-clear {
-  border: 0;
-  background: none;
-  padding: 10px 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  background: rgba(var(--tint-rgb), 0.07);
+  padding: 12px 18px;
   color: var(--muted);
   font: 600 13px var(--font);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  white-space: nowrap;
   cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+.ws-clear svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
 }
 .ws-clear:hover {
-  color: var(--acc);
+  color: var(--text);
+  border-color: var(--stroke-acc);
+  background: rgba(var(--tint-rgb), 0.12);
 }
 .ws-note {
   margin-top: 18px;

@@ -8,6 +8,10 @@
 # AI runtime/cache data (vector store, embeddings cache) — regenerated, not source.
 /ai/storage/
 
+# Page-speed image cache (dre_img() in db/functions.php) — regenerated from originals on demand.
+/images/cache/*
+!/images/cache/.gitkeep
+
 # PHP dependencies — regenerate with `composer install` (composer.json/composer.lock are committed).
 /vendor/
 

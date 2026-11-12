@@ -148,7 +148,9 @@ $toll_free = $footer_info['footer_contact_number'] ?? '800 37373';
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,200;0,300;0,400;0,500;0,600;1,200;1,300&amp;display=swap" rel="stylesheet" />
     <?= get_theme_font_links($theme_settings) ?>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <!-- Font Awesome: loaded without blocking the first paint (icons pop in a moment after). -->
+    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" /></noscript>
 
     <meta name="theme-color" content="<?= !empty($theme_settings['night_bg_color']) ? htmlspecialchars($theme_settings['night_bg_color'], ENT_QUOTES, 'UTF-8') : '#14110e' ?>" />
     <script>
@@ -177,7 +179,9 @@ $toll_free = $footer_info['footer_contact_number'] ?? '800 37373';
     <?php foreach ($page['css'] as $css): ?>
     <link rel="stylesheet" href="<?= htmlspecialchars(asset_url($css)) ?>" />
     <?php endforeach; ?>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/21.2.7/css/intlTelInput.css" />
+    <!-- intl-tel-input styles: same non-blocking load as Font Awesome above. -->
+    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/21.2.7/css/intlTelInput.css" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/21.2.7/css/intlTelInput.css" /></noscript>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/21.2.7/js/intlTelInput.min.js"></script>
     <link rel="stylesheet" href="assets/css/style.css" />
     
@@ -211,12 +215,12 @@ $toll_free = $footer_info['footer_contact_number'] ?? '800 37373';
               <span class="gptw-rib" aria-hidden="true"></span>
               <span class="gptw-badge">
                 <img
-                  src="<?= BASE_URL_IMG ?>header/<?= htmlspecialchars($header_details['greate_place_logo']) ?>"
+                  src="<?= htmlspecialchars(dre_img(BASE_URL_IMG . 'header/' . $header_details['greate_place_logo'], 200)) ?>"
                   alt="Great Place To Work — Best Workplaces in Real Estate, Middle East 2026" />
                 <i class="gptw-shine" aria-hidden="true"></i>
               </span>
               <span class="gptw-pop glass" aria-hidden="true">
-                <img src="<?= BASE_URL_IMG ?>header/<?= htmlspecialchars($header_details['greate_place_logo']) ?>" alt="" />
+                <img src="<?= htmlspecialchars(dre_img(BASE_URL_IMG . 'header/' . $header_details['greate_place_logo'], 200)) ?>" alt="" />
                 <span>
                   <small>Certified</small><b>Great Place To Work®</b>
                   <span>Best Workplaces™ in Real Estate · Middle East 2026</span>

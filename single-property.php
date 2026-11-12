@@ -52,7 +52,7 @@ include('common/header.php');
         <div class="pd-gal">
           <button type="button" class="pd-fav oc-fav" data-u="<?= e($property['slug']) ?>" aria-pressed="false" aria-label="Save <?= e($property['name']) ?> to your wishlist">♡</button>
           <button class="pg-main" data-g="0" aria-label="Open gallery">
-            <img src="<?= e($property['photos'][0]['src']) ?>" alt="<?= e($property['photos'][0]['title']) ?>" />
+            <img src="<?= e($property['photos'][0]['src']) ?>" alt="<?= e($property['photos'][0]['title']) ?>" fetchpriority="high" loading="eager" />
           </button>
 <?php if ($property['side_photos']) { ?>
           <div class="pg-side">
@@ -153,7 +153,7 @@ include('common/header.php');
               </div>
 <?php } ?>
 <?php if ($property['location_img']) { ?>
-              <button class="loc-img" data-g="<?= (int) $property['location_img_index'] ?>" aria-label="Open location map">
+              <button class="loc-img" aria-label="Open location map">
                 <img src="<?= e($property['location_img']) ?>" alt="<?= e($property['name']) ?> location map" loading="lazy" />
               </button>
 <?php } ?>
@@ -167,7 +167,7 @@ include('common/header.php');
             <span class="eyebrow">Property Masterplan</span>
             <h2 class="serif">Designed to <em class="gold-text">blend in.</em></h2>
 <?php if ($property['masterplan_img']) { ?>
-            <button class="mp-img" data-g="<?= (int) $property['masterplan_img_index'] ?>" aria-label="Open masterplan">
+            <button class="mp-img" aria-label="Open masterplan">
               <img src="<?= e($property['masterplan_img']) ?>" alt="<?= e($property['name']) ?> masterplan" loading="lazy" /><span class="glass on-img">⤢ Zoom</span>
             </button>
 <?php } ?>

@@ -55,7 +55,7 @@ include('common/header.php');
           <button type="button" class="pd-fav oc-fav" data-u="<?= e($property['slug']) ?>" aria-pressed="false" aria-label="Save <?= e($property['name']) ?> to your wishlist">♡</button>
 <?php if (!empty($property['photos'])) { ?>
           <button class="pg-main" data-g="0" aria-label="Open gallery">
-            <img src="<?= e($property['photos'][0]['src']) ?>" alt="<?= e($property['photos'][0]['title']) ?>" />
+            <img src="<?= e($property['photos'][0]['src']) ?>" alt="<?= e($property['photos'][0]['title']) ?>" fetchpriority="high" loading="eager" />
           </button>
 <?php } ?>
 <?php if (!empty($property['side_photos'])) { ?>

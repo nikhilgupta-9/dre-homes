@@ -7,6 +7,14 @@ $hero = ['desktop' => null, 'tablet' => null, 'mobile' => null];
 foreach (select_all('tbl_hero_section', 'is_active=1 ORDER BY display_order') as $row) {
   $hero[$row['img_screen_size']] = $row;
 }
+// The hero video's poster frame, saved next to it as "<name>.poster.jpg" when one exists.
+$hero_poster = '';
+if (!empty($hero['desktop']) && $hero['desktop']['media_type'] == 'video') {
+  $poster_path = preg_replace('/(\.web)?\.[^.]+$/', '.poster.jpg', $hero['desktop']['media_path']);
+  if (is_file(__DIR__ . '/admin_nsrdwsc/assets/media/' . $poster_path)) {
+    $hero_poster = BASE_URL_IMG . $poster_path;
+  }
+}
 
 // Hero search: popular locations shown before typing (the box also calls
 // ajax/hero-location-suggestions.php live as the visitor types further).
@@ -49,9 +57,9 @@ foreach ($home_projects as &$p) {
   $p['card_handover'] = trim(preg_replace('/^\s*handover\s*:?\s*/i', '', (string) $p['proj_handover']));
   if ($p['card_handover'] === '')
     $p['card_handover'] = '—';
-  $p['card_img'] = !empty($p['home_card_img'])
+  $p['card_img'] = dre_img(!empty($p['home_card_img'])
     ? BASE_URL_IMG . 'project/home-card-img/' . $p['home_card_img']
-    : BASE_URL_IMG . 'project/thumb/' . explode(',', $p['prj_thumb_img'])[0];
+    : BASE_URL_IMG . 'project/thumb/' . explode(',', $p['prj_thumb_img'])[0]);
   $p['card_url'] = BASE_URL . 'property/' . rawurlencode(trim((string) $p['proj_slug']));
 }
 unset($p);
@@ -81,12 +89,12 @@ include('common/header.php');
 ?>
 <header class="hero" id="hero" data-bg="video">
   <div class="hero-bg" aria-hidden="true">
-    <img class="hm" src="https://drehomes.com/images/home-sec/offplan-property.jpg" alt="" />
+    <img class="hm" src="<?= e($hero_poster ?: 'https://drehomes.com/images/home-sec/offplan-property.jpg') ?>" alt="" />
     <!-- HERO VIDEO: change the src below to use a different video (MP4, ideally < 8 MB, 1920px wide) -->
     <?php if (!empty($hero['desktop']) && $hero['desktop']['media_type'] == 'video') { ?>
       <!-- HERO VIDEO: managed from the admin (Hero Section) -->
       <video class="hm" id="heroVideo" muted="" loop="" playsinline="" webkit-playsinline="" preload="metadata"
-        poster="https://drehomes.com/images/home-sec/offplan-property.jpg">
+        poster="<?= e($hero_poster ?: 'https://drehomes.com/images/home-sec/offplan-property.jpg') ?>">
         <source src="<?= BASE_URL_IMG . e($hero['desktop']['media_path']) ?>" type="video/mp4" />
       </video>
     <?php } ?>
@@ -206,9 +214,9 @@ include('common/header.php');
     </div>
     <div class="areas reveal">
       <?php foreach ($home_comms as $i => $c) {
-        $comm_img = !empty($c['comm_home_img'])
+        $comm_img = dre_img(!empty($c['comm_home_img'])
           ? BASE_URL_IMG . 'community/home/' . $c['comm_home_img']
-          : BASE_URL_IMG . 'community/thumb/' . $c['comm_thumb_img']; ?>
+          : BASE_URL_IMG . 'community/thumb/' . $c['comm_thumb_img']); ?>
         <a class="area<?= $i === 0 ? ' tall' : '' ?>" href="<?= BASE_URL ?>community/<?= e($c['comm_slug']) ?>">
           <div class="bg" style="background-image: url(<?= e($comm_img) ?>)"></div>
           <div class="lbl glass on-img">
@@ -408,14 +416,16 @@ include('common/header.php');
         <span class="eyebrow">Words That Build Trust</span>
         <h2 class="serif">Our clients, <em class="gold-text">in their words</em></h2>
         <p class="lead">We take pride in creating smooth and rewarding real estate experiences across Dubai.</p>
-        <!-- Trustindex rating badge (same as live site) -->
+        <!-- Trustindex rating badge (same as live site). Loaded lazily by site.js, only
+             once this section nears the viewport, so its script work never competes
+             with the page's first paint. -->
         <div class="rv-badge">
-          <script defer="" async="" src="https://cdn.trustindex.io/loader.js?5e862a8729ae637df016bbd0ae2"></script>
+          <script data-src="https://cdn.trustindex.io/loader.js?5e862a8729ae637df016bbd0ae2"></script>
         </div>
       </div>
-      <!-- Trustindex Google reviews widget (same as live site) -->
+      <!-- Trustindex Google reviews widget (same as live site), lazy-loaded likewise. -->
       <div class="rv-widget glass">
-        <script defer="" async="" src="https://cdn.trustindex.io/loader.js?e5ad343727cf637b4d36c8ac53d"></script>
+        <script data-src="https://cdn.trustindex.io/loader.js?e5ad343727cf637b4d36c8ac53d"></script>
       </div>
     </div>
   </div>
@@ -505,7 +515,7 @@ include('common/header.php');
           <?php foreach ($pair as $k => $item) {
             $tall = ($col + $k) % 2 === 0;
             $img = !empty($item['thumbnail_url']) ? $item['thumbnail_url'] : $item['media_url'];
-            $img = preg_match('#^https?://#', $img) ? $img : BASE_URL_IMG . $img; ?>
+            $img = dre_img(preg_match('#^https?://#', $img) ? $img : BASE_URL_IMG . $img); ?>
             <a class="ig <?= $tall ? 'reel' : 'post' ?>"
               href="<?= e($item['instagram_url'] ?: 'https://www.instagram.com/drehomes_realestate/') ?>" target="_blank"
               rel="noopener" aria-label="<?= $tall ? 'Watch reel' : 'View post' ?> on Instagram">

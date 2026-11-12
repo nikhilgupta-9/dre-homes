@@ -1406,7 +1406,7 @@
 			$price = parse_price($row['proj_price'] ?? 0);
 			$thumb_raw = trim((string) ($row['prj_thumb_img'] ?? ''));
 			$first_thumb = $thumb_raw !== '' ? trim(explode(',', $thumb_raw)[0]) : '';
-			$thumb_url = $first_thumb !== '' ? BASE_URL_IMG . 'project/thumb/' . rawurlencode($first_thumb) : '';
+			$thumb_url = $first_thumb !== '' ? dre_img(BASE_URL_IMG . 'project/thumb/' . rawurlencode($first_thumb)) : '';
 
 			$projects[] = [
 				'name' => $name,
@@ -1504,7 +1504,10 @@
 			$payment_plan = ucfirst(mb_strtolower($payment_plan));
 		}
 
-		// Photos: gallery, then location map and masterplan (the lightbox shows them in this order)
+		// Photos: the hero gallery and its lightbox show gallery images only. The location
+		// map and masterplan are separate single images, each with its own small viewer in
+		// their own section (9.10: single-property.php #location / #masterplan) — they never
+		// mix into the gallery count or thumbnails.
 		$photos = [];
 		foreach (db_all("SELECT gallery_img, gallery_img_alt FROM tbl_proj_gallery WHERE proj_id = ? AND is_active = '1' ORDER BY proj_gallery_id ASC", [$id]) as $g) {
 			$src = project_media_url('gallery', $g['gallery_img']);
@@ -1514,36 +1517,13 @@
 		}
 		$location_img = project_media_url('location', $project['proj_loc_img']);
 		$masterplan_img = project_media_url('masterplan', $project['proj_mastrpln_img']);
-		$location_img_index = $location_img ? count($photos) : null;
-		if ($location_img) {
-			$photos[] = ['src' => $location_img, 'title' => 'Location map'];
-		}
-		$masterplan_img_index = $masterplan_img ? count($photos) : null;
-		if ($masterplan_img) {
-			$photos[] = ['src' => $masterplan_img, 'title' => 'Masterplan'];
-		}
 		if (!$photos) {
 			$photos[] = ['src' => project_media_url('thumb', explode(',', $project['prj_thumb_img'])[0]), 'title' => $name];
 		}
-		// Hero: the first photo big; beside it the second photo and the masterplan (or the last real
-		// photo). The location map screenshot never belongs here — it has its own card in the
-		// Location tab (9.10: single-property.php #location) — so it's skipped as a side photo.
+		// Hero: the first photo big, the second and third (if any) beside it.
 		$side = [];
-		if (count($photos) > 1) {
-			$side_indexes = [1];
-			if ($masterplan_img_index !== null && $masterplan_img_index > 1) {
-				$side_indexes[] = $masterplan_img_index;
-			} else {
-				for ($i = count($photos) - 1; $i > 1; $i--) {
-					if ($i !== $location_img_index) {
-						$side_indexes[] = $i;
-						break;
-					}
-				}
-			}
-			foreach ($side_indexes as $n => $i) {
-				$side[] = $photos[$i] + ['index' => $i, 'show_all' => $n === count($side_indexes) - 1];
-			}
+		for ($i = 1; $i <= 2 && $i < count($photos); $i++) {
+			$side[] = $photos[$i] + ['index' => $i, 'show_all' => $i === min(2, count($photos) - 1)];
 		}
 
 		// Amenities chosen for the project
@@ -1598,7 +1578,7 @@
 			$similar[] = [
 				'name' => trim($s['proj_name_on_card']) ?: trim($s['proj_name']),
 				'url' => BASE_URL . 'property/' . rawurlencode(trim($s['proj_slug'])),
-				'img' => project_media_url('thumb', explode(',', $s['prj_thumb_img'])[0]),
+				'img' => dre_img(project_media_url('thumb', explode(',', $s['prj_thumb_img'])[0])),
 				'location' => trim((string) $s['proj_location']),
 				'badge' => $s_handover !== '' ? 'Handover: ' . $s_handover : 'Off plan',
 				'beds' => bedroom_range_label($s['proj_bedroom'], $s['proj_bedroom_on_card']),
@@ -1631,9 +1611,7 @@
 			'photos' => $photos,
 			'side_photos' => $side,
 			'location_img' => $location_img,
-			'location_img_index' => $location_img_index,
 			'masterplan_img' => $masterplan_img,
-			'masterplan_img_index' => $masterplan_img_index,
 			'overview' => $overview,
 			'overview_html' => $overview_html,
 			'overview_first_html' => $overview_first_html,
@@ -1756,7 +1734,7 @@
 				foreach (explode(',', $thumbs_raw) as $thumb) {
 					$t = trim($thumb);
 					if ($t !== '') {
-						$images[] = BASE_URL_IMG . 'project/thumb/' . rawurlencode($t);
+						$images[] = dre_img(BASE_URL_IMG . 'project/thumb/' . rawurlencode($t));
 					}
 				}
 			}
@@ -2067,7 +2045,7 @@
 			$s_bath = (int) ($s['proj_shower'] ?? 0);
 			$s_comm = buy_property_clean_community($s['comm_heading'] ?? '', $s['proj_location'] ?? '');
 			$s_thumb = trim(explode(',', (string)$s['prj_thumb_img'])[0] ?? '');
-			$s_img = $s_thumb !== '' ? BASE_URL_IMG . 'project/thumb/' . rawurlencode($s_thumb) : (BASE_URL . 'admin_nsrdwsc/assets/media/logos/logo-light.png');
+			$s_img = $s_thumb !== '' ? dre_img(BASE_URL_IMG . 'project/thumb/' . rawurlencode($s_thumb)) : (BASE_URL . 'admin_nsrdwsc/assets/media/logos/logo-light.png');
 
 			$similar[] = [
 				'name' => $s_name,
@@ -2245,7 +2223,7 @@
 				foreach (explode(',', $thumbs_raw) as $thumb) {
 					$t = trim($thumb);
 					if ($t !== '') {
-						$images[] = BASE_URL_IMG . 'project/thumb/' . rawurlencode($t);
+						$images[] = dre_img(BASE_URL_IMG . 'project/thumb/' . rawurlencode($t));
 					}
 				}
 			}
@@ -2562,7 +2540,7 @@
 			$s_bath = (int) ($s['proj_shower'] ?? 0);
 			$s_comm = rent_property_clean_community($s['comm_heading'] ?? '', $s['proj_location'] ?? '');
 			$s_thumb = trim(explode(',', (string)$s['prj_thumb_img'])[0] ?? '');
-			$s_img = $s_thumb !== '' ? BASE_URL_IMG . 'project/thumb/' . rawurlencode($s_thumb) : (BASE_URL . 'admin_nsrdwsc/assets/media/logos/logo-light.png');
+			$s_img = $s_thumb !== '' ? dre_img(BASE_URL_IMG . 'project/thumb/' . rawurlencode($s_thumb)) : (BASE_URL . 'admin_nsrdwsc/assets/media/logos/logo-light.png');
 
 			$similar[] = [
 				'name' => $s_name,
@@ -2803,7 +2781,7 @@
 				$thumb_list = explode(',', $thumbs_raw);
 				$thumb = trim($thumb_list[0] ?? '');
 			}
-			$image = $thumb !== '' ? BASE_URL_IMG . 'project/thumb/' . rawurlencode($thumb) : BASE_URL . 'admin_nsrdwsc/assets/media/logos/logo-light.png';
+			$image = $thumb !== '' ? dre_img(BASE_URL_IMG . 'project/thumb/' . rawurlencode($thumb)) : BASE_URL . 'admin_nsrdwsc/assets/media/logos/logo-light.png';
 
 			$projects[] = [
 				'id' => (int) $row['prj_id'],
@@ -2990,7 +2968,7 @@
 			$s_country = international_detect_country($s['proj_location'] ?? '', $s['proj_name'] ?? '');
 			$s_flag = international_country_flag($s_country);
 			$s_thumb = trim(explode(',', (string)$s['prj_thumb_img'])[0] ?? '');
-			$s_img = $s_thumb !== '' ? BASE_URL_IMG . 'project/thumb/' . rawurlencode($s_thumb) : (BASE_URL . 'admin_nsrdwsc/assets/media/logos/logo-light.png');
+			$s_img = $s_thumb !== '' ? dre_img(BASE_URL_IMG . 'project/thumb/' . rawurlencode($s_thumb)) : (BASE_URL . 'admin_nsrdwsc/assets/media/logos/logo-light.png');
 			$s_price_num = (int) ($s['proj_price'] ?: ($s['proj_start_price'] ?? 0));
 			$s_price_html = $s_price_num > 1000 ? '<b>AED ' . number_format($s_price_num) . '</b>' : '<b><em>Price on request</em></b>';
 			$s_bed_raw = trim((string) ($s['proj_bedroom'] ?? ''));
@@ -3151,7 +3129,7 @@
 			if ($thumbs_raw !== '') {
 				$thumb = trim(explode(',', $thumbs_raw)[0] ?? '');
 			}
-			$image = $thumb !== '' ? BASE_URL_IMG . 'project/thumb/' . rawurlencode($thumb) : BASE_URL . 'admin_nsrdwsc/assets/media/logos/logo-light.png';
+			$image = $thumb !== '' ? dre_img(BASE_URL_IMG . 'project/thumb/' . rawurlencode($thumb)) : BASE_URL . 'admin_nsrdwsc/assets/media/logos/logo-light.png';
 
 			$projects[] = [
 				'id' => (int) $row['prj_id'],
@@ -3370,7 +3348,7 @@
 			$s_name = trim((string) ($s['proj_name_on_card'] ?? '')) ?: trim((string) ($s['proj_name'] ?? ''));
 			$s_slug = trim((string) ($s['proj_slug'] ?? ''));
 			$s_thumb = trim(explode(',', (string)$s['prj_thumb_img'])[0] ?? '');
-			$s_img = $s_thumb !== '' ? BASE_URL_IMG . 'project/thumb/' . rawurlencode($s_thumb) : (BASE_URL . 'admin_nsrdwsc/assets/media/logos/logo-light.png');
+			$s_img = $s_thumb !== '' ? dre_img(BASE_URL_IMG . 'project/thumb/' . rawurlencode($s_thumb)) : (BASE_URL . 'admin_nsrdwsc/assets/media/logos/logo-light.png');
 			$s_price_num = (int) ($s['proj_price'] ?: ($s['proj_start_price'] ?? 0));
 			$s_price_html = $s_price_num > 1000 ? '<b>AED ' . number_format($s_price_num) . '</b>' : '<b><em>Price on request</em></b>';
 			$s_bed_raw = trim((string) ($s['proj_bedroom'] ?? ''));
@@ -7354,7 +7332,7 @@
 
 			$thumbs_raw = trim((string) ($row['prj_thumb_img'] ?? ''));
 			$thumb = $thumbs_raw !== '' ? trim(explode(',', $thumbs_raw)[0]) : '';
-			$image = $thumb !== '' ? BASE_URL_IMG . 'project/thumb/' . rawurlencode($thumb) : BASE_URL . 'admin_nsrdwsc/assets/media/logos/logo-light.png';
+			$image = $thumb !== '' ? dre_img(BASE_URL_IMG . 'project/thumb/' . rawurlencode($thumb)) : BASE_URL . 'admin_nsrdwsc/assets/media/logos/logo-light.png';
 
 			$community = buy_property_clean_community($row['comm_heading'] ?? '', $row['proj_location'] ?? '');
 			$location = trim((string) ($row['proj_location'] ?? '')) ?: $community;

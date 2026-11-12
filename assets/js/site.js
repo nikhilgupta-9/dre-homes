@@ -474,6 +474,39 @@
   })();
 
   /* =====================================================================
+     Home page — Trustindex reviews widget: its script only runs once the
+     "Our clients" section nears the viewport, so its CPU work never
+     competes with the page's first paint (it sits well below the fold).
+     ===================================================================== */
+  (function () {
+    const section = document.querySelector(".reviews");
+    const scripts = $$(".reviews script[data-src]");
+    if (!section || !scripts.length) return;
+    let loaded = false;
+    function load() {
+      if (loaded) return;
+      loaded = true;
+      scripts.forEach((s) => {
+        const script = document.createElement("script");
+        script.src = s.dataset.src;
+        script.defer = true;
+        s.replaceWith(script);
+      });
+    }
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver((entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          load();
+          io.disconnect();
+        }
+      }, { rootMargin: "300px" });
+      io.observe(section);
+    } else {
+      load();
+    }
+  })();
+
+  /* =====================================================================
      Guides (buyer / seller / tenant / landlord): step checklist, progress, scrollspy
      ===================================================================== */
   (function () {
@@ -1113,6 +1146,12 @@
         close: "lbX",
       });
       $$("[data-g]").forEach((b) => b.addEventListener("click", () => lb.open(list, +b.dataset.g)));
+      // Location map / masterplan: their own single-image view in the same dialog, never mixed
+      // into the photo gallery's list/count above.
+      $$(".loc-img, .mp-img").forEach((b) => {
+        const img = b.querySelector("img");
+        if (img) b.addEventListener("click", () => lb.open([{ src: img.src, title: img.alt }], 0));
+      });
     }
     $$(".rm").forEach(
       (b) =>

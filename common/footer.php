@@ -46,7 +46,7 @@ $socials = [
 $insta = trim($header_info['header_instagram_link'] ?? '');
 $insta_handle = $insta ? '@' . trim(parse_url($insta, PHP_URL_PATH) ?? '', '/') : '';
 $permit = !empty($footer_info['permit_number']) ? $footer_info['permit_number'] : '1007935000';
-$gptw_logo = !empty($header_info['greate_place_logo']) ? BASE_URL_IMG . 'header/' . $header_info['greate_place_logo'] : '';
+$gptw_logo = !empty($header_info['greate_place_logo']) ? dre_img(BASE_URL_IMG . 'header/' . $header_info['greate_place_logo'], 200) : '';
 
 // Bottom bar: the design's one-line legal summary, with the numbers taken from the admin's copyright text
 $copyright = strip_tags(html_entity_decode($footer_info['footer_copyright_text'] ?? '', ENT_QUOTES, 'UTF-8'));

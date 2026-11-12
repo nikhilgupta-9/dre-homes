@@ -170,6 +170,11 @@ $toll_free = $footer_info['footer_contact_number'] ?? '800 37373';
       }
     </script>
 
+    <!-- Preload hint only: the browser's preload scanner can't see an @import buried inside a
+         <style> tag, so without this the fetch doesn't start until the CSS parser reaches it a
+         beat later. The @import below still does the actual loading/layering; this just makes
+         the request start sooner, in parallel with everything else in <head>. -->
+    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
     <!-- Bootstrap 5.3 — loaded into a cascade layer so the DRE theme below always takes priority -->
     <style>
       @layer reset, bootstrap;

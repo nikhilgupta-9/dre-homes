@@ -1508,15 +1508,17 @@
 		// map and masterplan are separate single images, each with its own small viewer in
 		// their own section (9.10: single-property.php #location / #masterplan) — they never
 		// mix into the gallery count or thumbnails.
+		// 1600px keeps the lightbox's zoomed view sharp while dre_img() still re-encodes
+		// as WebP where this PHP build supports it, and recompresses either way.
 		$photos = [];
 		foreach (db_all("SELECT gallery_img, gallery_img_alt FROM tbl_proj_gallery WHERE proj_id = ? AND is_active = '1' ORDER BY proj_gallery_id ASC", [$id]) as $g) {
 			$src = project_media_url('gallery', $g['gallery_img']);
 			if ($src !== '') {
-				$photos[] = ['src' => $src, 'title' => plain_text($g['gallery_img_alt']) ?: $name];
+				$photos[] = ['src' => dre_img($src, 1600), 'title' => plain_text($g['gallery_img_alt']) ?: $name];
 			}
 		}
-		$location_img = project_media_url('location', $project['proj_loc_img']);
-		$masterplan_img = project_media_url('masterplan', $project['proj_mastrpln_img']);
+		$location_img = dre_img(project_media_url('location', $project['proj_loc_img']), 1600);
+		$masterplan_img = dre_img(project_media_url('masterplan', $project['proj_mastrpln_img']), 1600);
 		if (!$photos) {
 			$photos[] = ['src' => project_media_url('thumb', explode(',', $project['prj_thumb_img'])[0]), 'title' => $name];
 		}
@@ -1859,7 +1861,7 @@
 			$img = trim((string) $g['gallery_img']);
 			if ($img !== '' && is_file(dirname(__DIR__) . '/admin_nsrdwsc/assets/media/project/gallery/' . $img)) {
 				$photos[] = [
-					'src' => BASE_URL_IMG . 'project/gallery/' . rawurlencode($img),
+					'src' => dre_img(BASE_URL_IMG . 'project/gallery/' . rawurlencode($img), 1600),
 					'title' => $name . ' photo ' . (count($photos) + 1),
 				];
 			}
@@ -2348,7 +2350,7 @@
 			$img = trim((string) $g['gallery_img']);
 			if ($img !== '' && is_file(dirname(__DIR__) . '/admin_nsrdwsc/assets/media/project/gallery/' . $img)) {
 				$photos[] = [
-					'src' => BASE_URL_IMG . 'project/gallery/' . rawurlencode($img),
+					'src' => dre_img(BASE_URL_IMG . 'project/gallery/' . rawurlencode($img), 1600),
 					'title' => $name . ' photo ' . (count($photos) + 1),
 				];
 			}
@@ -2879,7 +2881,7 @@
 			$file = trim((string) $g['gallery_img']);
 			if ($file !== '') {
 				$photos[] = [
-					'src' => BASE_URL_IMG . 'project/gallery/' . rawurlencode($file),
+					'src' => dre_img(BASE_URL_IMG . 'project/gallery/' . rawurlencode($file), 1600),
 					'title' => trim((string) ($g['gallery_img_alt'] ?: ($name . ' photo ' . ($idx + 1)))),
 				];
 			}
@@ -3260,7 +3262,7 @@
 			$file = trim((string) $g['gallery_img']);
 			if ($file !== '') {
 				$photos[] = [
-					'src' => BASE_URL_IMG . 'project/gallery/' . rawurlencode($file),
+					'src' => dre_img(BASE_URL_IMG . 'project/gallery/' . rawurlencode($file), 1600),
 					'title' => trim((string) ($g['gallery_img_alt'] ?: ($name . ' photo ' . ($idx + 1)))),
 				];
 			}

@@ -738,7 +738,9 @@
   })();
 
   /* =====================================================================
-     Google map auto-loads (map link = data-map on the #mapLoad button)
+     Google map: the button says "Load interactive map" — it only loads
+     once clicked, not on page load (the iframe's own JS is heavy enough
+     to noticeably delay first paint if it runs unconditionally).
      Used by the property detail pages (single-property, buy/rent/ready/international
      -*-single.php); community-single.php embeds its map directly instead.
      ===================================================================== */
@@ -746,14 +748,16 @@
     const b = $("mapLoad"),
       w = $("mapWrap");
     if (!b || !w || !b.dataset.map) return;
-    const i = document.createElement("iframe");
-    i.src = b.dataset.map;
-    i.loading = "lazy";
-    i.referrerPolicy = "no-referrer-when-downgrade";
-    i.allowFullscreen = true;
-    i.title = "Map";
-    w.innerHTML = "";
-    w.appendChild(i);
+    b.addEventListener("click", () => {
+      const i = document.createElement("iframe");
+      i.src = b.dataset.map;
+      i.loading = "lazy";
+      i.referrerPolicy = "no-referrer-when-downgrade";
+      i.allowFullscreen = true;
+      i.title = "Map";
+      w.innerHTML = "";
+      w.appendChild(i);
+    });
   })();
 
   /* =====================================================================

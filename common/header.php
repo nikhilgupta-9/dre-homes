@@ -188,7 +188,7 @@ $toll_free = $footer_info['footer_contact_number'] ?? '800 37373';
     <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/21.2.7/css/intlTelInput.css" onload="this.onload=null;this.rel='stylesheet'" />
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/21.2.7/css/intlTelInput.css" /></noscript>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/21.2.7/js/intlTelInput.min.js"></script>
-    <link rel="stylesheet" href="assets/css/style.css" />
+    <link rel="stylesheet" href="<?= htmlspecialchars(asset_url('assets/css/style.css')) ?>" />
     
     <!-- Dynamic Website Theme Overrides -->
     <?= render_theme_css($theme_settings) ?>

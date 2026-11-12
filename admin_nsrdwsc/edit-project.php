@@ -232,7 +232,7 @@ if ($details) {
   $old['prj_type_id'] = (int) $details['prj_type_id'];
   $old['prj_dev_id'] = (int) $details['prj_dev_id'];
   $old['prj_comm_id'] = (int) $details['prj_comm_id'];
-  foreach (array_merge(['proj_showonhomepage', 'proj_markfeat', 'is_active'], array_keys($app_toggles)) as $flag) {
+  foreach (array_merge(['proj_showonhomepage', 'is_home_hero', 'proj_markfeat', 'is_active'], array_keys($app_toggles)) as $flag) {
     $old[$flag] = (string) $details[$flag] === '1' ? '1' : '';
   }
   $old_lists['proj_bedroom'] = $split($details['proj_bedroom']);
@@ -267,7 +267,7 @@ if ($details && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['u
   $old['prj_type_id'] = (int) ($_POST['prj_type_id'] ?? 0);
   $old['prj_dev_id'] = (int) ($_POST['prj_dev_id'] ?? 0);
   $old['prj_comm_id'] = (int) ($_POST['prj_comm_id'] ?? 0);
-  foreach (array_merge(['proj_showonhomepage', 'proj_markfeat', 'is_active'], array_keys($app_toggles)) as $flag) {
+  foreach (array_merge(['proj_showonhomepage', 'is_home_hero', 'proj_markfeat', 'is_active'], array_keys($app_toggles)) as $flag) {
     $old[$flag] = isset($_POST[$flag]) ? '1' : '';
   }
   foreach ($icon_class as $n => $unused) {
@@ -328,6 +328,16 @@ if ($details && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['u
   $posted_time = strtotime($in['proj_posted_on']);
   if ($in['proj_posted_on'] === '' || $posted_time === false) {
     $errors[] = 'Choose the "posted on" date.';
+  }
+
+  // The homepage grid holds up to 6 cards; the hero banner is a separate single slot.
+  if ($old['proj_showonhomepage'] === '1' && $old['is_home_hero'] === '1') {
+    $errors[] = 'A project can be shown on the homepage grid or as the homepage hero banner, not both. Choose one.';
+  } elseif ($old['proj_showonhomepage'] === '1') {
+    $home_count = addp_query($conn, "SELECT COUNT(*) AS n FROM tbl_proj WHERE proj_showonhomepage = '1' AND prj_id <> ?", [$id]);
+    if (($home_count ? (int) $home_count[0]['n'] : 0) >= 6) {
+      $errors[] = 'The homepage already shows 6 projects. Remove one from the homepage first, then add this one.';
+    }
   }
 
   // Page address: left exactly as it is unless it was changed here, because changing it changes the page's link.
@@ -465,6 +475,7 @@ if ($details && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['u
       'meta_tags' => $in['meta_tags'],
       'proj_comm_feat' => implode(',', $featured_ids),
       'proj_showonhomepage' => $old['proj_showonhomepage'] === '1' ? '1' : '2',
+      'is_home_hero' => $old['is_home_hero'] === '1' ? '1' : '2',
       'home_card_order_no' => (int) $in['home_card_order_no'],
       'home_card_img' => $stored['home_card_img'],
       'proj_markfeat' => $old['proj_markfeat'] === '1' ? '1' : '2',
@@ -517,6 +528,10 @@ if ($details && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['u
         }
       }
       seo_check_save($conn, $id);
+      if ($old['is_home_hero'] === '1') {
+        // Only one project can be the homepage hero at a time.
+        addp_query($conn, "UPDATE tbl_proj SET is_home_hero = '2' WHERE prj_id <> ?", [$id]);
+      }
       $logger->log('UPDATE', 'tbl_proj', $id, $old_data, $logger->getOldRecordData('tbl_proj', $id), 'Project updated');
       header('Location: ' . BASE_URL . 'edit-project.php?edit=' . base64_encode($id) . '&saved=1');
       exit;
@@ -1104,7 +1119,12 @@ $picked = function ($list, $value) use (&$old_lists) {
                       <label class="dre-toggle">
                         <input type="checkbox" name="proj_showonhomepage" value="1" id="showHomepage" <?= ($old['proj_showonhomepage'] ?? '') === '1' ? 'checked' : '' ?>>
                         <i></i>
-                        <span><strong>Show on the homepage</strong><small>Adds a card for this project to the homepage.</small></span>
+                        <span><strong>Show on the homepage</strong><small>Adds a card for this project to the homepage. Up to 6 projects.</small></span>
+                      </label>
+                      <label class="dre-toggle">
+                        <input type="checkbox" name="is_home_hero" value="1" id="homeHero" <?= ($old['is_home_hero'] ?? '') === '1' ? 'checked' : '' ?>>
+                        <i></i>
+                        <span><strong>Homepage hero banner</strong><small>Shows this project in the big banner at the top of the homepage. Only one project at a time, separate from the 6 homepage cards above.</small></span>
                       </label>
                       <div class="dre-form-grid dre-cols-2" id="homeOrderNo">
                         <label class="dre-field">
@@ -1275,6 +1295,13 @@ $picked = function ($list, $value) use (&$old_lists) {
             function toggleHome() { homeFields.style.display = homeSwitch.checked ? '' : 'none'; }
             homeSwitch.addEventListener('change', toggleHome);
             toggleHome();
+
+            // --- Homepage grid and homepage hero are mutually exclusive ---
+            var heroSwitch = document.getElementById('homeHero');
+            if (heroSwitch) {
+              homeSwitch.addEventListener('change', function () { if (homeSwitch.checked) { heroSwitch.checked = false; } });
+              heroSwitch.addEventListener('change', function () { if (heroSwitch.checked) { homeSwitch.checked = false; toggleHome(); } });
+            }
 
             // --- Rows that can be added and removed ---
             function planTotal() {

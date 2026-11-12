@@ -373,6 +373,10 @@
     background: linear-gradient(135deg, var(--dd-main), var(--dd-accent));
     color: #fff;
 }
+.dre-pill-hero {
+    background: linear-gradient(135deg, #c9962f, #e8c477);
+    color: #3a2c06;
+}
 .dre-empty {
     padding: 22px 0;
     color: var(--dd-muted);

@@ -1,18 +1,117 @@
 /* Projects page. Builds on dre-dashboard.css and dre-leads.css. */
+
+/* Smaller hero/tabs on this page so the list gets more room. */
+.dre-projects .dre-hero {
+    padding: 16px 20px;
+    gap: 14px;
+}
+.dre-projects .dre-hero h1 {
+    font-size: 1.3rem;
+    margin-bottom: 2px;
+}
+.dre-projects .dre-hero p {
+    font-size: 0.85rem;
+}
+.dre-projects .dre-leads-stats div {
+    min-width: 72px;
+    padding: 7px 12px;
+}
+.dre-projects .dre-leads-stats strong {
+    font-size: 1.1rem;
+}
+.dre-projects .dre-leads-tabs {
+    margin: -4px -4px 8px;
+    padding: 4px 4px 8px;
+}
+.dre-projects .dre-leads-tabs a {
+    padding: 6px 12px;
+    font-size: 0.84rem;
+}
+
+/* Filter bar: one compact row, with the rest tucked behind "More filters". */
 .dre-proj-filter {
-    grid-template-columns: minmax(220px, 2fr) repeat(3, minmax(140px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 10px;
+    padding: 12px 16px;
+}
+.dre-proj-filter label {
+    margin: 0;
+}
+.dre-proj-filter label > span {
+    margin-bottom: 3px;
+    font-size: 0.72rem;
+}
+.dre-proj-filter input,
+.dre-proj-filter select {
+    height: 36px;
+    font-size: 0.86rem;
 }
 .dre-proj-filter .dre-leads-search {
-    grid-column: auto;
+    flex: 1 1 220px;
+    min-width: 180px;
+}
+.dre-proj-filter .dre-pf-main {
+    flex: 1 1 150px;
+    min-width: 130px;
+}
+.dre-proj-filter .dre-pf-actions {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    flex: none;
+    margin-left: auto;
+}
+.dre-proj-filter .dre-btn {
+    height: 36px;
+    padding: 0 12px;
+    font-size: 0.86rem;
+}
+.dre-pf-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--dd-main);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 18px;
+}
+.dre-pf-count[hidden] {
+    display: none;
+}
+.dre-pf-all-label {
+    display: none;
+}
+
+/* "More filters" row: hidden until the filter bar is opened. */
+.dre-proj-filter .dre-pf-adv {
+    display: none;
+    flex: 1 1 150px;
+    min-width: 130px;
+}
+.dre-proj-filter.is-open .dre-pf-adv {
+    display: block;
+}
+.dre-proj-filter.is-open::after {
+    content: '';
+    flex-basis: 100%;
+    height: 0;
 }
 .dre-proj-filter .dre-proj-check {
     display: flex;
     align-items: center;
-    gap: 8px;
-    height: 42px;
+    gap: 6px;
+    height: 36px;
     color: var(--dd-ink);
-    font-size: 0.92rem;
+    font-size: 0.86rem;
     cursor: pointer;
+    flex: none;
 }
 .dre-proj-filter .dre-proj-check input,
 .dre-proj-all input,
@@ -22,10 +121,37 @@
     accent-color: var(--dd-main);
     cursor: pointer;
 }
-.dre-proj-filter .dre-leads-filter-buttons {
-    grid-column: auto;
-    justify-content: flex-end;
+
+/* Active filter chips: compact pills under the filter bar. */
+.dre-pf-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: -6px 0 14px;
 }
+.dre-pf-chip,
+.dre-pf-clear {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(95, 87, 76, 0.18);
+    color: var(--dd-main);
+    font-size: 0.78rem;
+}
+.dre-pf-chip:hover {
+    background: rgba(255, 255, 255, 0.95);
+    text-decoration: none;
+}
+.dre-pf-clear {
+    background: none;
+    border-color: transparent;
+    text-decoration: underline;
+}
+
 .dre-proj-all {
     display: flex;
     align-items: center;
@@ -294,12 +420,9 @@
     }
 }
 @media (max-width: 1199px) {
-    .dre-proj-filter {
-        grid-template-columns: 1fr 1fr;
-    }
-    .dre-proj-filter .dre-leads-search,
-    .dre-proj-filter .dre-leads-filter-buttons {
-        grid-column: 1 / -1;
+    .dre-proj-filter .dre-pf-actions {
+        flex: 1 1 100%;
+        margin-left: 0;
         justify-content: flex-start;
     }
 }
@@ -351,8 +474,16 @@
     }
 }
 @media (max-width: 575px) {
-    .dre-proj-filter {
-        grid-template-columns: 1fr;
+    .dre-proj-filter .dre-leads-search,
+    .dre-proj-filter .dre-pf-main,
+    .dre-proj-filter.is-open .dre-pf-adv {
+        flex-basis: 100%;
+    }
+    .dre-pf-more-label {
+        display: none;
+    }
+    .dre-pf-all-label {
+        display: inline;
     }
     .dre-proj-all span {
         display: none;

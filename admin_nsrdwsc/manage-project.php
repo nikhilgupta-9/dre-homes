@@ -16,83 +16,7 @@ if (empty($_SESSION['admin_csrf'])) {
 	$_SESSION['admin_csrf'] = bin2hex(random_bytes(16));
 }
 
-// This page lists these project types (buy and rent listings have their own pages).
-$proj_types = [1 => 'Off Plan', 2 => 'Ready to Move In', 3 => 'International', 4 => 'Commercial'];
-$proj_url_prefix = [1 => 'property/', 2 => 'ready-to-move-in/', 3 => 'international-properties/', 4 => 'property/'];
-$proj_missing = ['price' => 'Price', 'bedrooms' => 'Bedrooms', 'image' => 'Thumbnail image', 'meta' => 'Meta description'];
-$proj_sorts = ['newest' => 'Latest first', 'added' => 'Newest ID first', 'name' => 'Name A-Z', 'price_low' => 'Price: low to high', 'price_high' => 'Price: high to low'];
-
-// ---------------------------------------------------------------
-// Filters (all optional, all from the address bar)
-// ---------------------------------------------------------------
-$f_type = isset($_GET['type']) && isset($proj_types[(int) $_GET['type']]) ? (int) $_GET['type'] : 0;
-$f_status = in_array($_GET['status'] ?? '', ['active', 'inactive'], true) ? $_GET['status'] : '';
-$f_home = (($_GET['home'] ?? '') === '1' || ($_GET['homepage_filter'] ?? '') === '1') ? '1' : '';
-$f_sync = in_array($_GET['sync'] ?? '', ['pushed', 'pending'], true) ? $_GET['sync'] : '';
-$f_source = ($_GET['source'] ?? '') === 'geniemap' ? 'geniemap' : '';
-$f_seo = in_array($_GET['seo'] ?? '', ['good', 'ok', 'bad', 'none'], true) ? $_GET['seo'] : '';
-$f_dev = max(0, (int) ($_GET['dev'] ?? 0));
-$f_comm = max(0, (int) ($_GET['comm'] ?? 0));
-$f_missing = isset($_GET['missing']) && is_string($_GET['missing']) && isset($proj_missing[$_GET['missing']]) ? $_GET['missing'] : '';
-$f_sort = isset($_GET['sort']) && is_string($_GET['sort']) && isset($proj_sorts[$_GET['sort']]) ? $_GET['sort'] : 'newest';
-$f_search = isset($_GET['q']) && is_string($_GET['q']) ? trim(mb_substr($_GET['q'], 0, 100)) : '';
-$f_per_page = (int) ($_GET['per'] ?? 25);
-if (!in_array($f_per_page, [25, 50, 100], true)) {
-	$f_per_page = 25;
-}
-$f_page = max(1, (int) ($_GET['page'] ?? 1));
-
-// Address of this page with the current filters, with some of them changed.
-function proj_url(array $change = [])
-{
-	global $f_seo, $f_source, $f_type, $f_status, $f_home, $f_sync, $f_dev, $f_comm, $f_missing, $f_sort, $f_search, $f_per_page, $f_page;
-	$params = array_merge([
-		'type' => $f_type ?: '', 'status' => $f_status, 'home' => $f_home, 'sync' => $f_sync, 'source' => $f_source, 'seo' => $f_seo, 'dev' => $f_dev ?: '', 'comm' => $f_comm ?: '',
-		'missing' => $f_missing, 'sort' => $f_sort === 'newest' ? '' : $f_sort, 'q' => $f_search,
-		'per' => $f_per_page === 25 ? '' : $f_per_page, 'page' => $f_page === 1 ? '' : $f_page,
-	], $change);
-	$params = array_filter($params, function ($value) {
-		return $value !== '' && $value !== null;
-	});
-	return BASE_URL . 'manage-project.php' . ($params ? '?' . http_build_query($params) : '');
-}
-
-function proj_e($text)
-{
-	return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
-}
-
-// Runs a prepared query and returns its rows (or true for a write).
-function proj_query($conn, $sql, array $params = [])
-{
-	$stmt = mysqli_prepare($conn, $sql);
-	if (!$stmt) {
-		error_log('Project query failed: ' . mysqli_error($conn));
-		return false;
-	}
-	if ($params) {
-		$types = '';
-		foreach ($params as $param) {
-			$types .= is_int($param) ? 'i' : 's';
-		}
-		mysqli_stmt_bind_param($stmt, $types, ...$params);
-	}
-	if (!mysqli_stmt_execute($stmt)) {
-		error_log('Project query failed: ' . mysqli_stmt_error($stmt));
-		mysqli_stmt_close($stmt);
-		return false;
-	}
-	$result = mysqli_stmt_get_result($stmt);
-	mysqli_stmt_close($stmt);
-	if ($result === false) {
-		return true;
-	}
-	$rows = [];
-	while ($row = mysqli_fetch_assoc($result)) {
-		$rows[] = $row;
-	}
-	return $rows;
-}
+include('includes/project-query.php');
 
 // Switches one project on or off the website and records the change.
 function proj_set_active($conn, $logger, $id, $active)
@@ -168,107 +92,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['proj_action']
 	$notice = 'Nothing was changed. Please reload the page and try again.';
 }
 
-// ---------------------------------------------------------------
-// The list
-// ---------------------------------------------------------------
-$has_facts = (bool) proj_query($conn, "SHOW TABLES LIKE 'tbl_ai_proj_facts'");
-$legacy_price_sql = "IF(tp.proj_price REGEXP '^ *[0-9]+ *$' AND tp.proj_price + 0 > 0, tp.proj_price + 0, NULL)";
-$price_sql = $has_facts ? "COALESCE(f.price_aed, $legacy_price_sql)" : $legacy_price_sql;
-$from_sql = "FROM tbl_proj AS tp
-	LEFT JOIN tbl_developer AS td ON tp.prj_dev_id = td.dev_id
-	LEFT JOIN tbl_community AS tc ON tp.prj_comm_id = tc.comm_id"
-	. ($has_facts ? " LEFT JOIN tbl_ai_proj_facts AS f ON f.prj_id = tp.prj_id" : '');
-// Projects imported from GenieMap carry a badge (the table exists once its migration has been run).
-$has_genie = (bool) proj_query($conn, "SHOW TABLES LIKE 'tbl_geniemap_import'");
-$from_sql .= $has_genie ? ' LEFT JOIN tbl_geniemap_import AS gm ON gm.prj_id = tp.prj_id' : '';
-$genie_sql = $has_genie ? 'gm.genie_id' : 'NULL';
-// The SEO check of the project form keeps a score per project (once its migration has been run).
-$has_seo = (bool) proj_query($conn, "SHOW TABLES LIKE 'tbl_proj_seo'");
-$from_sql .= $has_seo ? ' LEFT JOIN tbl_proj_seo AS seo ON seo.prj_id = tp.prj_id' : '';
-$seo_sql = $has_seo ? 'seo.seo_score' : 'NULL';
-$seo_levels = ['good' => ['Good', "$seo_sql > 70"], 'ok' => ['OK', "$seo_sql BETWEEN 41 AND 70"], 'bad' => ['Needs improvement', "$seo_sql <= 40"], 'none' => ['Not checked yet', "$seo_sql IS NULL"]];
-
-$missing_sql = [
-	'price' => "$price_sql IS NULL",
-	'bedrooms' => "(tp.proj_bedroom IS NULL OR TRIM(tp.proj_bedroom) = '')",
-	'image' => "(tp.prj_thumb_img IS NULL OR TRIM(tp.prj_thumb_img) = '')",
-	'meta' => "(tp.meta_description IS NULL OR TRIM(tp.meta_description) = '')",
-];
-
-// Every filter except the type, so the type tabs can show their own counts.
-$where = ['tp.prj_type_id IN (1, 2, 3, 4)'];
-$params = [];
-if ($f_search !== '') {
-	$like = '%' . addcslashes($f_search, '%_\\') . '%';
-	$where[] = '(tp.proj_name LIKE ? OR tp.proj_name_on_card LIKE ? OR tp.proj_location LIKE ? OR tp.proj_slug LIKE ? OR td.dev_heading LIKE ? OR tc.comm_heading LIKE ?)';
-	array_push($params, $like, $like, $like, $like, $like, $like);
-}
-if ($f_status !== '') {
-	$where[] = $f_status === 'active' ? "tp.is_active = '1'" : "tp.is_active <> '1'";
-}
-if ($f_home !== '') {
-	$where[] = "tp.proj_showonhomepage = '1'";
-}
-if ($f_source !== '' && $has_genie) {
-	$where[] = 'gm.genie_id IS NOT NULL';
-}
-if ($f_seo !== '' && $has_seo) {
-	$where[] = $seo_levels[$f_seo][1];
-}
-if ($f_sync !== '') {
-	$where[] = $f_sync === 'pushed' ? 'tp.app_sync_status = 1' : '(tp.app_sync_status IS NULL OR tp.app_sync_status <> 1)';
-}
-if ($f_dev > 0) {
-	$where[] = 'tp.prj_dev_id = ?';
-	$params[] = $f_dev;
-}
-if ($f_comm > 0) {
-	$where[] = 'tp.prj_comm_id = ?';
-	$params[] = $f_comm;
-}
-if ($f_missing !== '') {
-	$where[] = $missing_sql[$f_missing];
-}
-$where_sql = 'WHERE ' . implode(' AND ', $where);
-
-$type_counts = [];
-foreach (proj_query($conn, "SELECT tp.prj_type_id, COUNT(*) AS n $from_sql $where_sql GROUP BY tp.prj_type_id", $params) ?: [] as $row) {
-	$type_counts[(int) $row['prj_type_id']] = (int) $row['n'];
-}
-$count_all = array_sum($type_counts);
-// How many GenieMap projects there are in all, for the quick filter beside the tabs.
-$genie_total = $has_genie ? (int) ((proj_query($conn, 'SELECT COUNT(*) AS n FROM tbl_geniemap_import gm JOIN tbl_proj tp ON tp.prj_id = gm.prj_id WHERE tp.prj_type_id IN (1, 2, 3, 4)') ?: [['n' => 0]])[0]['n']) : 0;
-$total = $f_type ? ($type_counts[$f_type] ?? 0) : $count_all;
-
-$list_where_sql = $where_sql . ($f_type ? ' AND tp.prj_type_id = ' . $f_type : '');
-$order_sql = [
-	'newest' => 'tp.tstp DESC, tp.prj_id DESC',
-	'added' => 'tp.prj_id DESC',
-	'name' => 'tp.proj_name ASC',
-	'price_low' => "$price_sql IS NULL, $price_sql ASC",
-	'price_high' => "$price_sql IS NULL, $price_sql DESC",
-][$f_sort];
-
-$pages = max(1, (int) ceil($total / $f_per_page));
-$f_page = min($f_page, $pages);
-$offset = ($f_page - 1) * $f_per_page;
-
-$projects = proj_query(
-	$conn,
-	"SELECT tp.prj_id, tp.prj_type_id, tp.proj_name, tp.proj_name_on_card, tp.proj_location, tp.proj_slug, tp.proj_bedroom, tp.proj_price, tp.prj_thumb_img,
-		tp.meta_description, tp.is_active, tp.proj_showonhomepage, tp.app_sync_status, tp.app_sync_date, tp.tstp,
-		td.dev_heading AS proj_dev_name, tc.comm_heading AS proj_comm_name, $price_sql AS price_number, $genie_sql AS genie_id, $seo_sql AS seo_score
-	$from_sql $list_where_sql ORDER BY $order_sql LIMIT ?, ?",
-	array_merge($params, [$offset, $f_per_page])
-) ?: [];
-
-$stat = proj_query($conn, "SELECT COUNT(*) AS total, SUM(is_active = '1') AS active, SUM(is_active <> '1') AS hidden, SUM(proj_showonhomepage = '1') AS home, SUM(app_sync_status = 1) AS pushed FROM tbl_proj WHERE prj_type_id IN (1, 2, 3, 4)");
-$stat = $stat ? $stat[0] : ['total' => 0, 'active' => 0, 'hidden' => 0, 'home' => 0, 'pushed' => 0];
-
-$developer_options = proj_query($conn, "SELECT d.dev_id, d.dev_heading FROM tbl_developer d WHERE d.dev_id IN (SELECT prj_dev_id FROM tbl_proj WHERE prj_type_id IN (1, 2, 3, 4)) ORDER BY d.dev_heading") ?: [];
-$community_options = proj_query($conn, "SELECT c.comm_id, c.comm_heading FROM tbl_community c WHERE c.comm_id IN (SELECT prj_comm_id FROM tbl_proj WHERE prj_type_id IN (1, 2, 3, 4)) ORDER BY c.comm_heading") ?: [];
-
-$filters_on = $f_search !== '' || $f_status !== '' || $f_home !== '' || $f_sync !== '' || $f_source !== '' || $f_seo !== '' || $f_dev > 0 || $f_comm > 0 || $f_missing !== '';
+include('includes/project-list.php');
 
 // Messages after an action
 $done = is_string($_GET['done'] ?? null) ? $_GET['done'] : '';
@@ -571,161 +395,8 @@ if ($push_message === 'push_success') {
 									<input type="hidden" name="csrf" value="<?= proj_e($_SESSION['admin_csrf']) ?>">
 								</form>
 
-								<!-- The list -->
-								<div class="dre-glass dre-leads-list">
-									<div class="dre-h">
-										<h3>
-											<?= number_format($total) ?> <?= $total === 1 ? 'project' : 'projects' ?><?= $f_type ? ' &middot; ' . proj_e($proj_types[$f_type]) : '' ?>
-											<small>
-												<?php if ($total > 0): ?>
-													Showing <?= number_format($offset + 1) ?>&ndash;<?= number_format($offset + count($projects)) ?><?= $filters_on ? ' &middot; filtered' : '' ?>
-												<?php else: ?>
-													Nothing matches<?= $filters_on ? ' these filters' : '' ?>
-												<?php endif; ?>
-											</small>
-										</h3>
-										<?php if ($projects): ?>
-											<label class="dre-proj-all"><input type="checkbox" id="projSelectAll"> Select all on this page</label>
-										<?php endif; ?>
-									</div>
-
-									<?php if (!$projects): ?>
-										<div class="dre-empty">
-											<i class="bi bi-buildings" style="font-size: 2rem;"></i><br>
-											No projects to show.
-											<?php if ($filters_on || $f_type): ?>
-												<a href="<?= BASE_URL ?>manage-project.php">Show all projects</a>
-											<?php endif; ?>
-										</div>
-									<?php else: ?>
-										<div class="dre-proj-table" role="table" aria-label="Projects">
-											<div class="dre-proj-row dre-proj-head" role="row">
-												<div role="columnheader"><span class="sr-only">Select</span></div>
-												<div role="columnheader">Project</div>
-												<div role="columnheader">Developer and community</div>
-												<div role="columnheader">Price and bedrooms</div>
-												<div role="columnheader">Status</div>
-												<div role="columnheader"><span class="sr-only">Actions</span></div>
-											</div>
-											<?php foreach ($projects as $row):
-												$id = (int) $row['prj_id'];
-												$type_id = (int) $row['prj_type_id'];
-												$is_live = $row['is_active'] === '1';
-												$thumb = trim(explode(',', (string) $row['prj_thumb_img'])[0]);
-												$view_url = BASE_URL_HOME . ($proj_url_prefix[$type_id] ?? 'property/') . $row['proj_slug'];
-												$missing = [];
-												if ($row['price_number'] === null) {
-													$missing[] = 'price';
-												}
-												if (trim((string) $row['proj_bedroom']) === '') {
-													$missing[] = 'bedrooms';
-												}
-												if ($thumb === '') {
-													$missing[] = 'image';
-												}
-												if (trim((string) $row['meta_description']) === '') {
-													$missing[] = 'meta description';
-												}
-												$bedrooms = str_ireplace('STD', 'Studio', implode(', ', array_filter(array_map('trim', explode(',', (string) $row['proj_bedroom'])), 'strlen')));
-											?>
-												<div class="dre-proj-row<?= $is_live ? '' : ' is-hidden' ?>" role="row">
-													<div class="dre-proj-pick" role="cell">
-														<input type="checkbox" name="project_ids[]" value="<?= $id ?>" form="projBulkForm" class="dre-proj-box" aria-label="Select <?= proj_e($row['proj_name']) ?>">
-													</div>
-													<div class="dre-proj-main" role="cell">
-														<a class="dre-proj-thumb" href="<?= BASE_URL ?>edit-project.php?edit=<?= base64_encode($id) ?>" tabindex="-1" aria-hidden="true">
-															<?php if ($thumb !== ''): ?>
-																<img src="<?= BASE_URL ?>assets/media/project/thumb/<?= proj_e(rawurlencode($thumb)) ?>" alt="" loading="lazy" onerror="this.remove()">
-															<?php endif; ?>
-															<i class="bi bi-building"></i>
-														</a>
-														<div>
-															<a class="dre-proj-name" href="<?= BASE_URL ?>edit-project.php?edit=<?= base64_encode($id) ?>"><?= proj_e($row['proj_name']) ?></a>
-											<?php if (trim((string) ($row['proj_name_on_card'] ?? '')) !== '' && strcasecmp(trim((string) $row['proj_name_on_card']), trim((string) $row['proj_name'])) !== 0): ?><span class="dre-proj-sub">Card name: <?= proj_e($row['proj_name_on_card']) ?></span><?php endif; ?>
-															<span class="dre-proj-sub"><i class="bi bi-geo-alt"></i> <?= trim((string) $row['proj_location']) !== '' ? proj_e($row['proj_location']) : 'No location' ?></span>
-															<div class="dre-proj-pills">
-																<span class="dre-pill"><?= proj_e($proj_types[$type_id] ?? 'Other') ?></span>
-																<?php if ($row['proj_showonhomepage'] === '1'): ?><span class="dre-pill dre-pill-ai"><i class="bi bi-house-heart"></i> Homepage</span><?php endif; ?>
-																<?php if ($has_seo): $seo_level = $row['seo_score'] === null ? 'none' : ((int) $row['seo_score'] > 70 ? 'good' : ((int) $row['seo_score'] > 40 ? 'ok' : 'bad')); ?><span class="dre-seo-pill is-<?= $seo_level ?>" title="SEO check of the project form<?= $row['seo_score'] === null ? ': open the project and save it once to get a score' : ' (score ' . (int) $row['seo_score'] . ' of 100)' ?>"><i></i> SEO: <?= proj_e($seo_levels[$seo_level][0]) ?></span><?php endif; ?>
-																<?php if (!empty($row['genie_id'])): ?><span class="dre-pill dre-pill-genie" title="This project was imported from GenieMap"><i class="bi bi-geo-alt-fill"></i> Imported from GenieMap</span><?php endif; ?>
-															</div>
-														</div>
-													</div>
-													<div class="dre-proj-where" role="cell">
-														<span><i class="bi bi-building"></i> <?= trim((string) $row['proj_dev_name']) !== '' ? proj_e($row['proj_dev_name']) : '<em>No developer</em>' ?></span>
-														<span><i class="bi bi-map"></i> <?= trim((string) $row['proj_comm_name']) !== '' ? proj_e($row['proj_comm_name']) : '<em>No community</em>' ?></span>
-													</div>
-													<div class="dre-proj-facts" role="cell">
-														<strong><?= $row['price_number'] !== null ? 'AED ' . number_format((float) $row['price_number']) : 'Price on request' ?></strong>
-														<span><?= $bedrooms !== '' ? proj_e($bedrooms) . ' bed' : 'Bedrooms not set' ?></span>
-														<?php if ($missing): ?>
-															<span class="dre-proj-missing" title="Details that are not filled in"><i class="bi bi-exclamation-triangle"></i> Missing: <?= proj_e(implode(', ', $missing)) ?></span>
-														<?php endif; ?>
-													</div>
-													<div class="dre-proj-status" role="cell">
-														<form method="post" action="<?= proj_e(proj_url()) ?>">
-															<input type="hidden" name="csrf" value="<?= proj_e($_SESSION['admin_csrf']) ?>">
-															<input type="hidden" name="proj_id" value="<?= $id ?>">
-															<button type="submit" name="proj_action" value="<?= $is_live ? 'hide' : 'show' ?>" class="dre-switch<?= $is_live ? ' is-on' : '' ?>" role="switch" aria-checked="<?= $is_live ? 'true' : 'false' ?>" title="<?= $is_live ? 'Live on the website. Click to hide.' : 'Hidden from the website. Click to show.' ?>">
-																<i></i><span><?= $is_live ? 'Live' : 'Hidden' ?></span>
-															</button>
-														</form>
-														<span class="dre-proj-sync">
-															<?php if ((int) $row['app_sync_status'] === 1): ?>
-																<i class="bi bi-phone"></i> In the app<?= $row['app_sync_date'] ? ' &middot; ' . date('d M Y', strtotime($row['app_sync_date'])) : '' ?>
-															<?php else: ?>
-																<i class="bi bi-phone"></i> Not in the app
-															<?php endif; ?>
-														</span>
-													</div>
-													<div class="dre-proj-actions" role="cell">
-														<a class="dre-icon-btn" href="<?= BASE_URL ?>edit-project.php?edit=<?= base64_encode($id) ?>" title="Edit" aria-label="Edit <?= proj_e($row['proj_name']) ?>"><i class="bi bi-pencil"></i></a>
-														<a class="dre-icon-btn" href="<?= proj_e($view_url) ?>" target="_blank" rel="noopener" title="<?= $is_live ? 'View on the website' : 'Hidden projects do not open on the website' ?>" aria-label="View <?= proj_e($row['proj_name']) ?> on the website"><i class="bi bi-box-arrow-up-right"></i></a>
-														<div class="dropdown">
-															<button type="button" class="dre-icon-btn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="More" aria-label="More actions for <?= proj_e($row['proj_name']) ?>"><i class="bi bi-three-dots"></i></button>
-															<div class="dropdown-menu dropdown-menu-right">
-																<a class="dropdown-item" href="<?= BASE_URL ?>manage-gallery.php?proj_id=<?= $id ?>"><i class="bi bi-images mr-2"></i>Gallery</a>
-																<a class="dropdown-item" href="<?= BASE_URL ?>manage-faq.php?proj_id=<?= $id ?>"><i class="bi bi-question-circle mr-2"></i>Questions and answers</a>
-																<a class="dropdown-item" href="<?= BASE_URL ?>manage-payplan.php?proj_id=<?= $id ?>"><i class="bi bi-calendar-check mr-2"></i>Payment plan</a>
-																<div class="dropdown-divider"></div>
-																<form method="post" action="<?= proj_e(proj_url()) ?>" class="dre-proj-delete" data-name="<?= proj_e($row['proj_name']) ?>">
-																	<input type="hidden" name="csrf" value="<?= proj_e($_SESSION['admin_csrf']) ?>">
-																	<input type="hidden" name="proj_id" value="<?= $id ?>">
-																	<button type="submit" name="proj_action" value="delete" class="dropdown-item text-danger"><i class="bi bi-trash3 mr-2"></i>Delete</button>
-																</form>
-															</div>
-														</div>
-													</div>
-												</div>
-											<?php endforeach; ?>
-										</div>
-
-										<?php if ($pages > 1): ?>
-											<nav class="dre-leads-pages" aria-label="Pages">
-												<?php if ($f_page > 1): ?>
-													<a href="<?= proj_e(proj_url(['page' => $f_page - 1])) ?>" aria-label="Previous page"><i class="bi bi-chevron-left"></i></a>
-												<?php endif; ?>
-												<?php
-												$shown = [];
-												foreach ([1, 2, $f_page - 1, $f_page, $f_page + 1, $pages - 1, $pages] as $number) {
-													if ($number >= 1 && $number <= $pages) {
-														$shown[$number] = true;
-													}
-												}
-												ksort($shown);
-												$previous = 0;
-												foreach (array_keys($shown) as $number):
-													if ($number > $previous + 1): ?><span>&hellip;</span><?php endif; ?>
-													<a href="<?= proj_e(proj_url(['page' => $number])) ?>" class="<?= $number === $f_page ? 'is-on' : '' ?>" <?= $number === $f_page ? 'aria-current="page"' : '' ?>><?= $number ?></a>
-												<?php $previous = $number;
-												endforeach; ?>
-												<?php if ($f_page < $pages): ?>
-													<a href="<?= proj_e(proj_url(['page' => $f_page + 1])) ?>" aria-label="Next page"><i class="bi bi-chevron-right"></i></a>
-												<?php endif; ?>
-											</nav>
-										<?php endif; ?>
-									<?php endif; ?>
-								</div>
+								<!-- The list: shared with ajax/manage-project-search.php so live search can swap it in whole. -->
+								<?php include('includes/project-results.php'); ?>
 
 								<!-- Appears when at least one project is ticked -->
 								<div class="dre-proj-bulk" id="projBulkBar" hidden>
@@ -741,13 +412,15 @@ if ($push_message === 'push_success') {
 
 							<script>
 								// Selection bar, confirmations, and the message that fades out.
+								// Delegated on the document so it keeps working after the live search
+								// below swaps in a fresh #projResults.
 								(function () {
-									var boxes = Array.prototype.slice.call(document.querySelectorAll('.dre-proj-box'));
-									var all = document.getElementById('projSelectAll');
 									var bar = document.getElementById('projBulkBar');
 									var count = document.getElementById('projBulkCount');
 
 									function refresh() {
+										var boxes = Array.prototype.slice.call(document.querySelectorAll('.dre-proj-box'));
+										var all = document.getElementById('projSelectAll');
 										var picked = boxes.filter(function (box) { return box.checked; }).length;
 										count.textContent = picked;
 										bar.hidden = picked === 0;
@@ -756,15 +429,17 @@ if ($push_message === 'push_success') {
 											all.indeterminate = picked > 0 && picked < boxes.length;
 										}
 									}
-									boxes.forEach(function (box) { box.addEventListener('change', refresh); });
-									if (all) {
-										all.addEventListener('change', function () {
-											boxes.forEach(function (box) { box.checked = all.checked; });
+
+									document.addEventListener('change', function (event) {
+										if (event.target.classList.contains('dre-proj-box')) {
 											refresh();
-										});
-									}
+										} else if (event.target.id === 'projSelectAll') {
+											document.querySelectorAll('.dre-proj-box').forEach(function (box) { box.checked = event.target.checked; });
+											refresh();
+										}
+									});
 									document.getElementById('projBulkClear').addEventListener('click', function () {
-										boxes.forEach(function (box) { box.checked = false; });
+										document.querySelectorAll('.dre-proj-box').forEach(function (box) { box.checked = false; });
 										refresh();
 									});
 									bar.querySelectorAll('[data-confirm]').forEach(function (button) {
@@ -774,19 +449,85 @@ if ($push_message === 'push_success') {
 											}
 										});
 									});
-									document.querySelectorAll('.dre-proj-delete').forEach(function (form) {
-										form.addEventListener('submit', function (event) {
-											if (!window.confirm('Delete "' + form.getAttribute('data-name') + '"? Its gallery files, brochure and plans are removed too. A copy of the record is kept in the delete log.')) {
-												event.preventDefault();
-											}
-										});
+									document.addEventListener('submit', function (event) {
+										var form = event.target.closest('.dre-proj-delete');
+										if (!form) return;
+										if (!window.confirm('Delete "' + form.getAttribute('data-name') + '"? Its gallery files, brochure and plans are removed too. A copy of the record is kept in the delete log.')) {
+											event.preventDefault();
+										}
 									});
 									refresh();
+									window.dreProjRefreshBulk = refresh;
 
 									var notice = document.getElementById('projNotice');
 									if (notice) {
 										setTimeout(function () { notice.style.display = 'none'; }, 6000);
 									}
+								})();
+
+								// "More filters" toggle: not inside #projResults, so it survives the live search below.
+								(function () {
+									var filterForm = document.getElementById('projFilter');
+									var filterToggle = document.getElementById('projFilterToggle');
+									if (!filterForm || !filterToggle) return;
+									filterToggle.addEventListener('click', function () {
+										var open = filterForm.classList.toggle('is-open');
+										filterToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+									});
+								})();
+
+								// Real-time search/filter: typing or changing a filter re-queries the
+								// table without a full page reload. Pagination links inside the result
+								// stay AJAX too, so the whole list never needs a hard refresh.
+								(function () {
+									var form = document.getElementById('projFilter');
+									if (!form) return;
+
+									function load(page, pushUrl) {
+										var params = new URLSearchParams(new FormData(form));
+										params.set('page', page || 1);
+										// base_url (from includes/header.php) is required here: the page sets
+										// <base href="../../../">, so a bare relative URL would resolve outside
+										// the admin folder entirely.
+										fetch(base_url + 'ajax/manage-project-search.php?' + params.toString(), { credentials: 'same-origin' })
+											.then(function (response) { return response.text(); })
+											.then(function (html) {
+												var current = document.getElementById('projResults');
+												if (!current) return;
+												current.outerHTML = html;
+												if (window.dreProjRefreshBulk) window.dreProjRefreshBulk();
+												if (pushUrl) {
+													var query = params.toString();
+													history.replaceState(null, '', base_url + 'manage-project.php' + (query ? '?' + query : ''));
+												}
+											})
+											.catch(function () { /* leave the table as it is; the Apply button still works */ });
+									}
+
+									var timer;
+									var search = form.querySelector('input[name="q"]');
+									if (search) {
+										search.addEventListener('input', function () {
+											clearTimeout(timer);
+											timer = setTimeout(function () { load(1, true); }, 350);
+										});
+									}
+									form.querySelectorAll('select, input[type="checkbox"]').forEach(function (field) {
+										field.addEventListener('change', function () { load(1, true); });
+									});
+									form.addEventListener('submit', function (event) {
+										event.preventDefault();
+										clearTimeout(timer);
+										load(1, true);
+									});
+
+									document.addEventListener('click', function (event) {
+										var link = event.target.closest('#projResults .dre-leads-pages a');
+										if (!link) return;
+										event.preventDefault();
+										var page = new URL(link.href, location.href).searchParams.get('page') || 1;
+										load(page, true);
+									});
 								})();
 							</script>
 							<!--end::Projects-->

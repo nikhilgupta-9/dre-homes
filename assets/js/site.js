@@ -433,6 +433,7 @@
     const g = pop.length ? "Communities" : "Areas";
     SUGS.push({
       input: inp.id,
+      ajax: inp.dataset.ajax || undefined,
       minW: +inp.dataset.minW || undefined,
       popTitle: inp.dataset.popTitle,
       per: +inp.dataset.per || 4,

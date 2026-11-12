@@ -86,7 +86,15 @@ include('common/header.php');
         <h2 class="serif"><?= $review_stats['total'] ?> stories <em class="gold-text">of trust.</em></h2>
       </div>
     </div>
-    
+
+    <div class="chips" id="tqTp" role="group" aria-label="Filter reviews by topic">
+      <button class="chip on" type="button" data-tp="all">All <small><?= (int) ($topic_counts['all'] ?? 0) ?></small></button>
+      <button class="chip" type="button" data-tp="buy">Buying <small><?= (int) ($topic_counts['buy'] ?? 0) ?></small></button>
+      <button class="chip" type="button" data-tp="rent">Renting <small><?= (int) ($topic_counts['rent'] ?? 0) ?></small></button>
+      <button class="chip" type="button" data-tp="sell">Selling <small><?= (int) ($topic_counts['sell'] ?? 0) ?></small></button>
+      <button class="chip" type="button" data-tp="ag">With an advisor <small><?= (int) ($topic_counts['ag'] ?? 0) ?></small></button>
+    </div>
+
     <div class="fbar glass tq-bar">
       <label class="fsearch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <circle cx="11" cy="11" r="7"></circle>

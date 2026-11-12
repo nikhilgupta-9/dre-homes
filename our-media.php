@@ -5,6 +5,13 @@ include('db/config.php');
 $meta_tags = get_seo_tags(24);
 
 $media_content = get_media_content();              // Admin > Media > Media Content (banner, headings)
+$media_hero_image = trim((string) ($media_content['media_img'] ?? ''));
+$media_hero_image_url = $media_hero_image !== ''
+    ? BASE_URL_IMG . 'gallery/' . rawurlencode($media_hero_image)
+    : BASE_URL . 'images/home-sec/offplan-property.jpg';
+$media_hero_eyebrow = trim((string) ($media_content['media_heading'] ?? '')) ?: 'Media buzz';
+$media_hero_title = trim((string) ($media_content['media_title'] ?? '')) ?: 'Every frame tells a story.';
+$media_hero_subtitle = trim((string) ($media_content['media_sub_title'] ?? '')) ?: 'A glimpse into the world of DRE.';
 $photos = get_media_photos();                      // Admin > Media > Manage Media: every published photo, newest first
 $stories = get_media_stories($photos);             // runs of 7+ photos with the same caption
 $category_counts = get_media_category_counts($photos);
@@ -15,14 +22,14 @@ include('common/header.php');
 ?>
     <!-- ===== MEDIA: HERO ===== -->
     <header class="ph-hero mg-hero md-hero">
-      <div class="ph-bg" style="background-image: url(<?= BASE_URL_IMG ?>gallery/<?= rawurlencode($media_content['media_img'] ?? '') ?>)"></div>
+      <div class="ph-bg" style="background-image: url('<?= e($media_hero_image_url) ?>')"></div>
       <div class="wrap">
         <div class="crumbs" role="navigation" aria-label="Breadcrumb">
           <a href="<?= BASE_URL ?>">Home</a><span>/</span><span aria-current="page">Our Media</span>
         </div>
-        <span class="eyebrow"><?= e($media_content['media_heading'] ?? 'Media buzz') ?> </span>
-        <h1 class="serif">Every frame <em class="gold-text">tells a story.</em></h1>
-        <p class="sub"><?= e($media_content['media_sub_title'] ?? 'A glimpse into the world of DRE.') ?></p>
+        <span class="eyebrow"><?= e($media_hero_eyebrow) ?></span>
+        <h1 class="serif"><?= e($media_hero_title) ?></h1>
+        <p class="sub"><?= e($media_hero_subtitle) ?></p>
         <div class="dp-stats glass reveal">
           <div><small>Photos</small><b><?= count($photos) ?></b></div>
           <div><small>Award moments</small><b><?= $category_counts['awards'] ?></b></div>

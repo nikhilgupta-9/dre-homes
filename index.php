@@ -8,14 +8,37 @@ foreach (select_all('tbl_hero_section', 'is_active=1 ORDER BY display_order') as
   $hero[$row['img_screen_size']] = $row;
 }
 
-// Hot property launches, with their community and emirate
+// Hero search: popular locations shown before typing (the box also calls
+// ajax/hero-location-suggestions.php live as the visitor types further).
+$hero_locations = [];
+$res = mysqli_query($conn, "SELECT c.comm_heading, c.comm_location, COUNT(p.prj_id) AS proj_count
+  FROM tbl_community c
+  LEFT JOIN tbl_proj p ON p.prj_comm_id = c.comm_id AND p.is_active = '1'
+  WHERE c.is_active = '1'
+  GROUP BY c.comm_id
+  ORDER BY proj_count DESC, c.comm_heading ASC
+  LIMIT 12");
+while ($res && $row = mysqli_fetch_assoc($res)) {
+  $hero_locations[] = $row;
+}
+
+// Hot property launches, with their community and emirate (the hero project below is never one of these)
 $home_projects = [];
 $res = mysqli_query($conn, "SELECT p.*, c.comm_location FROM tbl_proj p
   LEFT JOIN tbl_community c ON c.comm_id = p.prj_comm_id
-  WHERE p.proj_showonhomepage=1 AND p.is_active=1
+  WHERE p.proj_showonhomepage=1 AND p.is_active=1 AND p.is_home_hero<>'1'
   ORDER BY p.home_card_order_no IS NULL, p.home_card_order_no ASC");
 while ($res && $row = mysqli_fetch_assoc($res)) {
   $home_projects[] = $row;
+}
+
+// The one project featured in the homepage hero banner. Admin > Manage Projects > Homepage hero banner.
+// Falls back to the first hot-launch card until a hero project is picked there.
+$hero_row = select_row('tbl_proj', "is_home_hero='1' AND is_active='1'");
+if ($hero_row) {
+  $hero_comm = (int) $hero_row['prj_comm_id'] > 0 ? select_row('tbl_community', 'comm_id=' . (int) $hero_row['prj_comm_id']) : [];
+  $hero_row['comm_location'] = $hero_comm['comm_location'] ?? '';
+  $home_projects[] = $hero_row;
 }
 foreach ($home_projects as &$p) {
   $p['card_name'] = !empty($p['proj_name_on_card']) ? $p['proj_name_on_card'] : $p['proj_name'];
@@ -32,7 +55,7 @@ foreach ($home_projects as &$p) {
   $p['card_url'] = BASE_URL . 'property/' . rawurlencode(trim((string) $p['proj_slug']));
 }
 unset($p);
-$hero_project = $home_projects[0] ?? null;
+$hero_project = $hero_row ? array_pop($home_projects) : ($home_projects[0] ?? null);
 
 // Signature neighbourhoods: the grid holds 5 tiles, the first one is tall
 $home_comms = select_all('tbl_community', 'comm_showonhomepage=1 AND is_active=1');
@@ -79,26 +102,12 @@ include('common/header.php');
         <div class="fields">
           <div class="field">
             <label>Location</label><input id="heroLoc" placeholder="Palm Jumeirah, Dubai Hills…" aria-label="Location"
-              data-suggest="heroLocList" data-pop-title="Popular areas" data-min-w="360" data-per="8"
+              data-suggest="heroLocList" data-ajax="<?= BASE_URL ?>ajax/hero-location-suggestions.php"
+              data-pop-title="Popular areas" data-min-w="360" data-per="8"
               data-max="8" /><datalist id="heroLocList">
-              <option value="Palm Jumeirah">Waterfront icon</option>
-              <option value="Downtown Dubai">Burj Khalifa &amp; Dubai Mall</option>
-              <option value="Dubai Hills Estate">Golf-front green community</option>
-              <option value="Business Bay">Canal-side skyline living</option>
-              <option value="Emaar Beachfront">Sea views &amp; private beach</option>
-              <option value="Jumeirah Village Circle">Family-friendly &amp; great value</option>
-              <option value="Dubai Creek Harbour">Creek-side towers</option>
-              <option value="Town Square">Nshama family community</option>
-              <option value="Damac Hills 2">Resort-style living</option>
-              <option value="Damac Lagoons">Lagoon villas</option>
-              <option value="Dubai Islands">New waterfront destination</option>
-              <option value="Dubai Marina">Marina &amp; JBR living</option>
-              <option value="Arabian Ranches">Villa community</option>
-              <option value="Emaar South">Golf community near Expo</option>
-              <option value="The Valley">Townhouse community</option>
-              <option value="Dubai Science Park">Affordable apartments</option>
-              <option value="Saadiyat Island">Abu Dhabi culture &amp; beaches</option>
-              <option value="Yas Island">Abu Dhabi leisure hub</option>
+              <?php foreach ($hero_locations as $location): ?>
+                <option value="<?= e($location['comm_heading']) ?>"><?= e($location['proj_count'] > 0 ? $location['proj_count'] . ' ' . ($location['proj_count'] == 1 ? 'listing' : 'listings') : $location['comm_location']) ?></option>
+              <?php endforeach; ?>
             </datalist>
           </div>
           <div class="field">

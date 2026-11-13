@@ -62,10 +62,11 @@ $legal_line = "Registered in Dubai, UAE · License No. $license · RERA office $
               <a href="<?= BASE_URL ?>" aria-label="DRE Homes — home"
                 ><img
                   class="site-logo"
-                  src="<?= BASE_URL_IMG ?>footer/<?= e($footer_info['footer_logo'] ?? '') ?>"
+                  src="<?= e(dre_img(BASE_URL_IMG . 'footer/' . ($footer_info['footer_logo'] ?? ''), 300)) ?>"
                   alt="<?= e($footer_info['footer_logo_alt'] ?? 'DRE logo') ?>"
                   width="250"
                   height="110"
+                  loading="lazy"
                   style="height: 72px; margin-left: -10px"
               /></a>
               <p style="margin-top: 16px; max-width: 300px">
@@ -126,7 +127,7 @@ $legal_line = "Registered in Dubai, UAE · License No. $license · RERA office $
               </ul>
               <div class="f-qr">
                 <a href="<?= BASE_URL ?>images/dre-qr-code-26.jpeg" target="_blank" rel="noopener" title="Open permit QR code"
-                  ><img src="<?= BASE_URL ?>images/dre-qr-code-26.jpeg" alt="DRE permit QR code — Permit No. <?= e($permit) ?>" loading="lazy"
+                  ><img src="<?= e(dre_img(BASE_URL . 'images/dre-qr-code-26.jpeg', 160)) ?>" alt="DRE permit QR code — Permit No. <?= e($permit) ?>" width="80" height="80" loading="lazy"
                 /></a>
                 <div><b>Permit Number</b><span><?= e($permit) ?></span><small>Scan to verify with DLD / RERA</small></div>
               </div>
@@ -229,14 +230,15 @@ $legal_line = "Registered in Dubai, UAE · License No. $license · RERA office $
       </form>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/jquery.validation/1.16.0/jquery.validate.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
-    <script src="<?= asset_url('assets/js/main.js') ?>"></script>
-    <script src="<?= asset_url('assets/js/site.js') ?>"></script>
-    <script src="<?= asset_url('assets/js/custom.js') ?>"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/jquery.validation/1.16.0/jquery.validate.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/21.2.7/js/intlTelInput.min.js" defer></script>
+    <script src="<?= asset_url('assets/js/main.js') ?>" defer></script>
+    <script src="<?= asset_url('assets/js/site.js') ?>" defer></script>
+    <script src="<?= asset_url('assets/js/custom.js') ?>" defer></script>
 <?php foreach ($page['js'] ?? [] as $js) { ?>
-    <script src="<?= e(asset_url($js)) ?>"></script>
+    <script src="<?= e(asset_url($js)) ?>" defer></script>
 <?php } ?>
   </body>
 </html>

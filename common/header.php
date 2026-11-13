@@ -131,23 +131,37 @@ $toll_free = $footer_info['footer_contact_number'] ?? '800 37373';
         var base_url = '<?= BASE_URL ?>';
     </script>
 
-    <!-- Google Tag Manager -->
+    <!-- Google Tag Manager (deferred to after load for 0 TBT) -->
     <script>
-        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-        })(window,document,'script','dataLayer','GTM-NDFF757K');
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
+        (function() {
+            function loadGTM() {
+                var s = document.createElement('script');
+                s.async = true;
+                s.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-NDFF757K';
+                document.head.appendChild(s);
+            }
+            if (document.readyState === 'complete') {
+                setTimeout(loadGTM, 500);
+            } else {
+                window.addEventListener('load', function() { setTimeout(loadGTM, 500); }, { once: true });
+            }
+        })();
     </script>
     <!-- End Google Tag Manager -->
 
 <?= empty($is_404_page) ? generateProjectDetailSchema($home_meta, $header_details, $footer_info, $breadcrumbs, $proj_detail ?? '', $images, $category_slug ?? '', $slug, $meta_tags ?: '') : '' ?>
 
+    <!-- LCP Hero Image Preload -->
+    <?php if (!empty($page['preload_image'])): ?>
+    <link rel="preload" as="image" href="<?= e($page['preload_image']) ?>" <?= !empty($page['preload_image_mobile']) ? 'imagesrcset="' . e($page['preload_image_mobile']) . ' 768w, ' . e($page['preload_image']) . ' 1600w" imagesizes="100vw"' : '' ?> fetchpriority="high" />
+    <?php endif; ?>
+
     <!-- Fonts & Icons -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,200;0,300;0,400;0,500;0,600;1,200;1,300&amp;display=swap" rel="stylesheet" />
     <?= get_theme_font_links($theme_settings) ?>
+    <!-- Preconnect to CDN -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
     <!-- Font Awesome: loaded without blocking the first paint (icons pop in a moment after). -->
     <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" onload="this.onload=null;this.rel='stylesheet'" />
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" /></noscript>
@@ -175,6 +189,7 @@ $toll_free = $footer_info['footer_contact_number'] ?? '800 37373';
          beat later. The @import below still does the actual loading/layering; this just makes
          the request start sooner, in parallel with everything else in <head>. -->
     <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
+    <link rel="preload" as="style" href="<?= asset_url('assets/css/main.css') ?>" />
     <!-- Bootstrap 5.3 — loaded into a cascade layer so the DRE theme below always takes priority -->
     <style>
       @layer reset, bootstrap;
@@ -187,7 +202,6 @@ $toll_free = $footer_info['footer_contact_number'] ?? '800 37373';
     <!-- intl-tel-input styles: same non-blocking load as Font Awesome above. -->
     <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/21.2.7/css/intlTelInput.css" onload="this.onload=null;this.rel='stylesheet'" />
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/21.2.7/css/intlTelInput.css" /></noscript>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/21.2.7/js/intlTelInput.min.js"></script>
     <link rel="stylesheet" href="<?= htmlspecialchars(asset_url('assets/css/style.css')) ?>" />
     
     <!-- Dynamic Website Theme Overrides -->
@@ -238,10 +252,11 @@ $toll_free = $footer_info['footer_contact_number'] ?? '800 37373';
             <a href="<?= BASE_URL ?>" class="logo" aria-label="DRE Homes — home">
               <img
                 class="site-logo"
-                src="<?= BASE_URL_IMG ?>header/<?= htmlspecialchars($header_details['header_logo'] ?? '') ?>"
+                src="<?= e(dre_img(BASE_URL_IMG . 'header/' . ($header_details['header_logo'] ?? ''), 300)) ?>"
                 alt="<?= htmlspecialchars($header_details['header_logo_alt'] ?? 'DRE Real Estate logo') ?>"
                 width="250"
                 height="110"
+                fetchpriority="high"
               />
             </a>
           </div>

@@ -78,24 +78,34 @@ $home_counters = select_all('tbl_abt_counter', 'is_active=1 ORDER BY abt_countr_
 $home_devs = select_all('tbl_developer', 'dev_showonhomepage=1 AND is_active=1 ORDER BY dev_order_no ASC');
 $insta_items = select_all('tbl_instagram_content', 'is_active=1 ORDER BY display_order ASC');
 
+$hero_raw_url = $hero_poster ?: BASE_URL . 'images/home-sec/offplan-property.jpg';
+$hero_img_desktop = dre_img($hero_raw_url, 1600);
+$hero_img_mobile = dre_img($hero_raw_url, 768);
+
 $page = [
   'active' => 'home',
   'title' => 'DRE Homes Real Estate | Dubai Property Brokerage',
   'description' => 'Curated off-plan launches, signature resales and premium residences — guided by RERA-certified advisors.',
   'css' => ['assets/css/suggest.css'],
   'js' => ['assets/js/suggest.js'],
+  'preload_image' => $hero_img_desktop,
+  'preload_image_mobile' => $hero_img_mobile,
 ];
 include('common/header.php');
 ?>
 <header class="hero" id="hero" data-bg="video">
   <div class="hero-bg" aria-hidden="true">
-    <img class="hm" src="<?= e($hero_poster ?: 'https://drehomes.com/images/home-sec/offplan-property.jpg') ?>" alt="" />
+    <img class="hm"
+         src="<?= e($hero_img_desktop) ?>"
+         srcset="<?= e($hero_img_mobile) ?> 768w, <?= e($hero_img_desktop) ?> 1600w"
+         sizes="100vw"
+         alt="" fetchpriority="high" />
     <!-- HERO VIDEO: change the src below to use a different video (MP4, ideally < 8 MB, 1920px wide) -->
     <?php if (!empty($hero['desktop']) && $hero['desktop']['media_type'] == 'video') { ?>
-      <!-- HERO VIDEO: managed from the admin (Hero Section) -->
-      <video class="hm" id="heroVideo" muted="" loop="" playsinline="" webkit-playsinline="" preload="metadata"
-        poster="<?= e($hero_poster ?: 'https://drehomes.com/images/home-sec/offplan-property.jpg') ?>">
-        <source src="<?= BASE_URL_IMG . e($hero['desktop']['media_path']) ?>" type="video/mp4" />
+      <!-- HERO VIDEO: managed from the admin (Hero Section) - loaded on desktop after paint to save 27MB bandwidth -->
+      <video class="hm" id="heroVideo" muted="" loop="" playsinline="" webkit-playsinline="" preload="none"
+        poster="<?= e($hero_img_desktop) ?>"
+        data-src="<?= BASE_URL_IMG . e($hero['desktop']['media_path']) ?>">
       </video>
     <?php } ?>
   </div>
@@ -297,7 +307,7 @@ include('common/header.php');
 
 <section id="about">
   <div class="wrap about">
-    <div class="about-img reveal">
+    <div class="about-img reveal" style="background-image: url('<?= e(dre_img(BASE_URL . 'images/dre-tree.jpg', 1000)) ?>')">
       <a class="play glass on-img" href="<?= page_link('about') ?>"><i>→</i>More about DRE</a>
     </div>
     <div class="reveal">
@@ -322,7 +332,7 @@ include('common/header.php');
 <section id="vision" style="padding-top: 20px">
   <div class="wrap duo">
     <article class="dcard reveal">
-      <div class="bg" style="background-image: url(https://drehomes.com/images/qurat-and-mudi.jpg)"></div>
+      <div class="bg" style="background-image: url('<?= e(dre_img(BASE_URL . 'images/qurat-and-mudi.jpg', 1000)) ?>')"></div>
       <div class="dc-in glass on-img">
         <span class="eyebrow">Meet the vision behind DRE</span>
         <h3>Built on relationships, <em class="gold-text">driven by results.</em></h3>
@@ -331,7 +341,7 @@ include('common/header.php');
       </div>
     </article>
     <article class="dcard reveal">
-      <div class="bg" style="background-image: url(https://drehomes.com/images/town-square-office.jpg)"></div>
+      <div class="bg" style="background-image: url('<?= e(dre_img(BASE_URL . 'images/town-square-office.jpg', 1000)) ?>')"></div>
       <div class="dc-in glass on-img">
         <span class="eyebrow">Town Square Branch</span>
         <h3>Making property decisions <em class="gold-text">easier across Dubai.</em></h3>
@@ -449,8 +459,8 @@ include('common/header.php');
         foreach ($home_devs as $row) {
           $dev_name = $row['dev_homp_img_alt'] ?: $row['dev_heading']; ?>
           <a class="dev glass" href="<?= BASE_URL ?>developer/<?= e($row['dev_slug']) ?>" <?= $dup ? 'aria-hidden="true" tabindex="-1"' : '' ?> title="<?= e($dev_name) ?> projects"><img
-              src="<?= BASE_URL_IMG ?>developer/homepage-image/<?= e($row['dev_homp_img']) ?>"
-              alt="<?= $dup ? '' : e($dev_name) ?>" loading="lazy" /><span>View projects →</span></a>
+              src="<?= e(dre_img(BASE_URL_IMG . 'developer/homepage-image/' . $row['dev_homp_img'], 250)) ?>"
+              alt="<?= $dup ? '' : e($dev_name) ?>" loading="lazy" width="180" height="60" /><span>View projects →</span></a>
         <?php }
       } ?>
     </div>
@@ -458,26 +468,26 @@ include('common/header.php');
   <div class="wrap">
     <div class="excl reveal">
       <a class="ex glass"
-        href="https://drehomes.com/company-news/sharafi-development-unveils-marea-residences-with-dre-x-as-exclusive-sales-partner">
+        href="<?= BASE_URL ?>company-news/sharafi-development-unveils-marea-residences-with-dre-x-as-exclusive-sales-partner">
         <div class="phw">
-          <div class="ph" style="background-image: url(https://drehomes.com/images/home-partner/Sharafi-deal1.jpeg)">
+          <div class="ph" style="background-image: url('<?= e(dre_img(BASE_URL . 'images/home-partner/Sharafi-deal1.jpeg', 800)) ?>')">
           </div>
         </div>
         <div class="tx">
-          <small>Exclusive Sales Partner</small><img src="https://drehomes.com/images/home-partner/sharafi-logo1.png"
-            alt="Sharafi Developments" />
+          <small>Exclusive Sales Partner</small><img src="<?= e(dre_img(BASE_URL . 'images/home-partner/sharafi-logo1.png', 200)) ?>"
+            alt="Sharafi Developments" loading="lazy" />
           <h3>Shaping coastal living with Sharafi Developments</h3>
           <em>Read the story →</em>
         </div>
       </a>
       <a class="ex glass"
-        href="https://drehomes.com/company-news/dubai-tonino-lamborghini-residences-unveils-final-phase">
+        href="<?= BASE_URL ?>company-news/dubai-tonino-lamborghini-residences-unveils-final-phase">
         <div class="phw">
-          <div class="ph" style="background-image: url(https://drehomes.com/images/home-partner/gulf-deal1.jpeg)"></div>
+          <div class="ph" style="background-image: url('<?= e(dre_img(BASE_URL . 'images/home-partner/gulf-deal1.jpeg', 800)) ?>')"></div>
         </div>
         <div class="tx">
-          <small>Exclusive Sales Partner</small><img src="https://drehomes.com/images/home-partner/gulf-logo1.png"
-            alt="Gulf Land Property Developers" />
+          <small>Exclusive Sales Partner</small><img src="<?= e(dre_img(BASE_URL . 'images/home-partner/gulf-logo1.png', 200)) ?>"
+            alt="Gulf Land Property Developers" loading="lazy" />
           <h3>Elevating luxury living with Gulf Land Property Developers</h3>
           <em>Read the story →</em>
         </div>

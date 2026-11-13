@@ -1019,13 +1019,20 @@
 		if (!$cache_ok || !is_string($url) || $url === '') {
 			return $url;
 		}
-		$rel = (strpos($url, BASE_URL) === 0) ? substr($url, strlen(BASE_URL)) : $url;
+		$rel = $url;
+		if (strpos($rel, BASE_URL) === 0) {
+			$rel = substr($rel, strlen(BASE_URL));
+		} else {
+			// Strip absolute site URLs (drehomes.com or local paths) to treat them as local assets
+			$rel = preg_replace('#^https?://(?:www\.)?drehomes\.com/(?:dre-homes-v3/|dre-homes-new-ui/)?#i', '', $rel);
+			$rel = preg_replace('#^https?://[^/]+/dre-homes-v3/#i', '', $rel);
+		}
 		$rel = ltrim(rawurldecode(strtok($rel, '?')), '/');
 		if (preg_match('#^[a-z]+://#i', $rel) || strpos($rel, '..') !== false) {
 			return $url;
 		}
 		$ext = strtolower(pathinfo($rel, PATHINFO_EXTENSION));
-		if (!in_array($ext, ['jpg', 'jpeg', 'png'], true)) {
+		if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
 			return $url;
 		}
 		$src = $root . $rel;
@@ -1049,7 +1056,18 @@
 			if (!$info || $info[0] * $info[1] > 30000000) {
 				return $url;
 			}
-			$im = ($info[2] === IMAGETYPE_PNG) ? @imagecreatefrompng($src) : (($info[2] === IMAGETYPE_JPEG) ? @imagecreatefromjpeg($src) : false);
+			if ($info[2] === IMAGETYPE_WEBP && $info[0] <= $max_width) {
+				return $url;
+			}
+			if ($info[2] === IMAGETYPE_PNG) {
+				$im = @imagecreatefrompng($src);
+			} elseif ($info[2] === IMAGETYPE_JPEG) {
+				$im = @imagecreatefromjpeg($src);
+			} elseif (defined('IMAGETYPE_WEBP') && $info[2] === IMAGETYPE_WEBP && function_exists('imagecreatefromwebp')) {
+				$im = @imagecreatefromwebp($src);
+			} else {
+				$im = false;
+			}
 			if (!$im) {
 				return $url;
 			}
@@ -7151,12 +7169,13 @@
 			$families = [];
 			foreach (array_keys($fonts) as $f) {
 				$formatted = str_replace(' ', '+', $f);
-				$families[] = 'family=' . $formatted . ':ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&';
+				$families[] = 'family=' . $formatted . ':ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,200;1,300&';
 			}
 			$url = 'https://fonts.googleapis.com/css2?' . implode('', $families) . 'display=swap';
 			$html .= '<link rel="preconnect" href="https://fonts.googleapis.com" />' . "\n";
 			$html .= '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />' . "\n";
-			$html .= '<link href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" rel="stylesheet" />' . "\n";
+			$html .= '<link rel="preload" as="style" href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" onload="this.onload=null;this.rel=\'stylesheet\'" />' . "\n";
+			$html .= '<noscript><link rel="stylesheet" href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" /></noscript>' . "\n";
 		}
 
 		return $html;

@@ -1,5 +1,9 @@
 <?php
-ob_start();
+if (!ob_start('ob_gzhandler')) {
+	ob_start();
+}
+session_cache_limiter('public');
+session_cache_expire(60);
 session_start();
 date_default_timezone_set('Asia/Kolkata');
 

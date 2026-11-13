@@ -1,25 +1,40 @@
 /* DRE Homes — shared site script (needs Bootstrap 5 bundle loaded first; nav, dock, AI panel, phone input, Dirham symbol, Liquid Glass, reveal) */
 const root = document.documentElement;
 
-/* ---- Popin live video agent (same token as live site) ---- */
-(function () {
+/* ---- Popin live video agent (lazy loaded to eliminate TBT blocking) ---- */
+let popinLoaded = false;
+function loadPopin(cb) {
+  if (popinLoaded) return cb && cb();
+  popinLoaded = true;
   const p = document.createElement("script");
   p.src = "https://widget01.popin.to/js/widget.js";
+  p.async = true;
   p.onload = () => {
     try {
-      popInWidgetInit({ token: "13538", mode: "hidden" });
+      if (typeof popInWidgetInit === "function") {
+        popInWidgetInit({ token: "13538", mode: "hidden" });
+      }
     } catch (e) {}
+    if (cb) cb();
   };
   document.body.appendChild(p);
-})();
-function openPopin() {
-  if (typeof window.Popin === "function") {
-    Popin("open");
-  } else {
-    window.open("https://wa.me/971585837346", "_blank");
-  }
 }
-document.getElementById("popinBtn").onclick = openPopin;
+if ("requestIdleCallback" in window) {
+  requestIdleCallback(() => setTimeout(loadPopin, 2500), { timeout: 4000 });
+} else {
+  window.addEventListener("load", () => setTimeout(loadPopin, 3000), { once: true });
+}
+function openPopin() {
+  loadPopin(() => {
+    if (typeof window.Popin === "function") {
+      Popin("open");
+    } else {
+      window.open("https://wa.me/971585837346", "_blank");
+    }
+  });
+}
+const popBtn = document.getElementById("popinBtn");
+if (popBtn) popBtn.onclick = openPopin;
 
 /* ---- AI assistant (UI shell — replies are scripted until connected to a real AI backend) ---- */
 const aiPanel = document.getElementById("aiPanel"),
@@ -182,9 +197,20 @@ if (document.getElementById("heroVideo")) {
     hero.dataset.bg = m;
     document.querySelectorAll("#heroSeg button").forEach((b) => b.classList.toggle("on", b.dataset.bg === m));
     if (m === "video") {
-      hv.preload = "auto";
-      if (!reduce) hv.play().catch(() => {});
-    } else hv.pause();
+      const isMobile = window.innerWidth < 768;
+      if (!isMobile && !reduce && hv) {
+        const startVideo = () => {
+          if (!hv.src && hv.dataset.src) hv.src = hv.dataset.src;
+          hv.preload = "auto";
+          if (!userPaused) hv.play().catch(() => {});
+        };
+        if (document.readyState === "complete") {
+          setTimeout(startVideo, 1000);
+        } else {
+          window.addEventListener("load", () => setTimeout(startVideo, 1000), { once: true });
+        }
+      }
+    } else if (hv) hv.pause();
     syncVc();
     try {
       localStorage.setItem("dre-hero", m);
@@ -197,8 +223,9 @@ if (document.getElementById("heroVideo")) {
   let hb = "video";
   setHeroBg(hb);
   new IntersectionObserver(([e]) => {
-    if (hero.dataset.bg !== "video" || reduce || userPaused) return;
-    e.isIntersecting ? hv.play().catch(() => {}) : hv.pause();
+    if (hero.dataset.bg !== "video" || window.innerWidth < 768 || reduce || userPaused || !hv) return;
+    if (e.isIntersecting && hv.src) hv.play().catch(() => {});
+    else if (hv) hv.pause();
   }).observe(hero);
 }
 

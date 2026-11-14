@@ -64,6 +64,7 @@ $dre_menu = [
 		['Podcast', 'bi-mic', 'manage-podcast.php', ['manage-podcast.php']],
 		['Media Gallery', 'bi-images', [
 			['All Media', 'manage-media.php', ['manage-media.php', 'add-media.php', 'edit-media.php']],
+			['Highlight Stories', 'manage-media-stories.php', ['manage-media-stories.php']],
 			['Page Content', 'edit-media-content.php' . $dre_edit, ['edit-media-content.php']],
 		]],
 		['Testimonials', 'bi-chat-quote', [
@@ -333,5 +334,48 @@ $dre_menu = [
 				opened = null;
 			}
 		});
+	})();
+
+	// Keep the independent sidebar scroll position when navigating between admin pages.
+	(function () {
+		var wrapper = document.getElementById('kt_aside_menu_wrapper');
+		if (!wrapper) {
+			return;
+		}
+		var key = 'dreAdminAsideScrollTop';
+		var saveTimer;
+		function remember() {
+			try {
+				sessionStorage.setItem(key, String(wrapper.scrollTop));
+			} catch (error) {
+				// The menu still works when browser storage is unavailable.
+			}
+		}
+		function restore() {
+			try {
+				var saved = sessionStorage.getItem(key);
+				if (saved !== null && saved !== '') {
+					wrapper.scrollTop = Math.max(0, parseInt(saved, 10) || 0);
+				}
+			} catch (error) {
+				// The menu still works when browser storage is unavailable.
+			}
+		}
+
+		wrapper.addEventListener('click', function (event) {
+			if (event.target.closest('a[href]')) {
+				window.clearTimeout(saveTimer);
+				remember();
+			}
+		});
+		wrapper.addEventListener('scroll', function () {
+			window.clearTimeout(saveTimer);
+			saveTimer = window.setTimeout(remember, 120);
+		}, { passive: true });
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', restore, { once: true });
+		} else {
+			restore();
+		}
 	})();
 </script>

@@ -79,6 +79,17 @@ $id = (int) base64_decode(is_string($_GET['edit'] ?? null) ? $_GET['edit'] : '',
 $details = $id > 0 ? (listc_query($conn, "SELECT * FROM {$page['table']} WHERE {$page['id_column']} = ?", [$id]) ?: []) : [];
 $details = $details ? $details[0] : null;
 
+if ($details && !isset($details['media_story_eyebrow'])) {
+  @listc_query($conn, "ALTER TABLE {$page['table']}
+    ADD COLUMN `media_story_eyebrow` varchar(255) NOT NULL DEFAULT 'Highlight stories' AFTER `media_sub_title`,
+    ADD COLUMN `media_story_title` varchar(255) NOT NULL DEFAULT 'Moments worth reliving.' AFTER `media_story_eyebrow`,
+    ADD COLUMN `media_gallery_eyebrow` varchar(255) NOT NULL DEFAULT 'The archive' AFTER `media_story_title`,
+    ADD COLUMN `media_gallery_title` varchar(255) NOT NULL DEFAULT 'Our visual stories.' AFTER `media_gallery_eyebrow`");
+  $details = listc_query($conn, "SELECT * FROM {$page['table']} WHERE {$page['id_column']} = ?", [$id]);
+  $details = $details ? $details[0] : null;
+}
+$has_section_headings = isset($details['media_story_eyebrow']);
+
 $errors = [];
 $old = ['heading' => '', 'text' => '', 'third' => '', 'is_active' => ''];
 if ($details) {
@@ -88,6 +99,12 @@ if ($details) {
     'third' => (string) $details[$page['third_column']],
     'is_active' => $details['is_active'] === '1' ? '1' : '',
   ];
+  if ($has_section_headings) {
+    $old['story_eyebrow'] = (string) $details['media_story_eyebrow'];
+    $old['story_title'] = (string) $details['media_story_title'];
+    $old['gallery_eyebrow'] = (string) $details['media_gallery_eyebrow'];
+    $old['gallery_title'] = (string) $details['media_gallery_title'];
+  }
 }
 
 if ($details && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST[$page['post_flag']])) {
@@ -95,6 +112,11 @@ if ($details && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST[$p
   $old['text'] = isset($_POST['text']) && is_string($_POST['text']) ? mb_substr(trim($_POST['text']), 0, 255) : '';
   $old['third'] = isset($_POST['third']) && is_string($_POST['third']) ? mb_substr(trim($_POST['third']), 0, 255) : '';
   $old['is_active'] = isset($_POST['is_active']) ? '1' : '';
+  if ($has_section_headings) {
+    foreach (['story_eyebrow', 'story_title', 'gallery_eyebrow', 'gallery_title'] as $field) {
+      $old[$field] = isset($_POST[$field]) && is_string($_POST[$field]) ? mb_substr(trim($_POST[$field]), 0, 255) : '';
+    }
+  }
 
   if (!is_string($_POST['csrf'] ?? null) || !hash_equals($_SESSION['admin_csrf'], $_POST['csrf'])) {
     $errors[] = 'The form expired. Please check your entries and save again.';
@@ -136,6 +158,13 @@ if ($details && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST[$p
     $assignments .= ", {$page['second_column']} = ?, {$page['third_column']} = ?";
     $values[] = $old['text'];
     $values[] = $old['third'];
+    if ($has_section_headings) {
+      $assignments .= ', media_story_eyebrow = ?, media_story_title = ?, media_gallery_eyebrow = ?, media_gallery_title = ?';
+      $values[] = $old['story_eyebrow'];
+      $values[] = $old['story_title'];
+      $values[] = $old['gallery_eyebrow'];
+      $values[] = $old['gallery_title'];
+    }
     $values[] = $id;
     $saved = listc_query($conn, "UPDATE {$page['table']} SET $assignments WHERE {$page['id_column']} = ?", $values);
     if (!$saved) {
@@ -291,6 +320,10 @@ $live_listings = $counted ? (int) $counted[0]['n'] : 0;
                   </div>
                 <?php endif; ?>
 
+                <?php if ($details && !$has_section_headings): ?>
+                  <div class="dre-form-alert" role="status"><i class="bi bi-info-circle"></i><div>Separate headings for Highlight stories and the photo archive are ready after <code>db/migrations/013_media_section_headings.sql</code> is run on this database. The banner content below can already be edited.</div></div>
+                <?php endif; ?>
+
                 <?php if ($errors): ?>
                   <div class="dre-form-alert dre-form-bad" role="alert" id="listcErrors" tabindex="-1">
                     <i class="bi bi-exclamation-triangle"></i>
@@ -312,6 +345,34 @@ $live_listings = $counted ? (int) $counted[0]['n'] : 0;
                   <form action="<?= BASE_URL . $page['file'] ?>?edit=<?= base64_encode($id) ?>" enctype="multipart/form-data" method="post" id="listing-content-form" class="dre-form">
                     <input type="hidden" name="csrf" value="<?= listc_e($_SESSION['admin_csrf']) ?>">
                     <input type="hidden" name="<?= listc_e($page['post_flag']) ?>" value="1">
+
+                    <?php if ($has_section_headings): ?>
+                    <section class="dre-glass dre-form-section" id="media-section-headings">
+                      <h2><i class="bi bi-images"></i> Highlight stories</h2>
+                      <p class="dre-form-note">The heading above the grouped photo moments.</p>
+                      <label class="dre-field">
+                        <span>Small heading</span>
+                        <input type="text" name="story_eyebrow" value="<?= listc_e($old['story_eyebrow']) ?>" maxlength="255" autocomplete="off">
+                      </label>
+                      <label class="dre-field">
+                        <span>Main heading</span>
+                        <input type="text" name="story_title" value="<?= listc_e($old['story_title']) ?>" maxlength="255" autocomplete="off">
+                      </label>
+                    </section>
+
+                    <section class="dre-glass dre-form-section">
+                      <h2><i class="bi bi-grid-3x3-gap"></i> Photo archive</h2>
+                      <p class="dre-form-note">The heading above all photos and filters.</p>
+                      <label class="dre-field">
+                        <span>Small heading</span>
+                        <input type="text" name="gallery_eyebrow" value="<?= listc_e($old['gallery_eyebrow']) ?>" maxlength="255" autocomplete="off">
+                      </label>
+                      <label class="dre-field">
+                        <span>Main heading</span>
+                        <input type="text" name="gallery_title" value="<?= listc_e($old['gallery_title']) ?>" maxlength="255" autocomplete="off">
+                      </label>
+                    </section>
+                    <?php endif; ?>
 
                     <section class="dre-glass dre-form-section">
                       <h2><i class="bi bi-window"></i> Top of the page</h2>

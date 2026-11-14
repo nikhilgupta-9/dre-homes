@@ -12,6 +12,10 @@ $media_hero_image_url = $media_hero_image !== ''
 $media_hero_eyebrow = trim((string) ($media_content['media_heading'] ?? '')) ?: 'Media buzz';
 $media_hero_title = trim((string) ($media_content['media_title'] ?? '')) ?: 'Every frame tells a story.';
 $media_hero_subtitle = trim((string) ($media_content['media_sub_title'] ?? '')) ?: 'A glimpse into the world of DRE.';
+$media_story_eyebrow = trim((string) ($media_content['media_story_eyebrow'] ?? '')) ?: 'Highlight stories';
+$media_story_title = trim((string) ($media_content['media_story_title'] ?? '')) ?: 'Moments worth reliving.';
+$media_gallery_eyebrow = trim((string) ($media_content['media_gallery_eyebrow'] ?? '')) ?: 'The archive';
+$media_gallery_title = trim((string) ($media_content['media_gallery_title'] ?? '')) ?: 'Our visual stories.';
 $photos = get_media_photos();                      // Admin > Media > Manage Media: every published photo, newest first
 $stories = get_media_stories($photos);             // runs of 7+ photos with the same caption
 $category_counts = get_media_category_counts($photos);
@@ -45,8 +49,8 @@ include('common/header.php');
       <div class="wrap">
         <div class="head-row reveal">
           <div>
-            <span class="eyebrow">Highlight stories</span>
-            <h2 class="serif">Moments <em class="gold-text">worth reliving.</em></h2>
+            <span class="eyebrow"><?= e($media_story_eyebrow) ?></span>
+            <h2 class="serif"><?= gold_last_word($media_story_title) ?></h2>
           </div>
         </div>
         <div class="md-sts reveal">
@@ -66,8 +70,8 @@ include('common/header.php');
       <div class="wrap">
         <div class="head-row reveal" style="margin-bottom: 22px">
           <div>
-            <span class="eyebrow">The archive</span>
-            <h2 class="serif">Our visual <em class="gold-text">stories.</em></h2>
+            <span class="eyebrow"><?= e($media_gallery_eyebrow) ?></span>
+            <h2 class="serif"><?= gold_last_word($media_gallery_title) ?></h2>
           </div>
         </div>
         <div class="cchips glass" id="mdCat" role="tablist" aria-label="Category">

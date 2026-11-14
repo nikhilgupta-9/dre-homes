@@ -378,7 +378,7 @@ if (preg_match('/^(uploaded|alts|shown|hidden|deleted)-(\d+)$/', $done, $match))
 								<div class="dre-glass dre-glass-dark dre-hero dre-leads-hero">
 									<div>
 										<h1>Media gallery</h1>
-										<p>The pictures on the Media page of the website, newest first.</p>
+										<p>Upload, organize, and edit photo captions in this gallery. Highlight story groups have their own page.</p>
 									</div>
 									<div class="dre-leads-stats">
 										<div><strong><?= number_format((int) $stat['active']) ?></strong><span>Live</span></div>
@@ -388,7 +388,8 @@ if (preg_match('/^(uploaded|alts|shown|hidden|deleted)-(\d+)$/', $done, $match))
 									</div>
 									<div class="dre-actions">
 										<a class="dre-primary" href="#mediaUpload" id="mediaUploadLink"><i class="bi bi-cloud-arrow-up"></i> Add pictures</a>
-										<a href="<?= BASE_URL ?>edit-media-content.php?edit=<?= base64_encode(1) ?>"><i class="bi bi-window"></i> Page content</a>
+										<a href="<?= BASE_URL ?>manage-media-stories.php"><i class="bi bi-images"></i> Highlight stories</a>
+										<a href="<?= BASE_URL ?>edit-media-content.php?edit=<?= base64_encode(1) ?>"><i class="bi bi-window"></i> Edit page content</a>
 										<a href="<?= BASE_URL ?>export-media.php"><i class="bi bi-download"></i> Export XLS</a>
 									</div>
 								</div>

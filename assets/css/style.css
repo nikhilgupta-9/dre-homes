@@ -12,11 +12,12 @@ color: #fff;
 #vision .dcard .dc-in {padding: 15px 20px;}
 #vision .dcard .btn i{width: 20px; height: 20px; font-size: 10px;}
 .eye-fff{color: #fff;}
-.excl {grid-template-columns: none;}
+/*.excl {grid-template-columns: none;}*/
 .currency-wrap {
     position: relative;
     
 }
+#developers .ex, .ex2{grid-template-rows: 1.3fr 1fr; grid-template-columns: none;}
 
 .currency-wrap .cur {
     appearance: none;
@@ -48,10 +49,15 @@ color: #fff;
 .pd-hero.cd-hero .pd-title{bottom: 20px;}
 .rps-box{min-height: 830px !important;}
 .rps-box .pd-title{bottom: -70px !important;}
-
-
-
-
+.mini-stat .gold-text{color:#fff !important;}
+.aw-f button, .aw-c button{border-radius: 0 !important;}
+.btn-glass{color: #fff;}
+.hero h1{font-size: 4vw;}
+.offcanvas.offcanvas-top{top: 96px;
+    left: 16px;
+    right: 16px;     max-height: calc(100vh - 116px);}
+    
+.pm-hero .ph-bg{background-position: left;}
 
 @media (min-width:1500px){
     .pd-hero.cd-hero .pd-title{ bottom: 30px !important;}
@@ -66,6 +72,11 @@ color: #fff;
     .stats{display: block;}
     .stats .stat{margin: 10px 0;}
     .svc .ic{margin-bottom: 30px;}
+}
+@media (max-width:640px){
+    #developers .ex{
+     grid-template-rows: 1fr;
+    }
 }
 @media (max-width:420px){
     .feature .info{display: block;}

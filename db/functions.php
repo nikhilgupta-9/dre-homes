@@ -3508,6 +3508,7 @@
 			}
 			$caption = media_caption($row['media_img_alt_tag'], $file);
 			$photos[] = [
+				'id' => (int) $row['media_id'],
 				'k' => count($photos),
 				'src' => BASE_URL_IMG . 'media-image/' . rawurlencode($file),
 				'caption' => $caption,
@@ -3522,6 +3523,13 @@
 	function get_media_stories(array $photos, $min_photos = 7)
 	{
 		$stories = [];
+		$custom_titles = [];
+		$res = @mysqli_query($GLOBALS['conn'], "SELECT story_anchor_id, story_title FROM tbl_media_story_titles");
+		if ($res) {
+			while ($row = mysqli_fetch_assoc($res)) {
+				$custom_titles[(int) $row['story_anchor_id']] = trim((string) $row['story_title']);
+			}
+		}
 		$count = count($photos);
 		for ($i = 0; $i < $count; $i = $end + 1) {
 			$end = $i;
@@ -3529,9 +3537,15 @@
 				$end++;
 			}
 			if ($end - $i + 1 >= $min_photos) {
+				$story_id = (int) ($photos[$end]['id'] ?? 0); // Oldest photo is a stable anchor when new photos are added.
+				$default_title = $photos[$i]['caption'];
 				$stories[] = [
-					'title' => $photos[$i]['caption'],
+					'id' => $story_id,
+					'title' => !empty($custom_titles[$story_id]) ? $custom_titles[$story_id] : $default_title,
+					'custom_title' => $custom_titles[$story_id] ?? '',
+					'default_title' => $default_title,
 					'cover' => $photos[$i]['src'],
+					'count' => $end - $i + 1,
 					'keys' => range($photos[$i]['k'], $photos[$end]['k']),
 				];
 			}

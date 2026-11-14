@@ -220,7 +220,7 @@ $legal_line = "Registered in Dubai, UAE · License No. $license · RERA office $
         ><button>Best areas to invest</button><button>Talk to a human</button>
       </div>
       <form class="ai-f" id="aiForm">
-        <input id="aiIn" placeholder="Ask about properties, areas, visas…" autocomplete="off" /><button
+        <input id="aiIn" placeholder="Ask about properties, areas, visas…" autocomplete="off" aria-label="Ask about properties, areas, visas" /><button
           aria-label="Send"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

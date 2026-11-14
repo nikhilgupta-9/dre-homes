@@ -90,8 +90,9 @@ $toll_free = $footer_info['footer_contact_number'] ?? '800 37373';
     <meta name="robots" content="follow,index" />
     <meta http-equiv="Cache-control" content="public" />
 
-    <!-- Canonical & OpenGraph -->
+    <!-- Canonical, OpenGraph & ARD Manifest -->
     <link rel="canonical" href="<?= htmlspecialchars($page_url) ?>" />
+    <link rel="ard" href="<?= BASE_URL ?>.well-known/ard.json" />
     <meta property="og:url" content="<?= htmlspecialchars($page_url) ?>" />
     <meta property="og:title" content="<?= htmlspecialchars($meta_tags['meta_title'] ?? '') ?>" />
     <meta property="og:description" content="<?= htmlspecialchars($meta_tags['meta_description'] ?? '') ?>" />
@@ -184,17 +185,8 @@ $toll_free = $footer_info['footer_contact_number'] ?? '800 37373';
       }
     </script>
 
-    <!-- Preload hint only: the browser's preload scanner can't see an @import buried inside a
-         <style> tag, so without this the fetch doesn't start until the CSS parser reaches it a
-         beat later. The @import below still does the actual loading/layering; this just makes
-         the request start sooner, in parallel with everything else in <head>. -->
-    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
-    <link rel="preload" as="style" href="<?= asset_url('assets/css/main.css') ?>" />
-    <!-- Bootstrap 5.3 — loaded into a cascade layer so the DRE theme below always takes priority -->
-    <style>
-      @layer reset, bootstrap;
-      @import url("https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css") layer(bootstrap);
-    </style>
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="<?= asset_url('assets/css/bootstrap.min.css') ?>" />
     <link rel="stylesheet" href="<?= asset_url('assets/css/main.css') ?>" />
     <?php foreach ($page['css'] as $css): ?>
     <link rel="stylesheet" href="<?= htmlspecialchars(asset_url($css)) ?>" />

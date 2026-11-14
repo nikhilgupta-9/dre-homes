@@ -1848,7 +1848,7 @@
 		$id = (int) $project['prj_id'];
 		$name_on_card = trim((string) ($project['proj_name_on_card'] ?? ''));
 		$proj_name = trim((string) ($project['proj_name'] ?? ''));
-		$name = $name_on_card !== '' ? $name_on_card : $proj_name;
+		$name = $proj_name !== '' ? $proj_name : $name_on_card;
 		$url = BASE_URL . 'buy-property/' . rawurlencode($slug);
 
 		$price = (int) ($project['proj_price'] ?: ($project['proj_start_price'] ?? 0));
@@ -1952,16 +1952,6 @@
 				if ($clean !== '') $features[] = $clean;
 			}
 		}
-		if (empty($features)) {
-			$features = [
-				'Spacious living & dining area',
-				'Modern kitchen layout',
-				'Balcony with community view',
-				'Covered parking space',
-				'Built-in wardrobes',
-			];
-		}
-
 		// Amenities
 		$amenities = [];
 		if (preg_match('/(?:Amenities & Facilities|Amenities &amp; Facilities|Facilities)[^<]*<\/p>\s*<ul>(.*?)<\/ul>/is', $overview_raw, $am_m)) {
@@ -2028,8 +2018,6 @@
 
 		// Clean intro paragraphs
 		$clean_intro = preg_replace('/<p>\s*REF\s*:[^<]*<\/p>/i', '', $overview_raw);
-		$clean_intro = preg_replace('/<p>\s*<strong>(?:Property Details|Amenities & Facilities|Amenities &amp; Facilities|Locations Nearby):?<\/strong><\/p>\s*<ul>.*?<\/ul>/is', '', $clean_intro);
-		$clean_intro = preg_replace('/<ul>.*?<\/ul>/is', '', $clean_intro);
 		$clean_intro = preg_replace('/<p>\s*About [^<]+<\/p>/is', '', $clean_intro);
 		// HTML version for display: keeps paragraphs and their alignment (e.g. "justify") from
 		// the admin's editor — see 9.3. $clean_intro itself stays plain text for meta_description.

@@ -614,8 +614,8 @@ nav {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: 1px solid var(--stroke);
   background: rgba(var(--tint-rgb), 0.08);
@@ -629,8 +629,8 @@ nav {
   color: #1a140f;
 }
 .nav-wish svg {
-  width: 19px;
-  height: 19px;
+  width: 17px;
+  height: 17px;
 }
 .nav-wish-count {
   position: absolute;
@@ -996,7 +996,7 @@ body.menu-open .dock {
 .mini-stat {
   position: absolute;
   left: -32px;
-  bottom: 190px;
+  bottom: 130px;
   z-index: 2;
   padding: 16px 20px;
   border-radius: 20px;
@@ -1184,7 +1184,7 @@ body.menu-open .dock {
     display: none;
   }
 }
-@media (max-width: 1080px) {
+@media (max-width: 768px) {
   .excl {
     grid-template-columns: 1fr;
   }
@@ -1735,6 +1735,7 @@ input[type="range"]::-moz-range-thumb {
   padding: 32px 28px;
   border-radius: 24px;
   transition: 0.4s;
+  height:100%;
 }
 .svc:hover {
   border-color: var(--stroke-acc);
@@ -1845,7 +1846,7 @@ input[type="range"]::-moz-range-thumb {
   position: relative;
   z-index: 2;
   width: 100%;
-  padding: 34px 32px;
+  padding: 15px 20px;
   border-radius: 24px;
 }
 .dcard h3 {

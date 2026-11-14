@@ -64,7 +64,7 @@ foreach ($award_rows as $added => $row) {
     $awards[] = [
         'added' => $added, // 0 = most recently added in the admin
         'title' => $title,
-        'img' => BASE_URL_IMG . 'awards/' . rawurlencode($row['award_img']),
+        'img' => dre_img(BASE_URL_IMG . 'awards/' . rawurlencode($row['award_img']), 500),
         'alt' => $plain($row['award_img_alt']) ?: $title,
         'text' => $text,
         'excerpt' => $excerpt($text),
@@ -111,12 +111,24 @@ $award_h1 = e(implode(' ', $heading_words)) . ' <em class="gold-text">' . e(mb_s
 
 $award_meta = fn($award) => $award['partner'] . ($award['year'] ? ' · ' . $award['year'] : '');
 
+$hero_banner = !empty($award_content['award_cont_img']) ? BASE_URL_IMG . 'awards/' . rawurlencode($award_content['award_cont_img']) : '';
+$hero_bg_desktop = $hero_banner ? dre_img($hero_banner, 1600) : '';
+$hero_bg_mobile = $hero_banner ? dre_img($hero_banner, 768) : '';
+
+$page = [
+    'active' => 'about',
+    'title' => !empty($meta_tags['meta_title']) ? $meta_tags['meta_title'] : 'Our Awards & Recognition | DRE Homes Dubai',
+    'description' => !empty($meta_tags['meta_description']) ? $meta_tags['meta_description'] : 'Honouring our milestones and top-broker achievements across the UAE property market.',
+    'preload_image' => $hero_bg_desktop,
+    'preload_image_mobile' => $hero_bg_mobile,
+];
+
 include('common/header.php');
 ?>
 <!-- ===== AWARDS: HERO ===== -->
 <header class="ph-hero mg-hero aw-hero">
-    <div class="ph-bg"
-        style="background-image: url(<?= BASE_URL_IMG ?>awards/<?= rawurlencode($award_content['award_cont_img'] ?? '') ?>)">
+    <div class="ph-bg" data-nosk
+        style="background-image: url('<?= e($hero_bg_desktop ?: $hero_banner) ?>')">
     </div>
     <div class="wrap">
         <div class="crumbs" role="navigation" aria-label="Breadcrumb">
@@ -152,7 +164,7 @@ include('common/header.php');
                     <article class="aw-f glass">
                         <button class="aw-fi" type="button" data-k="<?= $award['k'] ?>"
                             aria-label="View award: <?= e($award['title']) ?>">
-                            <img src="<?= e($award['img']) ?>" alt="<?= e($award['alt']) ?>" />
+                            <img src="<?= e($award['img']) ?>" alt="<?= e($award['alt']) ?>" loading="lazy" width="360" height="270" />
                         </button>
                         <div class="aw-fb">
                             <span class="aw-meta"><?= e($award_meta($award)) ?></span>
@@ -212,7 +224,7 @@ include('common/header.php');
                                     data-img="<?= e($award['img']) ?>" data-title="<?= e($award['title']) ?>">
                                     <button class="aw-ci" type="button" data-k="<?= $award['k'] ?>"
                                         aria-label="View award: <?= e($award['title']) ?>">
-                                        <img src="<?= e($award['img']) ?>" alt="<?= e($award['alt']) ?>" loading="lazy" />
+                                        <img src="<?= e($award['img']) ?>" alt="<?= e($award['alt']) ?>" loading="lazy" width="280" height="210" />
                                     </button>
                                     <div class="aw-cb">
                                         <span

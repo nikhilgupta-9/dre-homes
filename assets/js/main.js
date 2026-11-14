@@ -422,7 +422,7 @@ const io = new IntersectionObserver(
       });
       io.unobserve(e.target);
     }),
-  { threshold: 0.12 },
+  { threshold: 0.05, rootMargin: "50px" },
 );
 document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
 new MutationObserver((ms) =>
@@ -558,7 +558,7 @@ new MutationObserver((ms) =>
 
 /* ---- Image skeletons: shimmer on every <img> and inline background-image until it loads (incl. dynamic content) ---- */
 (function () {
-  const SKIP = ".site-logo,.gptw img,.f-award img,[data-nosk]";
+  const SKIP = ".site-logo,.gptw img,.f-award img,[data-nosk],.hm,.hero-bg img,.ph-bg";
   const seen = (u) => {
     try {
       return performance.getEntriesByName(new URL(u, location.href).href).length > 0;

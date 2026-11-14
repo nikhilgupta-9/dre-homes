@@ -1,0 +1,19 @@
+{
+  "$schema": "https://agenticresourcediscovery.org/schema/v1/manifest.json",
+  "specVersion": "1.0",
+  "entries": [
+    {
+      "@context": "https://agenticresourcediscovery.org/context/v1",
+      "identifier": "urn:air:drehomes.com:search:properties",
+      "displayName": "DRE Homes Real Estate Search",
+      "type": "text/html",
+      "url": "https://drehomes.com/buy-property",
+      "description": "Search luxury off-plan properties, villas, and apartments in Dubai and UAE with DRE Homes Real Estate.",
+      "representativeQueries": [
+        "Find luxury off-plan villas for sale in Dubai",
+        "Explore real estate projects in Palm Jumeirah",
+        "Search luxury apartments in Dubai"
+      ]
+    }
+  ]
+}

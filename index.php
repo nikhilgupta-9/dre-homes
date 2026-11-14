@@ -119,7 +119,7 @@ include('common/header.php');
         <div class="tabs"><button class="on">Off Plan</button><button>Buy</button><button>Rent</button></div>
         <div class="fields">
           <div class="field">
-            <label>Location</label><input id="heroLoc" placeholder="Palm Jumeirah, Dubai Hills…" aria-label="Location"
+            <label for="heroLoc">Location</label><input id="heroLoc" placeholder="Palm Jumeirah, Dubai Hills…" aria-label="Location"
               data-suggest="heroLocList" data-ajax="<?= BASE_URL ?>ajax/hero-location-suggestions.php"
               data-pop-title="Popular areas" data-min-w="360" data-per="8"
               data-max="8" /><datalist id="heroLocList">
@@ -129,7 +129,7 @@ include('common/header.php');
             </datalist>
           </div>
           <div class="field">
-            <label>Residence</label><select id="heroType">
+            <label for="heroType">Residence</label><select id="heroType" aria-label="Residence type">
               <option value="">Any type</option>
               <option value="Apartment">Apartment</option>
               <option value="Villa">Villa</option>
@@ -138,7 +138,7 @@ include('common/header.php');
             </select>
           </div>
           <div class="field">
-            <label>Budget</label><select id="heroBudget">
+            <label for="heroBudget">Budget</label><select id="heroBudget" aria-label="Budget">
               <option value="">Any budget</option>
               <option value="1000000-3000000">AED 1M – 3M</option>
               <option value="3000000-10000000">AED 3M – 10M</option>
@@ -296,8 +296,9 @@ include('common/header.php');
       <div class="calc glass correct-aed">
         <h4>Eligibility check</h4>
         <small>Slide to your planned investment</small>
+        <label for="budget" class="visually-hidden">Planned investment budget</label>
         <div class="val " id="bval">AED 2,500,000</div>
-        <input type="range" id="budget" min="500000" max="10000000" step="50000" value="2500000" />
+        <input type="range" id="budget" min="500000" max="10000000" step="50000" value="2500000" aria-label="Planned investment budget" />
         <div class="scale"><span>AED 0.5M</span><span>AED 10M+</span></div>
         <div class="result" id="bres"></div>
       </div>
@@ -566,12 +567,12 @@ include('common/header.php');
         <p class="lead">Toll free 800 37373 · Hotline +971 52 754 3243</p>
       </div>
       <form class="form" id="ctaForm" novalidate="">
-        <input class="form-control" name="name" placeholder="Full name" autocomplete="name" required="" />
+        <input class="form-control" name="name" placeholder="Full name" autocomplete="name" required="" aria-label="Full name" />
         <input class="form-control" id="ctaPhone" name="phone" type="tel" placeholder="Phone / WhatsApp"
-          autocomplete="tel" required="" />
+          autocomplete="tel" required="" aria-label="Phone number or WhatsApp" />
         <input type="hidden" name="phone_full" id="ctaPhoneFull" />
         <div class="err" id="ctaPhoneErr" role="alert">Please enter a valid phone number.</div>
-        <input class="form-control" name="message" placeholder="What are you looking for?" />
+        <input class="form-control" name="message" placeholder="What are you looking for?" aria-label="What are you looking for?" />
         <button class="btn btn-gold" style="justify-content: center; margin-top: 6px">Request a call back</button>
       </form>
     </div>

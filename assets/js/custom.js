@@ -7,6 +7,32 @@
 (function () {
   "use strict";
 
+  /* Communities autocomplete can register here even if the page script fails to load. */
+  var communityGrid = document.getElementById("cmGrid");
+  if (communityGrid && !window.__SUGS?.some(function (cfg) { return cfg.input === "cmQ"; })) {
+    var communityCards = Array.from(communityGrid.querySelectorAll(".cm"));
+    var toCommunitySuggestion = function (card) {
+      return {
+        t: card.querySelector("b").textContent.trim(),
+        s: card.querySelector("small").textContent.trim(),
+        g: "Communities",
+        img: card.querySelector("img").src,
+        href: card.getAttribute("href"),
+      };
+    };
+    window.__SUGS = window.__SUGS || [];
+    window.__SUGS.push({
+      input: "cmQ",
+      popTitle: "Popular communities",
+      per: 9,
+      max: 9,
+      popular: communityCards.filter(function (card) { return card.dataset.pc; })
+        .sort(function (a, b) { return Number(b.dataset.pc) - Number(a.dataset.pc); })
+        .map(toCommunitySuggestion),
+      items: communityCards.map(toCommunitySuggestion),
+    });
+  }
+
   /* ---- Walls with a "Show more" button (Our Media, Our Team, Testimonials, …):
      load the next page automatically on scroll, instead of waiting for a click.
      Markup from site.js: <div class="md-more"><button id="xxMore">Show more …</button></div>;
@@ -79,4 +105,3 @@
     }
   })();
 })();
-

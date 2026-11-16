@@ -235,8 +235,8 @@ $legal_line = "Registered in Dubai, UAE · License No. $license · RERA office $
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/21.2.7/js/intlTelInput.min.js" defer></script>
     <script src="<?= asset_url('assets/js/main.js') ?>?v=2" defer></script>
-    <script src="<?= asset_url('assets/js/site.js') ?>" defer></script>
-    <script src="<?= asset_url('assets/js/custom.js') ?>" defer></script>
+    <script src="<?= asset_url('assets/js/site.js') ?>?v=2" defer></script>
+    <script src="<?= asset_url('assets/js/custom.js') ?>?v=2" defer></script>
 <?php foreach ($page['js'] ?? [] as $js) { ?>
     <script src="<?= e(asset_url($js)) ?>" defer></script>
 <?php } ?>

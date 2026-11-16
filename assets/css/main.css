@@ -2126,8 +2126,8 @@ footer {
   font-size: 14px;
   color: var(--muted);
 }
-footer h5 {
-  font-size: 11px;
+.dre-footer-heading {
+  font-size: 11px !important;
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--acc);

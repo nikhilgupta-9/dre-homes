@@ -7141,6 +7141,80 @@
 	}
 
 	/**
+	 * Keeps the configured button text color and adjusts the background only when needed for WCAG AA.
+	 */
+	function accessible_button_colors($background, $preferred)
+	{
+		$to_rgb = static function ($color) {
+			$color = trim((string) $color);
+			if (!preg_match('/^#?(?:[a-f0-9]{3}|[a-f0-9]{6})$/i', $color)) {
+				return null;
+			}
+
+			$hex = ltrim($color, '#');
+			if (strlen($hex) === 3) {
+				$hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+			}
+
+			return [
+				hexdec(substr($hex, 0, 2)),
+				hexdec(substr($hex, 2, 2)),
+				hexdec(substr($hex, 4, 2)),
+			];
+		};
+		$luminance = static function ($rgb) {
+			$channels = array_map(static function ($channel) {
+				$channel /= 255;
+				return $channel <= 0.04045 ? $channel / 12.92 : (($channel + 0.055) / 1.055) ** 2.4;
+			}, $rgb);
+
+			return 0.2126 * $channels[0] + 0.7152 * $channels[1] + 0.0722 * $channels[2];
+		};
+
+		$background_rgb = $to_rgb($background) ?: [171, 119, 82];
+		$preferred_rgb = $to_rgb($preferred) ?: [255, 255, 255];
+		$background_luminance = $luminance($background_rgb);
+		$foreground_luminance = $luminance($preferred_rgb);
+		$contrast = static function ($foreground_luminance, $background_luminance) {
+			return (max($foreground_luminance, $background_luminance) + 0.05)
+				/ (min($foreground_luminance, $background_luminance) + 0.05);
+		};
+
+		if ($contrast($foreground_luminance, $background_luminance) >= 4.5) {
+			$adjusted_background = $background_rgb;
+		} else {
+			$target = $foreground_luminance >= $background_luminance ? 0 : 255;
+			$low = 0;
+			$high = 1;
+			for ($i = 0; $i < 16; $i++) {
+				$amount = ($low + $high) / 2;
+				$candidate = array_map(static function ($channel) use ($target, $amount) {
+					return (int) round($channel + ($target - $channel) * $amount);
+				}, $background_rgb);
+				if ($contrast($foreground_luminance, $luminance($candidate)) >= 4.6) {
+					$high = $amount;
+				} else {
+					$low = $amount;
+				}
+			}
+			$adjusted_background = array_map(static function ($channel) use ($target, $high) {
+				return (int) round($channel + ($target - $channel) * $high);
+			}, $background_rgb);
+		}
+
+		$to_hex = static function ($rgb) {
+			return '#' . implode('', array_map(static function ($channel) {
+				return str_pad(dechex($channel), 2, '0', STR_PAD_LEFT);
+			}, $rgb));
+		};
+
+		return [
+			'background' => $to_hex($adjusted_background),
+			'foreground' => $to_hex($preferred_rgb),
+		];
+	}
+
+	/**
 	 * Returns Google Fonts HTML link tags for the chosen fonts.
 	 */
 	function get_theme_font_links($theme)
@@ -7203,8 +7277,12 @@
 		$accent_2 = htmlspecialchars($theme['accent_color_2'] ?? '#F5E9DC', ENT_QUOTES, 'UTF-8');
 		$accent_3 = htmlspecialchars($theme['accent_color_3'] ?? '#DCC5A9', ENT_QUOTES, 'UTF-8');
 
-		$btn_bg = htmlspecialchars($theme['button_bg_color'] ?? '#ab7752', ENT_QUOTES, 'UTF-8');
-		$btn_fg = htmlspecialchars($theme['button_text_color'] ?? '#ffffff', ENT_QUOTES, 'UTF-8');
+		$button_colors = accessible_button_colors(
+			$theme['button_bg_color'] ?? '#ab7752',
+			$theme['button_text_color'] ?? '#ffffff'
+		);
+		$btn_bg = htmlspecialchars($button_colors['background'], ENT_QUOTES, 'UTF-8');
+		$btn_fg = htmlspecialchars($button_colors['foreground'], ENT_QUOTES, 'UTF-8');
 		$btn_r = htmlspecialchars($theme['button_border_radius'] ?? '999px', ENT_QUOTES, 'UTF-8');
 		$card_r = htmlspecialchars($theme['card_border_radius'] ?? '26px', ENT_QUOTES, 'UTF-8');
 

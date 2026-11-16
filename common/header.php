@@ -187,7 +187,7 @@ $toll_free = $footer_info['footer_contact_number'] ?? '800 37373';
 
     <!-- Stylesheets -->
     <link rel="stylesheet" href="<?= asset_url('assets/css/bootstrap.min.css') ?>" />
-    <link rel="stylesheet" href="<?= asset_url('assets/css/main.css') ?>" />
+    <link rel="stylesheet" href="<?= asset_url('assets/css/main.css') ?>?v=4" />
     <?php foreach ($page['css'] as $css): ?>
     <link rel="stylesheet" href="<?= htmlspecialchars(asset_url($css)) ?>" />
     <?php endforeach; ?>

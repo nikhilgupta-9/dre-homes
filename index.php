@@ -185,8 +185,8 @@ include('common/header.php');
         <p class="lead">The newest and most sought-after projects, fresh on the UAE market.</p>
       </div>
       <div class="chips glass">
-        <button class="chip on">All</button><button class="chip">Dubai</button><button class="chip">Abu
-          Dhabi</button><button class="chip">Sharjah</button>
+        <button class="chip on" data-city="">All</button><button class="chip" data-city="Dubai">Dubai</button><button
+          class="chip" data-city="Abu Dhabi">Abu Dhabi</button><button class="chip" data-city="Sharjah">Sharjah</button>
       </div>
     </div>
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3" id="cards">

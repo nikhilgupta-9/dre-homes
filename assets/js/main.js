@@ -363,17 +363,20 @@ if (window.intlTelInput && phoneEl) {
   });
   dlg.addEventListener("close", () => v.pause());
 })();
-/* ---- Home: off-plan cards filter (the cards themselves are written in index.html) ---- */
+/* ---- Home: off-plan cards filter ---- */
 const cards = document.getElementById("cards");
 if (cards) {
-  const chips = [...document.querySelectorAll(".chip")].filter((c) => !c.closest("#cards"));
+  const chips = [...document.querySelectorAll("#props .chips [data-city]")];
   chips.forEach(
     (b) =>
       (b.onclick = () => {
         chips.forEach((x) => x.classList.remove("on"));
         b.classList.add("on");
-        const f = b.textContent.trim();
-        [...cards.children].forEach((col) => (col.hidden = f !== "All" && col.dataset.c !== f));
+        const city = b.dataset.city.trim().replace(/\s+/g, " ").toLowerCase();
+        [...cards.children].forEach((col) => {
+          const cardCity = (col.dataset.c || "").trim().replace(/\s+/g, " ").toLowerCase();
+          col.hidden = city !== "" && cardCity !== city;
+        });
       }),
   );
 }

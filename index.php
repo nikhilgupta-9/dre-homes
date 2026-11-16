@@ -103,7 +103,7 @@ include('common/header.php');
     <!-- HERO VIDEO: change the src below to use a different video (MP4, ideally < 8 MB, 1920px wide) -->
     <?php if (!empty($hero['desktop']) && $hero['desktop']['media_type'] == 'video') { ?>
       <!-- HERO VIDEO: managed from the admin (Hero Section) - loaded on desktop after paint to save 27MB bandwidth -->
-      <video class="hm" id="heroVideo" muted="" loop="" playsinline="" webkit-playsinline="" preload="none"
+      <video class="hm" id="heroVideo" autoplay="" muted="" loop="" playsinline="" webkit-playsinline="" preload="none"
         poster="<?= e($hero_img_desktop) ?>"
         data-src="<?= BASE_URL_IMG . e($hero['desktop']['media_path']) ?>">
       </video>

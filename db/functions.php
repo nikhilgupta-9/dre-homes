@@ -1477,7 +1477,6 @@
 			'quick_developers' => $quick,
 			'developers' => array_keys($developers),
 			'emirates' => array_keys($count_by('emirate')),
-			'areas' => array_values($areas),
 			'beds' => array_values($beds),
 			'prices' => [500000, 750000, 1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 7000000, 8000000, 9000000, 10000000, 15000000, 25000000],
 		];
@@ -3524,11 +3523,8 @@
 	{
 		$stories = [];
 		$custom_titles = [];
-		$res = @mysqli_query($GLOBALS['conn'], "SELECT story_anchor_id, story_title FROM tbl_media_story_titles");
-		if ($res) {
-			while ($row = mysqli_fetch_assoc($res)) {
-				$custom_titles[(int) $row['story_anchor_id']] = trim((string) $row['story_title']);
-			}
+		foreach (db_all("SELECT story_anchor_id, story_title FROM tbl_media_story_titles") as $row) {
+			$custom_titles[(int) $row['story_anchor_id']] = trim((string) $row['story_title']);
 		}
 		$count = count($photos);
 		for ($i = 0; $i < $count; $i = $end + 1) {

@@ -174,6 +174,11 @@ if (document.getElementById("heroVideo")) {
     '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
   const IC_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  hv.autoplay = true;
+  hv.muted = true;
+  hv.defaultMuted = true;
+  hv.loop = true;
+  hv.playsInline = true;
   function syncVc() {
     const p = hv.paused;
     vc.innerHTML = p ? IC_PLAY : IC_PAUSE;
@@ -197,8 +202,7 @@ if (document.getElementById("heroVideo")) {
     hero.dataset.bg = m;
     document.querySelectorAll("#heroSeg button").forEach((b) => b.classList.toggle("on", b.dataset.bg === m));
     if (m === "video") {
-      const isMobile = window.innerWidth < 768;
-      if (!isMobile && !reduce && hv) {
+      if (!reduce && hv) {
         const startVideo = () => {
           if (!hv.src && hv.dataset.src) hv.src = hv.dataset.src;
           hv.preload = "auto";
@@ -223,7 +227,7 @@ if (document.getElementById("heroVideo")) {
   let hb = "video";
   setHeroBg(hb);
   new IntersectionObserver(([e]) => {
-    if (hero.dataset.bg !== "video" || window.innerWidth < 768 || reduce || userPaused || !hv) return;
+    if (hero.dataset.bg !== "video" || reduce || userPaused || !hv) return;
     if (e.isIntersecting && hv.src) hv.play().catch(() => {});
     else if (hv) hv.pause();
   }).observe(hero);

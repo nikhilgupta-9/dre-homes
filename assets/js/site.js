@@ -2932,7 +2932,10 @@
       L.st.n += 24;
       L.draw();
     };
-    const ph = (el) => ({ src: el.querySelector("img").src, title: el.textContent.trim(), c: el.dataset.c, el });
+    const ph = (el) => {
+      const img = el.querySelector("img");
+      return { src: (img && (img.dataset.full || img.src)) || "", title: el.textContent.trim(), c: el.dataset.c, el };
+    };
     const strip = $("mdStrip");
     const lb = lightbox(
       $("mdLb"),
@@ -2980,53 +2983,67 @@
       const b = e.target.closest("button");
       if (b) lb.show(+b.dataset.k);
     };
-    const tc = {};
-    L.items.forEach((el) => {
-      const t = el.textContent.trim();
-      tc[t] = (tc[t] || 0) + 1;
-    });
-    const pop = ($("mdQ").dataset.trending || "").split("|").filter(Boolean);
-    SUGS.push({
-      input: "mdQ",
-      anchor: "#wall .fsearch",
-      minW: 380,
-      popTitle: "Popular searches",
-      per: 6,
-      max: 10,
-      popular: pop.map((t) => ({
-        t,
-        s: L.items.filter((el) => el.textContent.toLowerCase().includes(t.toLowerCase())).length + " photos",
-        g: "Popular",
-        ic: "search",
-        q: t,
-      })),
-      items: [
-        ...chips
-          .filter((b) => b.dataset.c !== "all")
-          .map((b) => ({
-            t: CN[b.dataset.c],
-            s: L.items.filter((el) => el.dataset.c === b.dataset.c).length + " photos",
-            g: "Categories",
-            ic: "dev",
-            q: "",
-            c: b.dataset.c,
-          })),
-        ...Object.keys(tc).map((t) => ({
+    const setupSuggestions = () => {
+      const q = $("mdQ");
+      if (!q || q._sugsDone) return;
+      q._sugsDone = true;
+      const tc = {};
+      L.items.forEach((el) => {
+        const t = el.textContent.trim();
+        tc[t] = (tc[t] || 0) + 1;
+      });
+      const pop = (q.dataset.trending || "").split("|").filter(Boolean);
+      SUGS.push({
+        input: "mdQ",
+        anchor: "#wall .fsearch",
+        minW: 380,
+        popTitle: "Popular searches",
+        per: 6,
+        max: 10,
+        popular: pop.map((t) => ({
           t,
-          s: tc[t] + (tc[t] > 1 ? " photos" : " photo"),
-          g: "Moments",
+          s: L.items.filter((el) => el.textContent.toLowerCase().includes(t.toLowerCase())).length + " photos",
+          g: "Popular",
           ic: "search",
           q: t,
         })),
-      ],
-      onPick: (it) => {
-        if (it.c) {
-          $("mdQ").value = "";
-          L.st.q = "";
-          L.set("c", it.c);
-        }
-      },
-    });
+        items: [
+          ...chips
+            .filter((b) => b.dataset.c !== "all")
+            .map((b) => ({
+              t: CN[b.dataset.c],
+              s: L.items.filter((el) => el.dataset.c === b.dataset.c).length + " photos",
+              g: "Categories",
+              ic: "dev",
+              q: "",
+              c: b.dataset.c,
+            })),
+          ...Object.keys(tc).map((t) => ({
+            t,
+            s: tc[t] + (tc[t] > 1 ? " photos" : " photo"),
+            g: "Moments",
+            ic: "search",
+            q: t,
+          })),
+        ],
+        onPick: (it) => {
+          if (it.c) {
+            $("mdQ").value = "";
+            L.st.q = "";
+            L.set("c", it.c);
+          }
+        },
+      });
+    };
+    const qIn = $("mdQ");
+    if (qIn) {
+      qIn.addEventListener("focus", setupSuggestions, { once: true });
+      if ("requestIdleCallback" in window) {
+        requestIdleCallback(setupSuggestions, { timeout: 2000 });
+      } else {
+        setTimeout(setupSuggestions, 1200);
+      }
+    }
     L.draw();
   })();
 

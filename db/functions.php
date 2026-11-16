@@ -4514,7 +4514,8 @@
 			$bed_info = parse_community_bedrooms($p['proj_bedroom'] ?? '');
 
 			// Image
-			$thumb = trim((string) $p['prj_thumb_img']);
+			$thumbs = array_filter(array_map('trim', explode(',', (string) $p['prj_thumb_img'])));
+			$thumb = reset($thumbs) ?: '';
 			$thumb_url = $thumb !== '' ? BASE_URL_IMG . 'project/thumb/' . rawurlencode($thumb) : BASE_URL . 'assets/img/card-placeholder.jpg';
 
 			$route = $type_routes[(int) $p['prj_type_id']] ?? $type_routes[1];

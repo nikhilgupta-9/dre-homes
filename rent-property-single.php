@@ -1,4 +1,4 @@
-  <?php
+<?php
   // 1. CONFIG
   include('db/config.php');
 
@@ -395,4 +395,3 @@
       </dialog>
 
   <?php include('common/footer.php'); ?>
-

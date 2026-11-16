@@ -102,7 +102,7 @@
       const q = input.value;
       const { groups, out } = search(q, source || cfg.items);
       items = [].concat(...Object.values(groups));
-      act = out.length && q.trim() ? 0 : -1;
+      act = -1;
       let h = "";
       if (!out.length) h = `<div class="sg-e">No matches for “${esc(q)}”. Press Enter to search anyway.</div>`;
       else {
@@ -121,7 +121,7 @@
         });
       }
       h +=
-        '<div class="sg-f"><span><kbd>↑</kbd> <kbd>↓</kbd> to navigate</span><span><kbd>Enter</kbd> to select · <kbd>Esc</kbd> to close</span></div>';
+        '<div class="sg-f"><span><kbd>↑</kbd> <kbd>↓</kbd> to navigate</span><span><kbd>Enter</kbd> to search · arrows then Enter to select · <kbd>Esc</kbd> to close</span></div>';
       box.innerHTML = h;
       setAct(act);
     }
@@ -174,6 +174,8 @@
       input.setAttribute("aria-expanded", "false");
       input.removeAttribute("aria-activedescendant");
     }
+    const form = anchor.closest("form");
+    if (form) form.addEventListener("submit", hide);
     function pick(it) {
       if (!it) return;
       hide();
@@ -209,10 +211,10 @@
       if (!open) return;
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        setAct(items.length ? (act + 1) % items.length : -1);
+        setAct(items.length ? (act + 1 + items.length) % items.length : -1);
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        setAct(items.length ? (act - 1 + items.length) % items.length : -1);
+        setAct(items.length ? (act <= 0 ? items.length - 1 : act - 1) : -1);
       } else if (e.key === "Enter") {
         if (act >= 0 && items[act]) {
           e.preventDefault();

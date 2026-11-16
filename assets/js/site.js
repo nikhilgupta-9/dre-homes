@@ -104,9 +104,10 @@
       const numNode = span.nextSibling;
       if (!numNode || numNode.nodeType !== 3) return;
       if (span.dataset.aedOrig === undefined) {
-        const digits = numNode.nodeValue.replace(/[^\d.]/g, "");
-        if (!digits) return;
-        span.dataset.aedOrig = digits;
+        const match = numNode.nodeValue.match(/^\s*([+-]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s*([KMB])?\s*(\+)?\s*$/i);
+        if (!match) return;
+        const multiplier = { K: 1e3, M: 1e6, B: 1e9 }[(match[2] || "").toUpperCase()] || 1;
+        span.dataset.aedOrig = String(Number(match[1].replace(/,/g, "")) * multiplier);
         span.dataset.aedText = numNode.nodeValue;
       }
       if (current === "AED" || !rates || !rates[current]) {
@@ -118,7 +119,7 @@
       if (!isFinite(orig)) return;
       const converted = Math.round(orig * rates[current]).toLocaleString("en-US");
       span.hidden = true;
-      numNode.nodeValue = current + " " + converted;
+      numNode.nodeValue = current + " " + converted + (/\+\s*$/.test(span.dataset.aedText) ? "+" : "");
     }
 
     function convertAll() {
@@ -482,6 +483,7 @@
     const section = document.querySelector(".reviews");
     const scripts = $$(".reviews script[data-src]");
     if (!section || !scripts.length) return;
+    window.__dreTrustindexReviewsInitialized = true;
     let loaded = false;
     function load() {
       if (loaded) return;
